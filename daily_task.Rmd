@@ -397,6 +397,15 @@ cleaned_diseases %>%
   filter(pref == "大阪府") %>% write_excel_csv("docs/results/data-大阪府.csv")
 # 「その他」都道府県は 都道府県×感染症 の組み合わせで1ファイルずつ出力。
 # JS がチャートを描く直前に必要な1疾患分だけロードできるようにするため。
+# ファイル名は JS の categoryToDisplay() と同じ表示名を使う（名前不一致による404を防ぐ）。
+category_to_display <- function(cat) {
+  dplyr::case_when(
+    cat == "COVID-19"                  ~ "新型コロナウイルス",
+    cat == "ＲＳウイルス感染症"         ~ "RSウイルス",
+    cat == "Ａ群溶血性レンサ球菌咽頭炎" ~ "A群溶血性レンサ球菌咽頭炎",
+    TRUE ~ cat
+  )
+}
 dir.create("docs/results/pref", recursive = TRUE, showWarnings = FALSE)
 other_prefs <- cleaned_diseases %>%
   filter(!pref %in% c("全国", "東京都", "大阪府")) %>%
@@ -405,9 +414,10 @@ other_prefs <- cleaned_diseases %>%
 for (p in other_prefs) {
   cats_p <- cleaned_diseases %>% filter(pref == p) %>% distinct(category) %>% pull(category)
   for (cat in cats_p) {
+    file_cat <- category_to_display(cat)
     cleaned_diseases %>%
       filter(pref == p, category == cat) %>%
-      write_excel_csv(paste0("docs/results/pref/data-", p, "-", cat, ".csv"))
+      write_excel_csv(paste0("docs/results/pref/data-", p, "-", file_cat, ".csv"))
   }
 }
 

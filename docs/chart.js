@@ -264,7 +264,11 @@ async function _renderPlaceholder(placeholder) {
   placeholder.remove();
   drawFocusContextChart(pending.cat, catData);
   const key = cssSafe(pending.cat);
-  state.chartRenderCache[key] = pending.signature;
+  // データロード後の実データでシグネチャを再計算して保存。
+  // pending.signature はロード前（データ0件）のシグネチャの可能性があるため、
+  // 古いシグネチャを保存すると次の _drawAllChartsSync で不要な再描画が起きる。
+  const renderedSignature = buildChartRenderSignature(pending.cat, catData, pending.selectedPrefs || []);
+  state.chartRenderCache[key] = renderedSignature;
   // drawFocusContextChart はコンテナ末尾に追記するので元の位置へ戻す
   const newNode = document.querySelector(`#chart-container .chart[data-category-key="${key}"]`);
   if (newNode && parent && nextSibling) {
