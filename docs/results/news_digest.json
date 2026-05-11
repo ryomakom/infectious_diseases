@@ -1,140 +1,163 @@
 {
-  "week": "2026-04-12",
+  "week": "2026-04-26",
   "lead": {
     "category": "A群溶血性レンサ球菌咽頭炎",
-    "nationwide_ratio_alert": 0.28,
-    "nationwide_current_ma4": 2.28,
-    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=0.42）",
-    "importance_score": 0.9541
+    "nationwide_ratio_alert": 0.4,
+    "nationwide_current_ma4": 3.23,
+    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=1.33）",
+    "importance_score": 1.7059
   },
   "top_prefectures": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "鳥取県",
-      "current_ma4": 7.21,
-      "current_value": 7.21,
-      "previous_value": 5.11,
-      "ratio_alert": 0.9,
-      "ratio_yoy": 2.18,
-      "growth1Rate": 0.411,
+      "current_ma4": 7.32,
+      "current_value": 7.32,
+      "previous_value": 7.05,
+      "ratio_alert": 0.92,
+      "ratio_yoy": 1.94,
+      "growth1Rate": 0.0383,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 3.1699
-    },
-    {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "山形県",
-      "current_ma4": 5.27,
-      "current_value": 5.27,
-      "previous_value": 4.19,
-      "ratio_alert": 0.66,
-      "ratio_yoy": 1.52,
-      "growth1Rate": 0.2578,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 2.2
+      "importance_score": 2.6019
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "北海道",
-      "current_ma4": 5,
-      "current_value": 5,
-      "previous_value": 5.13,
-      "ratio_alert": 0.62,
-      "ratio_yoy": 1.31,
-      "growth1Rate": -0.0253,
+      "current_ma4": 6.62,
+      "current_value": 6.62,
+      "previous_value": 5.59,
+      "ratio_alert": 0.83,
+      "ratio_yoy": 1.66,
+      "growth1Rate": 0.1843,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 1.8237
+      "importance_score": 2.685
+    },
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "愛媛県",
+      "current_ma4": 6.1,
+      "current_value": 6.1,
+      "previous_value": 6.4,
+      "ratio_alert": 0.76,
+      "ratio_yoy": 1.73,
+      "growth1Rate": -0.0469,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 3.9615
     }
   ],
   "rising": [
     {
-      "category": "マイコプラズマ肺炎",
+      "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.16,
-      "current_value": 0.16,
-      "previous_value": 0.1,
-      "ratio_alert": null,
-      "ratio_yoy": 1.31,
-      "growth1Rate": 0.6,
-      "weeksOverAlert": null,
-      "persistenceRate": null,
+      "current_ma4": 0.26,
+      "current_value": 0.26,
+      "previous_value": 0.18,
+      "ratio_alert": 0.05,
+      "ratio_yoy": 1.28,
+      "growth1Rate": 0.4444,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 0.6494
+      "importance_score": 0.6991
     }
   ],
-  "alerts": [],
+  "alerts": [
+    {
+      "category": "手足口病",
+      "pref": "全国",
+      "current_ma4": 0.26,
+      "current_value": 0.26,
+      "previous_value": 0.18,
+      "ratio_alert": 0.05,
+      "ratio_yoy": 1.28,
+      "growth1Rate": 0.4444,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 0.6991
+    }
+  ],
   "improving": [
     {
       "category": "インフルエンザ",
       "pref": "全国",
-      "current_ma4": 1.46,
-      "current_value": 1.46,
-      "previous_value": 3.21,
-      "ratio_alert": 0.05,
-      "ratio_yoy": 0.32,
-      "growth1Rate": -0.5452,
+      "current_ma4": 0.61,
+      "current_value": 0.61,
+      "previous_value": 0.92,
+      "ratio_alert": 0.02,
+      "ratio_yoy": 0.29,
+      "growth1Rate": -0.337,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 0.4001
+      "importance_score": 0.2065
     }
   ],
   "anomalies": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "全国",
-      "current_ma4": 2.28,
-      "current_value": 2.28,
-      "seasonal_mean": 1.8672,
-      "seasonal_zscore": 0.4193,
-      "importance_score": 0.9541
+      "current_ma4": 3.23,
+      "current_value": 3.23,
+      "seasonal_mean": 1.8618,
+      "seasonal_zscore": 1.3256,
+      "importance_score": 1.7059
+    },
+    {
+      "category": "感染性胃腸炎",
+      "pref": "全国",
+      "current_ma4": 5.35,
+      "current_value": 5.35,
+      "seasonal_mean": 5.2828,
+      "seasonal_zscore": 0.0324,
+      "importance_score": 0.9834
     },
     {
       "category": "水痘",
       "pref": "全国",
-      "current_ma4": 0.33,
-      "current_value": 0.33,
-      "seasonal_mean": 0.3677,
-      "seasonal_zscore": -0.1217,
-      "importance_score": 0.2468
-    },
-    {
-      "category": "マイコプラズマ肺炎",
-      "pref": "全国",
-      "current_ma4": 0.16,
-      "current_value": 0.16,
-      "seasonal_mean": 0.1888,
-      "seasonal_zscore": -0.2108,
-      "importance_score": 0.6494
+      "current_ma4": 0.38,
+      "current_value": 0.38,
+      "seasonal_mean": 0.384,
+      "seasonal_zscore": -0.012,
+      "importance_score": 0.309
     }
   ],
   "news_candidates": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "全国",
-      "importance_score": 0.9541,
+      "importance_score": 1.7059,
       "flags": [
         "anomaly"
       ]
     },
     {
-      "category": "マイコプラズマ肺炎",
+      "category": "感染性胃腸炎",
       "pref": "全国",
-      "importance_score": 0.6494,
+      "importance_score": 0.9834,
       "flags": [
-        "anomaly",
+        "anomaly"
+      ]
+    },
+    {
+      "category": "手足口病",
+      "pref": "全国",
+      "importance_score": 0.6991,
+      "flags": [
+        "alert",
         "rising"
       ]
     },
     {
       "category": "水痘",
       "pref": "全国",
-      "importance_score": 0.2468,
+      "importance_score": 0.309,
       "flags": [
         "anomaly"
       ]
@@ -143,7 +166,7 @@
   "top_news": {
     "category": "A群溶血性レンサ球菌咽頭炎",
     "pref": "全国",
-    "importance_score": 0.9541,
+    "importance_score": 1.7059,
     "flags": [
       "anomaly"
     ]
@@ -152,13 +175,13 @@
   "affected_blocks": [
     "中国",
     "北海道",
-    "東北"
+    "四国"
   ],
   "generated_text": {
-    "headline": "マイコプラズマ肺炎、全国で前週比+60%の急増",
-    "summary": "マイコプラズマ肺炎は全国で前週比+60%の急増がみられます。",
+    "headline": "手足口病、宮崎県で警報水準",
+    "summary": "手足口病は宮崎県で警報基準値を超えています（全国平均では基準値の0.05倍）。",
     "bullets": [
-      "マイコプラズマ肺炎：全国平均で前週比+60%の急増（定点あたり0.16人）"
+      "手足口病：宮崎県で警報基準値を超える患者数。全国平均では基準値の0.05倍"
     ]
   }
 }
