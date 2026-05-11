@@ -1,0 +1,94 @@
+# .github/workflows/render-rmarkdown.yml
+name: Render R Markdown Workflows
+
+on:
+  push:
+    branches:
+      - main
+
+  schedule:
+    - cron: '0 5 * * 1,2,3,4,5'
+
+  workflow_dispatch:      # 手動トリガー
+
+# GITHUB_TOKEN にリポジトリ書き込み権限を付与
+permissions:
+  contents: write
+
+jobs:
+  run_r_code:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. リポジトリをチェックアウト（直近1コミットのみ取得）
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+          persist-credentials: true
+
+      # 2. システム依存ライブラリのインストール（Rパッケージのビルド前に必要）
+      - name: Install system libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            pandoc \
+            libxml2-dev libicu-dev libssl-dev libcurl4-openssl-dev \
+            libfontconfig1-dev libfreetype6-dev libpng-dev libjpeg-dev libtiff5-dev \
+            libharfbuzz-dev libfribidi-dev
+
+      # 3. R のセットアップ（バイナリ版のRSPMを使うので大幅に高速化）
+      - name: Set up R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: 'release'
+          use-public-rspm: true
+
+      # 4. R パッケージのインストール（pakを使い、依存解決・キャッシュ・libパスを自動処理）
+      - name: Install R package dependencies
+        uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rmarkdown
+            any::tidyverse
+            any::rvest
+            any::lubridate
+
+      # 5. 初回処理
+#      - name: Render initial processing (first run only)
+#        run: |
+#          if [ ! -f initialized.lock ]; then
+#            Rscript -e "rmarkdown::render('initial_processing.Rmd')"
+#            touch initialized.lock
+#          else
+#            echo "Initial processing already completed."
+#          fi
+
+      # 6. 日次処理
+      - name: Render daily task
+        run: |
+          Rscript -e "rmarkdown::render('daily_task.Rmd')"
+
+      # 7. 生成された CSV をコミット＆プッシュ（データ更新コミットは上書きして履歴を蓄積させない）
+      - name: Commit and push CSVs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/*-teiten.csv docs/results/data-*.csv docs/results/pref/*.csv merged_data/*.csv logs/*.csv docs/results/ranking.csv docs/results/news_digest.json docs/results/top_highlights.json docs/results/last_fetch.txt docs/results/weekly_report.md || echo "No CSV files to add"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            LAST_MSG=$(git log -1 --pretty=%s)
+            if [ "$LAST_MSG" = "Update disease CSV outputs" ]; then
+              # 前回もデータ更新コミットなら上書き（履歴を増やさない）
+              git commit --amend --no-edit
+              git push --force-with-lease
+            else
+              # コードコミットの直後など、新規コミットとして追加
+              git commit -m "Update disease CSV outputs"
+              git push
+            fi
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

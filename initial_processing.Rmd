@@ -1,0 +1,219 @@
+---
+---
+title: "国立感染研週報の整形"
+output: html_document
+date: "2024-04-16"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(rvest)
+library(lubridate)
+```
+
+
+国立感染症研究所が週単位で発表している5類感染症の流行状況データを読み込み、適切な形に変換する
+
+
+```{r, echo=FALSE}
+
+# 保存フォルダ内のCSVファイルを列挙
+csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE)
+
+
+# cp932のCSVをUTF-8の一時ファイルに変換してからread_csvに渡すヘルパー
+# （Linux環境ではvroom/readrのlocale指定だけではcp932を正しく扱えないことがあるため、
+#   OSのiconvコマンドで一時ファイルに変換するのが最も確実）
+read_cp932_csv <- function(file_path, ...) {
+  tmp <- tempfile(fileext = ".csv")
+  on.exit(unlink(tmp), add = TRUE)
+  system2("iconv", c("-f", "CP932", "-t", "UTF-8", file_path), stdout = tmp)
+  read_csv(tmp, ...)
+}
+
+# CSVファイルを処理する関数
+process_csv <- function(file_path) {
+  # 2行目1列目のテキストを読み込む
+  week_text <- read_cp932_csv(
+    file_path,
+    col_names = FALSE,
+    skip = 1,
+    n_max = 1
+  ) %>%
+    pull(1)
+
+  # デバッグ情報を表示
+  cat("Processing file:", file_path, "Week text:", week_text, "\n")
+
+  # CSVファイルをすべて読み込み
+  data <- read_cp932_csv(file_path, col_names = FALSE)
+  
+  # 3行目の奇数列（3列目以降）のNAを左隣の値で埋める
+  data[3, ] <- data[3, ] %>%
+    as.data.frame() %>%
+    mutate(across(
+      .cols = everything(),
+      .fns = ~ {
+        col_index <- which(names(data) == cur_column()) # 現在の列インデックスを取得
+        if (col_index > 2 && col_index %% 2 == 1) { # 3列目以降かつ奇数列が対象
+          ifelse(
+            is.na(.), # NAか判定
+            data[3, col_index - 1][[1]], # 左隣の値をコピー
+            .
+          )
+        } else {
+          . # 対象外の列はそのまま
+        }
+      }
+    ))
+  
+  # 2列目以降の列名を作成（3行目と4行目を連結）
+  new_col_names <- names(data) %>%
+    map_chr(~ {
+      col_index <- which(names(data) == .x) # 現在の列インデックスを取得
+      if (col_index > 1) { # 2列目以降のみ処理
+        paste0(data[3, col_index][[1]], "_", data[4, col_index][[1]])
+      } else {
+        .x # 1列目はそのまま
+      }
+    })
+  
+  # 列名を変更（重複があったら自動で連番を付けて一意化）
+  colnames(data) <- make.unique(new_col_names)
+  
+  # データの整形
+  data <- data %>%
+    slice(-1, -2, -3, -4) %>%  # 1～4行目を削除
+    mutate(week = week_text) %>% # 新しい列として week を追加
+    rename(pref = X1) %>% # 1列目を pref にリネーム
+    pivot_longer(
+      cols = -c(week, pref),
+      names_to = "category",
+      values_to = "value"
+    )
+  
+  return(data)
+}
+
+# すべてのCSVファイルを処理し、結果を結合
+diseases <- csv_files %>%
+  lapply(process_csv) %>%
+  bind_rows() %>% 
+  mutate(year=as.double(str_sub(week,1,4))) %>% 
+  mutate(week_num=str_sub(week,6,7)) %>% 
+  mutate(date=as.Date(str_c(year,"-",str_sub(week,17,18),"-",str_sub(week,20,21)))) %>% 
+  dplyr::select(date,year,pref,category,value,everything()) %>% 
+  mutate(pref=ifelse(pref=="総数","全国",pref)) %>% 
+  filter(!is.na(pref))
+
+
+# D3ビジュアライズ用のデータ
+cleaned_diseases <- diseases %>%
+  # 日付部分を列に展開
+  bind_cols(
+    str_match(.$week,
+      "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
+    ) %>%
+      as_tibble(.name_repair = "minimal") %>%
+      setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
+  ) %>%
+  # 必要な列を整数に変換
+  mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
+  # ラベルを作成（条件付きで）
+  mutate(week_label_clean = ifelse(
+    is.na(year_str), NA_character_,
+    sprintf("%d月%d日～%d月%d日（%s年）",
+            m1, d1, m2, d2, year_str)
+  )) %>%
+  # 不要列削除
+  dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
+  # 以降の処理を継続
+  filter(str_detect(category, "定当")) %>% 
+  mutate(category = str_remove(category, "_定当")) %>% 
+  dplyr::select(date, pref, category, value, year, week_label_clean) %>%
+  mutate(value = as.double(value)) %>%
+  filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
+  mutate(value = ifelse(is.na(value), 0, value))
+
+cleaned_diseases %>% 
+  write_excel_csv("merged_data/merged_data.csv")
+
+pref_lookup <- tibble::tribble(
+  ~pref, ~pref_en,
+  "全国", "Nationwide",
+  "北海道", "Hokkaido",
+  "青森県", "Aomori",
+  "岩手県", "Iwate",
+  "宮城県", "Miyagi",
+  "秋田県", "Akita",
+  "山形県", "Yamagata",
+  "福島県", "Fukushima",
+  "茨城県", "Ibaraki",
+  "栃木県", "Tochigi",
+  "群馬県", "Gunma",
+  "埼玉県", "Saitama",
+  "千葉県", "Chiba",
+  "東京都", "Tokyo",
+  "神奈川県", "Kanagawa",
+  "新潟県", "Niigata",
+  "富山県", "Toyama",
+  "石川県", "Ishikawa",
+  "福井県", "Fukui",
+  "山梨県", "Yamanashi",
+  "長野県", "Nagano",
+  "岐阜県", "Gifu",
+  "静岡県", "Shizuoka",
+  "愛知県", "Aichi",
+  "三重県", "Mie",
+  "滋賀県", "Shiga",
+  "京都府", "Kyoto",
+  "大阪府", "Osaka",
+  "兵庫県", "Hyogo",
+  "奈良県", "Nara",
+  "和歌山県", "Wakayama",
+  "鳥取県", "Tottori",
+  "島根県", "Shimane",
+  "岡山県", "Okayama",
+  "広島県", "Hiroshima",
+  "山口県", "Yamaguchi",
+  "徳島県", "Tokushima",
+  "香川県", "Kagawa",
+  "愛媛県", "Ehime",
+  "高知県", "Kochi",
+  "福岡県", "Fukuoka",
+  "佐賀県", "Saga",
+  "長崎県", "Nagasaki",
+  "熊本県", "Kumamoto",
+  "大分県", "Oita",
+  "宮崎県", "Miyazaki",
+  "鹿児島県", "Kagoshima",
+  "沖縄県", "Okinawa"
+)
+
+disease_lookup <- tibble::tribble(
+  ~category, ~category_en,
+  "インフルエンザ", "Flu",
+  "ＲＳウイルス感染症", "RSV",
+  "咽頭結膜熱", "Adenovirus infection",
+  "Ａ群溶血性レンサ球菌咽頭炎", "Strep throat",
+  "感染性胃腸炎", "Gastroenteritis",
+  "水痘", "Chickenpox",
+  "手足口病", "Hand-foot-mouth disease",
+  "伝染性紅斑", "Fifth disease",
+  "突発性発しん", "Roseola",
+  "ヘルパンギーナ", "Herpangina",
+  "流行性耳下腺炎", "Mumps",
+  "急性出血性結膜炎", "Hemorrhagic conjunctivitis",
+  "流行性角結膜炎", "Viral conjunctivitis",
+  "細菌性髄膜炎", "Bacterial meningitis",
+  "無菌性髄膜炎", "Viral meningitis",
+  "マイコプラズマ肺炎", "Mycoplasma pneumonia",
+  "クラミジア肺炎", "Chlamydia pneumonia",
+  "感染性胃腸炎（ロタウイルス）", "Rotavirus",
+  "百日咳", "Whooping cough",
+  "COVID-19", "COVID-19"
+)
+```
+
+
+

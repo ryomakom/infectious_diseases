@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>都道府県別にみた主な感染症の流行状況 | 定点当たり患者数の推移</title>
+
+  <meta name="description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点当たり患者数の週次推移をインタラクティブに可視化したページです。新型コロナウイルス、インフルエンザ、RSウイルス、感染性胃腸炎、手足口病などを比較できます。">
+  <meta name="keywords" content="感染症,都道府県別,定点当たり患者数,新型コロナウイルス,COVID-19,インフルエンザ,RSウイルス,感染性胃腸炎,手足口病,水痘,突発性発しん,伝染性紅斑,ヘルパンギーナ,流行性耳下腺炎,流行性角結膜炎,急性出血性結膜炎,マイコプラズマ肺炎,クラミジア肺炎,細菌性髄膜炎,無菌性髄膜炎,咽頭結膜熱,A群溶血性レンサ球菌咽頭炎,感染性胃腸炎（ロタウイルス）">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="小宮山亮磨">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="canonical" href="https://ryomakom.github.io/infectious_diseases_trends/">
+  <link rel="alternate" hreflang="ja" href="https://ryomakom.github.io/infectious_diseases_trends/">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ja_JP">
+  <meta property="og:site_name" content="Ryoma Komiyama">
+  <meta property="og:title" content="都道府県別にみた主な感染症の流行状況">
+  <meta property="og:description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症の定点当たり患者数の週次推移を可視化しています。">
+  <meta property="og:url" content="https://ryomakom.github.io/infectious_diseases_trends/">
+  <meta property="og:image" content="https://ryomakom.github.io/infectious_diseases_trends/ogp.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="都道府県別にみた主な感染症の流行状況">
+  <meta name="twitter:description" content="都道府県別の主な感染症の定点当たり患者数の週次推移をインタラクティブに表示。">
+  <meta name="twitter:image" content="https://ryomakom.github.io/infectious_diseases_trends/ogp.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://d3js.org/d3.v6.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/d3-simple-slider/1.6.3/d3-simple-slider.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-simple-slider/1.6.3/d3-simple-slider.min.js"></script>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Dataset",
+    "name": "都道府県別にみた主な感染症の流行状況",
+    "description": "国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点当たり患者数の週次推移を可視化したデータページ。",
+    "url": "https://ryomakom.github.io/infectious_diseases_trends/",
+    "inLanguage": "ja",
+    "mainEntityOfPage": {
+      "@type": "WebPage",
+      "@id": "https://ryomakom.github.io/infectious_diseases_trends/"
+    },
+    "creator": {
+      "@type": "Person",
+      "name": "小宮山亮磨"
+    },
+    "publisher": {
+      "@type": "Person",
+      "name": "小宮山亮磨"
+    },
+    "keywords": [
+      "感染症",
+      "都道府県別",
+      "定点当たり患者数",
+      "新型コロナウイルス",
+      "インフルエンザ",
+      "RSウイルス",
+      "感染性胃腸炎",
+      "手足口病",
+      "水痘",
+      "突発性発しん",
+      "伝染性紅斑",
+      "ヘルパンギーナ",
+      "流行性耳下腺炎",
+      "流行性角結膜炎",
+      "急性出血性結膜炎",
+      "マイコプラズマ肺炎",
+      "クラミジア肺炎",
+      "細菌性髄膜炎",
+      "無菌性髄膜炎",
+      "咽頭結膜熱",
+      "A群溶血性レンサ球菌咽頭炎",
+      "感染性胃腸炎（ロタウイルス）"
+    ],
+    "isBasedOn": {
+      "@type": "DataCatalog",
+      "name": "国立健康危機管理研究機構 感染症発生動向調査"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>主な感染症の流行状況</h1>
+    <p class="header-intro">
+      新型コロナウイルス感染症やインフルエンザなど、日本国内の主な20の感染症の流行状況を調べられます。
+      <a href="https://id-info.jihs.go.jp/surveillance/idwr/provisional/sokuhou.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a>のサイトから、都道府県別の定点（医療機関）あたり患者数をGitHub Actionsで自動収集し、D3.jsで可視化しています。
+    </p>
+    <div class="header-meta">
+      <p id="last-updated" class="update-date"></p>
+      <p id="latest-data" class="update-date"></p>
+    </div>
+  </header>
+
+  <div class="share-buttons" aria-label="SNSでシェア">
+    <a href="https://twitter.com/intent/tweet?text=%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E5%AE%9A%E7%82%B9%E5%BD%93%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB&amp;url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases_trends%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-x" title="X（Twitter）でシェア">
+      <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
+    </a>
+    <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases_trends%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-fb" title="Facebookでシェア">
+      <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"></path></svg>
+    </a>
+    <a href="https://social-plugins.line.me/lineit/share?url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases_trends%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-line" title="LINEで送る">
+      <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.63.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.039 1.085l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"></path></svg>
+    </a>
+    <a href="https://bsky.app/intent/compose?text=%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E5%AE%9A%E7%82%B9%E5%BD%93%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB%0Ahttps%3A%2F%2Fryomakom.github.io%2Finfectious_diseases_trends%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-bsky" title="Blueskyでシェア">
+      <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 4.279c0 1.198.378 2.903 1.082 4.546 1.235 2.742 3.064 6.033 5.642 8.126 2.578 2.093 5.313 2.909 6.276 2.909.963 0 3.698-.816 6.276-2.909 2.578-2.093 4.407-5.384 5.642-8.126C23.622 7.182 24 5.477 24 4.28c0-1.198-.139-2.37-.902-2.714-.659-.299-1.664-.621-4.3 1.24C16.046 4.747 13.087 8.686 12 10.8z"></path></svg>
+    </a>
+    <a href="https://note.com/intent/post?url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases_trends%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-note" title="noteで書く">
+      <img src="img/note-icon.svg" alt="note" class="share-icon share-icon-img" width="18" height="18" loading="lazy">
+    </a>
+  </div>
+
+  <p class="author-credit" aria-label="クレジット">
+    小宮山亮磨　朝日新聞デジタル企画報道部
+    <span class="author-sep">—</span>
+    <a href="https://ryomakom.github.io/my_profile/" target="_blank" rel="noopener">Home</a>
+  </p>
+
+  <main id="main" role="main">
+    <section id="news-digest-section" class="news-digest-section" aria-label="今週の注目"></section>
+    <section id="ranking-top-highlights" class="ranking-top-highlights" aria-label="最も注目すべき三つの感染症と地域"></section>
+    <section class="ranking-section" aria-labelledby="ranking-title">
+      <div class="ranking-heading-row">
+        <h2 id="ranking-title">何がどこで流行しているか</h2>
+      </div>
+      <div class="ranking-filters ranking-filters-row">
+        <div class="ranking-filter-group">
+          <span class="ranking-filter-label">表示中の都道府県</span>
+          <div id="ranking-pref-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の都道府県"></div>
+          <div class="ranking-filter-row">
+            <div class="ranking-select-wrap">
+              <select id="ranking-pref-add" aria-label="都道府県をここから追加"></select>
+            </div>
+            <button type="button" class="reset-btn reset-btn--icon-only" id="ranking-pref-reset" aria-label="都道府県の選択を全国に戻す" title="初期に戻す">
+              <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>
+            </button>
+          </div>
+        </div>
+        <div class="ranking-filter-group">
+          <span class="ranking-filter-label">表示中の感染症</span>
+          <div id="ranking-disease-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の感染症"></div>
+          <div class="ranking-filter-row">
+            <div class="ranking-select-wrap">
+              <select id="ranking-disease-add" aria-label="感染症をここから追加"></select>
+            </div>
+            <button type="button" class="reset-btn reset-btn--icon-only" id="ranking-disease-reset" aria-label="感染症の選択をすべてに戻す" title="初期に戻す">
+              <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="ranking-table-wrap">
+        <table class="ranking-table" id="ranking-table">
+          <thead>
+            <tr>
+              <th scope="col">感染症</th>
+              <th scope="col" class="col-pref">地域</th>
+              <th scope="col" class="sortable" data-sort="current_ma4" id="th-current-value" aria-sort="none" title="クリックで並べ替え">定点あたり患者数</th>
+              <th scope="col" class="sortable sort-active sort-desc has-inline-help" data-sort="ratio_alert" data-sort-hint="クリックで並べ替え" id="th-ratio-alert" aria-sort="descending" title="クリックで並べ替え">
+                <span class="th-with-help">
+                  警報基準比
+                  <button
+                    type="button"
+                    class="metric-help-trigger"
+                    data-help-target="help-ratio-alert"
+                    aria-label="警報基準比の説明を表示"
+                    aria-expanded="false"
+                  >?</button>
+                  <span id="help-ratio-alert" class="metric-help-popover" role="tooltip">患者数が警報基準の何倍かを示す指標。基準がない感染症は「ー」で表示</span>
+                </span>
+              </th>
+              <th scope="col" class="sortable has-inline-help" data-sort="ratio_wow" data-sort-hint="クリックで並べ替え" id="th-ratio-wow" aria-sort="none" title="クリックで並べ替え">
+                <span class="th-with-help">
+                  前週比
+                  <button
+                    type="button"
+                    class="metric-help-trigger"
+                    data-help-target="help-ratio-wow"
+                    aria-label="前週比の説明を表示"
+                    aria-expanded="false"
+                  >?</button>
+                  <span id="help-ratio-wow" class="metric-help-popover" role="tooltip">直近の定点あたり患者数が前週と比べて何%増減したか</span>
+                </span>
+              </th>
+              <th scope="col" class="sortable has-inline-help" data-sort="ratio_yoy" data-sort-hint="クリックで並べ替え" id="th-ratio-yoy" aria-sort="none" title="クリックで並べ替え">
+                <span class="th-with-help">
+                  平年比
+                  <button
+                    type="button"
+                    class="metric-help-trigger"
+                    data-help-target="help-ratio-yoy"
+                    aria-label="平年比の説明を表示"
+                    aria-expanded="false"
+                  >?</button>
+                  <span id="help-ratio-yoy" class="metric-help-popover" role="tooltip">過去3年の同時期にあった4週間の移動平均に対する比率。1なら平年並み、2なら平年の2倍</span>
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody id="ranking-body"></tbody>
+        </table>
+      </div>
+      <p class="ranking-more-wrap" id="ranking-more-wrap" style="display:none;">
+        <button type="button" class="ranking-more-btn" id="ranking-more-btn"></button>
+      </p>
+      <div id="ranking-sort-announce" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    </section>
+
+    <section class="controls-card" aria-labelledby="controls-title">
+      <div class="ranking-heading-row">
+        <h2 id="controls-title" class="controls-title">患者はどう増減してきたか</h2>
+      </div>
+
+      <div class="controls-filters-row">
+        <div class="filter-group">
+          <span class="filter-group-label">表示中の都道府県</span>
+          <div id="pref-selected" class="filter-tags filter-tags--above" role="list" aria-label="表示中の都道府県"></div>
+          <div class="filter-row">
+            <div id="pref-dropdown" class="dropdown">
+              <button type="button" id="dropdown-btn" class="dropdown-btn" aria-label="都道府県を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
+              <div id="dropdown-content" class="dropdown-content" role="listbox" aria-label="都道府県一覧"></div>
+            </div>
+            <button id="pref-reset" type="button" class="reset-btn reset-btn--icon-only" aria-label="都道府県の選択を初期に戻す" title="初期に戻す">
+              <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>
+            </button>
+          </div>
+          <p id="pref-empty-hint" class="filter-empty-hint" style="display:none;">都道府県を選ぶとグラフに反映されます</p>
+        </div>
+
+        <div class="filter-group">
+          <span class="filter-group-label">表示中の感染症</span>
+          <div id="disease-selected" class="filter-tags filter-tags--above" role="list" aria-label="表示中の感染症"></div>
+          <div class="filter-row">
+            <div id="disease-dropdown" class="dropdown">
+              <button type="button" id="disease-dropdown-btn" class="dropdown-btn" aria-label="感染症を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
+              <div id="disease-dropdown-content" class="dropdown-content" role="listbox" aria-label="感染症一覧"></div>
+            </div>
+            <button id="disease-reset" type="button" class="reset-btn reset-btn--icon-only" aria-label="感染症の選択を初期に戻す" title="初期に戻す">
+              <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>
+            </button>
+          </div>
+          <p id="disease-empty-hint" class="filter-empty-hint" style="display:none;">感染症を選ぶとグラフに反映されます</p>
+        </div>
+      </div>
+
+      <p class="controls-desc">都道府県や感染症を自由に追加して比較できます。下のスライダーで表示期間を調整できます（左右のつまみで期間の長さも変えられます）。</p>
+      <div class="chart-area-wrap">
+        <div id="chart-container"></div>
+      </div>
+    </section>
+  </main>
+
+  <div class="tooltip" style="opacity:0;"></div>
+
+  <script src="state.js"></script>
+  <script src="ranking.js"></script>
+  <script src="chart.js"></script>
+  <script src="newsDigest.js"></script>
+  <script src="dataLoader.js"></script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+{
+  "week": "2026-04-12",
+  "lead": {
+    "category": "A群溶血性レンサ球菌咽頭炎",
+    "nationwide_ratio_alert": 0.28,
+    "nationwide_current_ma4": 2.28,
+    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=0.42）",
+    "importance_score": 0.9541
+  },
+  "top_prefectures": [
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "鳥取県",
+      "current_ma4": 7.21,
+      "current_value": 7.21,
+      "previous_value": 5.11,
+      "ratio_alert": 0.9,
+      "ratio_yoy": 2.18,
+      "growth1Rate": 0.411,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 3.1699
+    },
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "山形県",
+      "current_ma4": 5.27,
+      "current_value": 5.27,
+      "previous_value": 4.19,
+      "ratio_alert": 0.66,
+      "ratio_yoy": 1.52,
+      "growth1Rate": 0.2578,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 2.2
+    },
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "北海道",
+      "current_ma4": 5,
+      "current_value": 5,
+      "previous_value": 5.13,
+      "ratio_alert": 0.62,
+      "ratio_yoy": 1.31,
+      "growth1Rate": -0.0253,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 1.8237
+    }
+  ],
+  "rising": [
+    {
+      "category": "マイコプラズマ肺炎",
+      "pref": "全国",
+      "current_ma4": 0.16,
+      "current_value": 0.16,
+      "previous_value": 0.1,
+      "ratio_alert": null,
+      "ratio_yoy": 1.31,
+      "growth1Rate": 0.6,
+      "weeksOverAlert": null,
+      "persistenceRate": null,
+      "persistenceWindow": 4,
+      "importance_score": 0.6494
+    }
+  ],
+  "alerts": [],
+  "improving": [
+    {
+      "category": "インフルエンザ",
+      "pref": "全国",
+      "current_ma4": 1.46,
+      "current_value": 1.46,
+      "previous_value": 3.21,
+      "ratio_alert": 0.05,
+      "ratio_yoy": 0.32,
+      "growth1Rate": -0.5452,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 0.4001
+    }
+  ],
+  "anomalies": [
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "全国",
+      "current_ma4": 2.28,
+      "current_value": 2.28,
+      "seasonal_mean": 1.8672,
+      "seasonal_zscore": 0.4193,
+      "importance_score": 0.9541
+    },
+    {
+      "category": "水痘",
+      "pref": "全国",
+      "current_ma4": 0.33,
+      "current_value": 0.33,
+      "seasonal_mean": 0.3677,
+      "seasonal_zscore": -0.1217,
+      "importance_score": 0.2468
+    },
+    {
+      "category": "マイコプラズマ肺炎",
+      "pref": "全国",
+      "current_ma4": 0.16,
+      "current_value": 0.16,
+      "seasonal_mean": 0.1888,
+      "seasonal_zscore": -0.2108,
+      "importance_score": 0.6494
+    }
+  ],
+  "news_candidates": [
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "全国",
+      "importance_score": 0.9541,
+      "flags": [
+        "anomaly"
+      ]
+    },
+    {
+      "category": "マイコプラズマ肺炎",
+      "pref": "全国",
+      "importance_score": 0.6494,
+      "flags": [
+        "anomaly",
+        "rising"
+      ]
+    },
+    {
+      "category": "水痘",
+      "pref": "全国",
+      "importance_score": 0.2468,
+      "flags": [
+        "anomaly"
+      ]
+    }
+  ],
+  "top_news": {
+    "category": "A群溶血性レンサ球菌咽頭炎",
+    "pref": "全国",
+    "importance_score": 0.9541,
+    "flags": [
+      "anomaly"
+    ]
+  },
+  "spread_type": "地域拡散",
+  "affected_blocks": [
+    "中国",
+    "北海道",
+    "東北"
+  ],
+  "generated_text": {
+    "headline": "マイコプラズマ肺炎、全国で前週比+60%の急増",
+    "summary": "マイコプラズマ肺炎は全国で前週比+60%の急増がみられます。",
+    "bullets": [
+      "マイコプラズマ肺炎：全国平均で前週比+60%の急増（定点あたり0.16人）"
+    ]
+  }
+}

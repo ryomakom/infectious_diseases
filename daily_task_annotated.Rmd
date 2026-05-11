@@ -1,0 +1,1812 @@
+---
+title: "国立感染研の最新週報の処理"
+output: html_document
+date: "2025-4-16"
+---
+
+```{r, eval=FALSE}
+library(tidyverse)
+library(rvest)
+library(lubridate)
+library(jsonlite)
+```
+
+
+```{r, eval=FALSE}
+
+pref_lookup <- tibble::tribble(
+  ~pref, ~pref_en,
+  "全国", "Nationwide",
+  "北海道", "Hokkaido",
+  "青森県", "Aomori",
+  "岩手県", "Iwate",
+  "宮城県", "Miyagi",
+  "秋田県", "Akita",
+  "山形県", "Yamagata",
+  "福島県", "Fukushima",
+  "茨城県", "Ibaraki",
+  "栃木県", "Tochigi",
+  "群馬県", "Gunma",
+  "埼玉県", "Saitama",
+  "千葉県", "Chiba",
+  "東京都", "Tokyo",
+  "神奈川県", "Kanagawa",
+  "新潟県", "Niigata",
+  "富山県", "Toyama",
+  "石川県", "Ishikawa",
+  "福井県", "Fukui",
+  "山梨県", "Yamanashi",
+  "長野県", "Nagano",
+  "岐阜県", "Gifu",
+  "静岡県", "Shizuoka",
+  "愛知県", "Aichi",
+  "三重県", "Mie",
+  "滋賀県", "Shiga",
+  "京都府", "Kyoto",
+  "大阪府", "Osaka",
+  "兵庫県", "Hyogo",
+  "奈良県", "Nara",
+  "和歌山県", "Wakayama",
+  "鳥取県", "Tottori",
+  "島根県", "Shimane",
+  "岡山県", "Okayama",
+  "広島県", "Hiroshima",
+  "山口県", "Yamaguchi",
+  "徳島県", "Tokushima",
+  "香川県", "Kagawa",
+  "愛媛県", "Ehime",
+  "高知県", "Kochi",
+  "福岡県", "Fukuoka",
+  "佐賀県", "Saga",
+  "長崎県", "Nagasaki",
+  "熊本県", "Kumamoto",
+  "大分県", "Oita",
+  "宮崎県", "Miyazaki",
+  "鹿児島県", "Kagoshima",
+  "沖縄県", "Okinawa"
+)
+
+disease_lookup <- tibble::tribble(
+  ~category, ~category_en,
+  "インフルエンザ", "Flu",
+  "ＲＳウイルス感染症", "RSV",
+  "咽頭結膜熱", "Adenovirus infection",
+  "Ａ群溶血性レンサ球菌咽頭炎", "Strep throat",
+  "感染性胃腸炎", "Gastroenteritis",
+  "水痘", "Chickenpox",
+  "手足口病", "Hand-foot-mouth disease",
+  "伝染性紅斑", "Fifth disease",
+  "突発性発しん", "Roseola",
+  "ヘルパンギーナ", "Herpangina",
+  "流行性耳下腺炎", "Mumps",
+  "急性出血性結膜炎", "Hemorrhagic conjunctivitis",
+  "流行性角結膜炎", "Viral conjunctivitis",
+  "細菌性髄膜炎", "Bacterial meningitis",
+  "無菌性髄膜炎", "Viral meningitis",
+  "マイコプラズマ肺炎", "Mycoplasma pneumonia",
+  "クラミジア肺炎", "Chlamydia pneumonia",
+  "感染性胃腸炎（ロタウイルス）", "Rotavirus",
+  "百日咳", "Whooping cough",
+  "COVID-19", "COVID-19"
+)
+
+# 元データの感染症名を表示用に変換（ダウンロード後に適用）
+category_to_display <- function(x) {
+  dplyr::recode(x,
+    "COVID-19" = "新型コロナウイルス",
+    "ＲＳウイルス感染症" = "RSウイルス",
+    "Ａ群溶血性レンサ球菌咽頭炎" = "A群溶血性レンサ球菌咽頭炎",
+    .default = x
+  )
+}
+
+cleaned_diseases <- read_csv("merged_data/merged_data.csv", show_col_types = FALSE) %>%
+  mutate(category = category_to_display(category))
+
+# CSVファイルを処理する関数
+process_csv <- function(file_path) {
+  # 2行目1列目のテキストを読み込む（エンコーディングを指定）
+  week_text <- read_csv(
+    file_path, 
+    locale = locale(encoding = "cp932"), 
+    col_names = FALSE, 
+    skip = 1, 
+    n_max = 1
+  ) %>%
+    pull(1)
+  
+  # デバッグ情報を表示
+  cat("Processing file:", file_path, "Week text:", week_text, "\n")
+  
+  # CSVファイルをすべて読み込み
+  data <- read_csv(file_path, locale = locale(encoding = "cp932"), col_names = FALSE)
+  
+  # 3行目の奇数列（3列目以降）のNAを左隣の値で埋める
+  data[3, ] <- data[3, ] %>%
+    as.data.frame() %>%
+    mutate(across(
+      .cols = everything(),
+      .fns = ~ {
+        col_index <- which(names(data) == cur_column()) # 現在の列インデックスを取得
+        if (col_index > 2 && col_index %% 2 == 1) { # 3列目以降かつ奇数列が対象
+          ifelse(
+            is.na(.), # NAか判定
+            data[3, col_index - 1][[1]], # 左隣の値をコピー
+            .
+          )
+        } else {
+          . # 対象外の列はそのまま
+        }
+      }
+    ))
+  
+  # 2列目以降の列名を作成（3行目と4行目を連結）
+  new_col_names <- names(data) %>%
+    map_chr(~ {
+      col_index <- which(names(data) == .x) # 現在の列インデックスを取得
+      if (col_index > 1) { # 2列目以降のみ処理
+        paste0(data[3, col_index][[1]], "_", data[4, col_index][[1]])
+      } else {
+        .x # 1列目はそのまま
+      }
+    })
+  
+  # 列名を変更
+  colnames(data) <- new_col_names
+  
+  # データの整形
+  data <- data %>%
+    slice(-1, -2, -3, -4) %>%  # 1～4行目を削除
+    mutate(week = week_text) %>% # 新しい列として week を追加
+    rename(pref = X1) %>% # 1列目を pref にリネーム
+    pivot_longer(
+      cols = -c(week, pref),
+      names_to = "category",
+      values_to = "value"
+    )
+  
+  return(data)
+}
+
+
+
+# — year_week.csv 読み込み —
+year_week <- read_csv("year_week.csv") %>%
+  mutate(date = as.Date(date))
+
+# — 今日と5日前 —
+today           <- Sys.Date()
+five_days_before <- today - days(5)
+
+# — 5日前以前の最新2週取得 —
+distinct_weeks <- year_week %>%
+  filter(date <= five_days_before) %>%
+  arrange(date) %>%
+  tail(2) %>%
+  pull(year_week)
+
+# — ディレクトリ準備 —
+data_dir <- "data"
+log_dir  <- "logs"
+if (!dir.exists(data_dir)) dir.create(data_dir)
+if (!dir.exists(log_dir))  dir.create(log_dir)
+
+# — 累積ログファイル設定 —
+log_file <- file.path(log_dir, "log.csv")
+
+# — 既存ログ読み込みまたは空の tibble —
+if (file.exists(log_file)) {
+  existing_logs <- read_csv(
+    log_file,
+    col_types = cols(
+      timestamp  = col_character(),
+      week_label = col_character(),
+      action     = col_character(),
+      rows       = col_integer()
+    )
+  )
+} else {
+  existing_logs <- tibble(
+    timestamp  = character(),
+    week_label = character(),
+    action     = character(),
+    rows       = integer()
+  )
+}
+
+# — 初期化 —
+log_entries <- list()
+data_list   <- list()
+
+for (week_label in distinct_weeks) {
+  ts        <- Sys.time()
+  parts     <- str_split(week_label, "-")[[1]]
+  url       <- sprintf(
+    "https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv",
+    parts[1], parts[2], week_label
+  )
+  local_file <- file.path(data_dir, sprintf("%s-teiten.csv", week_label))
+
+  if (!file.exists(local_file)) {
+    # ダウンロード試行
+    success <- tryCatch(
+      {
+        download.file(url, destfile = local_file, mode = "wb")
+        TRUE
+      },
+      error = function(e) FALSE
+    )
+
+    if (success && file.exists(local_file)) {
+      # ダウンロード成功 → 処理
+      df <- process_csv(local_file) %>%
+        mutate(
+          year     = as.double(str_sub(week, 1, 4)),
+          week_num = str_sub(week, 6, 7)
+        ) %>%
+        mutate(date = as.Date(str_c(year, "-",
+                                    str_sub(week,-7,-6),"-",
+                                    str_sub(week,-4,-3)))) %>%
+        select(date, year, pref, category, value, everything()) %>%
+        mutate(pref = ifelse(pref == "総数", "全国", pref)) %>%
+        filter(!is.na(pref)) %>%
+        # 日付部分を列に展開
+        bind_cols(
+          str_match(
+            .$week,
+            "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
+          ) %>%
+            as_tibble(.name_repair = "minimal") %>%
+            setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
+        ) %>%
+        # 必要な列を整数に変換
+        mutate(across(c(m1, d1, m2, d2), as.integer)) %>%
+        mutate(
+          month1_en = month.name[m1],
+          month2_en = month.name[m2]
+          ) %>%
+        mutate(week_label_clean = ifelse(
+    is.na(year_str), NA_character_,
+    sprintf("%d月%d日～%d月%d日（%s年）",
+            m1, d1, m2, d2, year_str))
+          ) %>%
+  # ★ ここで中間列を削除
+  select(
+    -full, -year_str,
+    -m1, -d1, -m2, -d2,
+    -month1_en, -month2_en
+  ) %>%
+        filter(str_detect(category, "定当")) %>%
+        mutate(category = str_remove(category, "_定当")) %>%
+        # 最終的に必要な列順に整形
+        select(date, pref, category, value, year, week_label_clean) %>%
+        mutate(value = as.double(value)) %>%
+        filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
+        mutate(value = ifelse(is.na(value), 0, value)) #%>%
+        #left_join(pref_lookup, by = "pref") %>%
+        #select(-pref) %>%
+        #rename(pref=pref_en) %>%
+        #left_join(disease_lookup, by = "category") %>%
+        #select(-category) %>%
+        #rename(category=category_en)
+
+      log_entry <- tibble(
+        timestamp  = as.character(ts),
+        week_label = week_label,
+        action     = "downloaded",
+        rows       = nrow(df)
+      )
+      data_list[[week_label]] <- df
+    } else {
+      # ダウンロード失敗 (ファイルなし等)
+      log_entry <- tibble(
+        timestamp  = as.character(ts),
+        week_label = week_label,
+        action     = "not_found",
+        rows       = NA_integer_
+      )
+    }
+  } else {
+    # 既存ファイルはスキップ
+    log_entry <- tibble(
+      timestamp  = as.character(ts),
+      week_label = week_label,
+      action     = "skipped",
+      rows       = NA_integer_
+    )
+  }
+
+  # ログ追加
+  log_entries <- append(log_entries, list(log_entry))
+  Sys.sleep(5)
+}
+
+# — ログ結合＆出力 —
+new_logs <- bind_rows(log_entries)
+all_logs <- bind_rows(existing_logs, new_logs) %>%
+  distinct()
+
+write_csv(all_logs, log_file)
+
+# 取得試行日時をフロント用に出力（ログの最終タイムスタンプ）
+if (nrow(all_logs) > 0) {
+  last_attempt <- max(as.POSIXct(all_logs$timestamp), na.rm = TRUE)
+  if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+  writeLines(format(last_attempt, "%Y-%m-%d"), "docs/results/last_fetch.txt")
+}
+
+# 新規データがあれば統合
+if (length(data_list) > 0) {
+  latest_data <- bind_rows(data_list) %>% distinct()
+  cleaned_diseases <- cleaned_diseases %>%
+    bind_rows(latest_data) %>%
+    distinct() %>%
+    mutate(category = category_to_display(category))
+  cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
+  message("新規データを統合し merged_data を更新しました。")
+} else {
+  message("新規データがありませんでした。")
+}
+
+# グラフ用CSVは常に変換後の名前で出力（新規の有無にかかわらず）
+cleaned_diseases %>%
+  filter(pref == "全国")  %>% write_excel_csv("docs/results/data-全国.csv")
+cleaned_diseases %>%
+  filter(pref == "東京都") %>% write_excel_csv("docs/results/data-東京都.csv")
+cleaned_diseases %>%
+  filter(pref == "大阪府") %>% write_excel_csv("docs/results/data-大阪府.csv")
+cleaned_diseases %>%
+  filter(!pref %in% c("全国", "東京都", "大阪府")) %>%
+  write_excel_csv("docs/results/data-その他.csv")
+
+# ---- ランキング用: 平年比・警報基準比（毎回実行・cleaned_diseases で算出） ----
+# 出典: docs/DASHBOARD_SPEC.md, data/alert_thresholds.csv
+yw <- cleaned_diseases %>%
+  mutate(date = as.Date(date)) %>%
+  distinct(date) %>%
+  mutate(
+    yr = lubridate::year(date),
+    wk = lubridate::isoweek(date),
+    year_week = sprintf("%04d-%02d", yr, wk)
+  ) %>%
+  select(date, year_week, yr, wk)
+
+d <- cleaned_diseases %>%
+  mutate(date = as.Date(date)) %>%
+  left_join(yw, by = "date") %>%
+  group_by(pref, category) %>%
+  arrange(date) %>%
+  mutate(
+    ma4 = if_else(
+      row_number() >= 4,
+      (value + lag(value, 1) + lag(value, 2) + lag(value, 3)) / 4,
+      NA_real_
+    )
+  ) %>%
+  ungroup() %>%
+  filter(!is.na(ma4))
+
+by_week <- d %>%
+  group_by(pref, category, year_week) %>%
+  summarise(
+    ma4 = last(ma4),
+    weekly_value = last(value),
+    yr = last(yr),
+    wk = last(wk),
+    .groups = "drop"
+  )
+
+latest_yr_wk <- by_week %>% pull(year_week) %>% max()
+latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
+latest_wk <- substr(latest_yr_wk, 6, 7)
+past_3_weeks <- sprintf("%04d-%s", (latest_yr - 1):(latest_yr - 3), latest_wk)
+
+# 現在値＝直近週の数値（移動平均ではない）。同週に複数日ある場合は最も新しい日の値を使う
+current_ma4 <- d %>%
+  filter(year_week == latest_yr_wk) %>%
+  group_by(pref, category) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  select(pref, category, current_ma4 = value)
+
+reference_date <- d %>% filter(year_week == latest_yr_wk) %>% pull(date) %>% max(na.rm = TRUE)
+
+baseline_ma4 <- by_week %>%
+  filter(year_week %in% past_3_weeks) %>%
+  group_by(pref, category) %>%
+  summarise(baseline_ma4 = mean(ma4), .groups = "drop")
+
+alert <- read_csv("data/alert_thresholds.csv", col_types = "cdddc")
+
+ranking <- current_ma4 %>%
+  inner_join(baseline_ma4, by = c("pref", "category")) %>%
+  filter(baseline_ma4 > 0) %>%
+  mutate(
+    ratio_yoy = round(current_ma4 / baseline_ma4, 2),
+    year_week = latest_yr_wk,
+    reference_date = as.character(reference_date)
+  ) %>%
+  left_join(alert %>% select(category, alert_start), by = "category") %>%
+  mutate(
+    ratio_alert = if_else(
+      !is.na(alert_start) & alert_start > 0,
+      round(current_ma4 / alert_start, 2),
+      NA_real_
+    )
+  ) %>%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert)
+
+write_excel_csv(ranking, "docs/results/ranking.csv")
+message("ランキング出力: docs/results/ranking.csv")
+
+# ---- トップ要点カード用: 事前計算済みJSON（全国 + 上位3都道府県） ----
+ranking_valid <- ranking %>%
+  filter(!is.na(ratio_alert))
+
+if (nrow(ranking_valid) > 0) {
+  compare_cols <- c("ratio_alert", "ratio_yoy", "current_ma4")
+
+  nationwide_anchor <- ranking_valid %>%
+    filter(pref == "全国")
+  if (nrow(nationwide_anchor) == 0) nationwide_anchor <- ranking_valid
+
+  target_row <- nationwide_anchor %>%
+    arrange(desc(ratio_alert), desc(ratio_yoy), desc(current_ma4)) %>%
+    slice(1)
+  target_category <- target_row$category[[1]]
+
+  top_pref_rows <- ranking_valid %>%
+    filter(category == target_category, pref != "全国") %>%
+    arrange(desc(ratio_alert), desc(ratio_yoy), desc(current_ma4)) %>%
+    slice_head(n = 3)
+
+  nationwide_row <- ranking %>%
+    filter(category == target_category, pref == "全国") %>%
+    slice_head(n = 1)
+  if (nrow(nationwide_row) == 0) nationwide_row <- target_row %>% mutate(pref = "全国")
+
+  # Sparkline values (latest 52 points) for nationwide and top3 prefs only.
+  spark_targets <- c("全国", top_pref_rows$pref)
+  spark_map <- cleaned_diseases %>%
+    mutate(date = as.Date(date), value = as.numeric(value)) %>%
+    filter(category == target_category, pref %in% spark_targets, !is.na(value)) %>%
+    arrange(date) %>%
+    group_by(pref) %>%
+    slice_tail(n = 52) %>%
+    summarise(series52 = list(as.numeric(value)), .groups = "drop")
+
+  get_series52 <- function(pref_name) {
+    row <- spark_map %>% filter(pref == pref_name)
+    if (nrow(row) == 0) return(list())
+    unname(as.list(row$series52[[1]]))
+  }
+
+  nationwide_obj <- list(
+    category = target_category,
+    pref = "全国",
+    rankLabel = "全国",
+    current_ma4 = as.numeric(nationwide_row$current_ma4[[1]]),
+    ratio_alert = as.numeric(nationwide_row$ratio_alert[[1]]),
+    series52 = get_series52("全国")
+  )
+
+  top_pref_objs <- lapply(seq_len(nrow(top_pref_rows)), function(i) {
+    row <- top_pref_rows[i, ]
+    list(
+      category = target_category,
+      pref = as.character(row$pref[[1]]),
+      rankLabel = paste0(i, "."),
+      current_ma4 = as.numeric(row$current_ma4[[1]]),
+      ratio_alert = as.numeric(row$ratio_alert[[1]]),
+      series52 = get_series52(as.character(row$pref[[1]]))
+    )
+  })
+
+  top_payload <- list(
+    targetCategory = target_category,
+    generatedAt = as.character(Sys.time()),
+    nationwideRow = nationwide_obj,
+    topPrefRows = top_pref_objs
+  )
+
+  if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+  writeLines(toJSON(top_payload, auto_unbox = TRUE, pretty = TRUE, na = "null"), "docs/results/top_highlights.json")
+  message("トップ要点JSON出力: docs/results/top_highlights.json")
+}
+
+# ---- ニュース自動生成: news_digest.json / weekly_report.md ----
+safe_num <- function(x, digits = 4) {
+  ifelse(is.finite(x), round(as.numeric(x), digits), NA_real_)
+}
+fmt_num <- function(x, digits = 2) {
+  ifelse(is.finite(x), format(round(x, digits), nsmall = digits), "—")
+}
+
+MIN_CURRENT_MA4 <- 0.1
+MIN_AVG_FOR_GROWTH <- 0.1
+PERSISTENCE_WINDOW <- 4L
+
+# importance score weights
+W_ANOMALY <- 0.6
+W_ALERT <- 0.8
+W_LEVEL <- 0.4
+W_PERSISTENCE <- 0.5
+W_GROWTH <- 0.3
+BONUS_ANOMALY <- 1.0
+BONUS_ALERT <- 2.0
+BONUS_PERSIST <- 3.0
+BONUS_RISING <- 0.5
+
+major_categories <- c(
+  "インフルエンザ",
+  "RSウイルス",
+  "感染性胃腸炎",
+  "手足口病",
+  "A群溶血性レンサ球菌咽頭炎",
+  "咽頭結膜熱",
+  "新型コロナウイルス"
+)
+
+PREF_TO_BLOCK <- c(
+  "北海道" = "北海道",
+  "青森県" = "東北", "岩手県" = "東北", "宮城県" = "東北", "秋田県" = "東北", "山形県" = "東北", "福島県" = "東北",
+  "茨城県" = "関東", "栃木県" = "関東", "群馬県" = "関東", "埼玉県" = "関東", "千葉県" = "関東", "東京都" = "関東", "神奈川県" = "関東",
+  "新潟県" = "中部", "富山県" = "中部", "石川県" = "中部", "福井県" = "中部", "山梨県" = "中部", "長野県" = "中部", "岐阜県" = "中部", "静岡県" = "中部", "愛知県" = "中部",
+  "三重県" = "近畿", "滋賀県" = "近畿", "京都府" = "近畿", "大阪府" = "近畿", "兵庫県" = "近畿", "奈良県" = "近畿", "和歌山県" = "近畿",
+  "鳥取県" = "中国", "島根県" = "中国", "岡山県" = "中国", "広島県" = "中国", "山口県" = "中国",
+  "徳島県" = "四国", "香川県" = "四国", "愛媛県" = "四国", "高知県" = "四国",
+  "福岡県" = "九州", "佐賀県" = "九州", "長崎県" = "九州", "熊本県" = "九州", "大分県" = "九州", "宮崎県" = "九州", "鹿児島県" = "九州", "沖縄県" = "九州"
+)
+
+is_major_category <- function(cat) {
+  !is.na(cat) & cat %in% major_categories
+}
+
+prefToBlock <- function(pref) {
+  out <- unname(PREF_TO_BLOCK[pref])
+  ifelse(is.na(out), NA_character_, out)
+}
+
+classifySpreadType <- function(blocks) {
+  n <- length(unique(blocks[!is.na(blocks)]))
+  if (n <= 1) return("局所")
+  if (n <= 3) return("地域拡散")
+  "全国拡散"
+}
+
+computeBlockCounts <- function(top_pref_df, rising_df, persistent_df) {
+  bind_rows(
+    top_pref_df %>% select(category, pref),
+    rising_df %>% select(category, pref),
+    persistent_df %>% select(category, pref)
+  ) %>%
+    mutate(block = prefToBlock(pref)) %>%
+    filter(!is.na(block)) %>%
+    group_by(category, block) %>%
+    summarise(n = n(), .groups = "drop")
+}
+
+buildGeoContext <- function(digest) {
+  top_news <- digest$top_news
+  top_pref_df <- digest$top_pref_df
+  rising_df <- digest$rising_df
+  persistent_df <- digest$persistent_df
+  block_counts <- computeBlockCounts(top_pref_df, rising_df, persistent_df)
+  if (nrow(top_news) == 0) {
+    return(list(
+      spread_type = "局所",
+      affected_blocks = character(0),
+      sentence = "地域分布は限定的です。"
+    ))
+  }
+  target_cat <- as.character(top_news$category[[1]])
+  target_blocks <- block_counts %>%
+    filter(category == target_cat) %>%
+    arrange(desc(n), block)
+  affected_blocks <- target_blocks$block
+  spread_type <- classifySpreadType(affected_blocks)
+  flags <- unlist(top_news$flags[[1]])
+  block_text <- if (length(affected_blocks) > 0) paste(affected_blocks, collapse = "・") else "限定的な地域"
+  sentence <- if ("rising" %in% flags) {
+    sprintf("%sの増加は%sを中心にみられます。", target_cat, block_text)
+  } else if ("persistent_alert" %in% flags) {
+    sprintf("%sの警報超えは%sを中心に続いています。", target_cat, block_text)
+  } else {
+    sprintf("%sの発生は%sを中心にみられます。", target_cat, block_text)
+  }
+  list(
+    spread_type = spread_type,
+    affected_blocks = affected_blocks,
+    sentence = sentence
+  )
+}
+
+computeSeasonalBaseline <- function(rows) {
+  rows %>%
+    mutate(
+      seasonal_mean = pmap_dbl(
+        list(weekly_value_series, year_series, week_series),
+        function(weekly_value_series, year_series, week_series) {
+          if (length(weekly_value_series) <= 1 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
+          current_year <- tail(year_series, 1)
+          current_week <- tail(week_series, 1)
+          max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
+          week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
+          hist_idx <- year_series < current_year & week_distance <= 2 & is.finite(weekly_value_series)
+          hist_values <- weekly_value_series[hist_idx]
+          if (length(hist_values) == 0) return(NA_real_)
+          m <- mean(hist_values, na.rm = TRUE)
+          ifelse(is.finite(m), m, NA_real_)
+        }
+      ),
+      seasonal_std = pmap_dbl(
+        list(weekly_value_series, year_series, week_series),
+        function(weekly_value_series, year_series, week_series) {
+          if (length(weekly_value_series) <= 2 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
+          current_year <- tail(year_series, 1)
+          current_week <- tail(week_series, 1)
+          max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
+          week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
+          hist_idx <- year_series < current_year & week_distance <= 2 & is.finite(weekly_value_series)
+          hist_values <- weekly_value_series[hist_idx]
+          if (length(hist_values) <= 1) return(NA_real_)
+          sdv <- sd(hist_values, na.rm = TRUE)
+          ifelse(is.finite(sdv) && sdv > 0, sdv, NA_real_)
+        }
+      )
+    )
+}
+
+computeSeasonalZscore <- function(row) {
+  cv <- row$current_value
+  sm <- row$seasonal_mean
+  ss <- row$seasonal_std
+  if (!is.finite(cv) || !is.finite(sm) || !is.finite(ss) || ss <= 0) return(NA_real_)
+  z <- (cv - sm) / ss
+  ifelse(is.finite(z), z, NA_real_)
+}
+
+computeImportanceScore <- function(row) {
+  sz <- ifelse(is.finite(row$seasonal_zscore), as.numeric(row$seasonal_zscore), 0)
+  ra <- ifelse(is.finite(row$ratio_alert), as.numeric(row$ratio_alert), 0)
+  cm <- ifelse(is.finite(row$current_ma4), as.numeric(row$current_ma4), 0)
+  pr <- ifelse(is.finite(row$persistenceRate), as.numeric(row$persistenceRate), 0)
+  gr <- ifelse(is.finite(row$growth1Rate), as.numeric(row$growth1Rate), 0)
+  wo <- ifelse(is.finite(row$weeksOverAlert), as.numeric(row$weeksOverAlert), 0)
+
+  anomaly_component <- max(sz, 0) * W_ANOMALY
+  alert_component <- max(ra, 0) * W_ALERT
+  level_component <- log(1 + max(cm, 0)) * W_LEVEL
+  persistence_component <- max(pr, 0) * W_PERSISTENCE
+  growth_component <- max(gr, 0) * 0.15
+
+  score <- anomaly_component + alert_component + level_component + persistence_component + growth_component
+  if (sz >= 2.5) score <- score + BONUS_ANOMALY
+  if (ra >= 1) score <- score + 1.5
+  if (wo >= 2) score <- score + BONUS_PERSIST
+  if (gr >= 0.2) score <- score + BONUS_RISING
+  ifelse(is.finite(score), as.numeric(score), 0)
+}
+
+attachImportanceScore <- function(df) {
+  if (nrow(df) == 0) {
+    df$importance_score <- numeric(0)
+    return(df)
+  }
+  getcol <- function(nm, default = NA_real_) {
+    if (nm %in% names(df)) return(df[[nm]])
+    rep(default, nrow(df))
+  }
+  df %>%
+    mutate(
+      importance_score = mapply(
+        function(seasonal_zscore, ratio_alert, current_ma4, persistenceRate, growth1Rate, weeksOverAlert) {
+          computeImportanceScore(list(
+            seasonal_zscore = seasonal_zscore,
+            ratio_alert = ratio_alert,
+            current_ma4 = current_ma4,
+            persistenceRate = persistenceRate,
+            growth1Rate = growth1Rate,
+            weeksOverAlert = weeksOverAlert
+          ))
+        },
+        getcol("seasonal_zscore"),
+        getcol("ratio_alert"),
+        getcol("current_ma4"),
+        getcol("persistenceRate"),
+        getcol("growth1Rate"),
+        getcol("weeksOverAlert")
+      )
+    )
+}
+
+buildNewsCandidates <- function(digest) {
+  anomalies_df <- digest$anomalies_df
+  rising_df <- digest$rising_df
+  persistent_df <- digest$persistent_df
+
+  parts <- list()
+  if (nrow(anomalies_df) > 0) parts <- append(parts, list(anomalies_df %>% mutate(flag = "anomaly")))
+  if (nrow(rising_df) > 0) parts <- append(parts, list(rising_df %>% mutate(flag = "rising")))
+  if (nrow(persistent_df) > 0) parts <- append(parts, list(persistent_df %>% mutate(flag = "persistent_alert")))
+  if (length(parts) == 0) return(tibble())
+
+  bind_rows(parts) %>%
+    group_by(category, pref) %>%
+    summarise(
+      importance_score = max(importance_score, na.rm = TRUE),
+      flags = list(sort(unique(flag))),
+      .groups = "drop"
+    ) %>%
+    arrange(desc(importance_score))
+}
+
+pickTopNews <- function(candidates) {
+  if (nrow(candidates) == 0) return(candidates)
+  candidates %>% slice_head(n = 1)
+}
+
+buildTopNewsSection <- function(digest) {
+  top_news <- digest$top_news
+  candidates <- digest$news_candidates
+  if (nrow(top_news) == 0) {
+    return(c("## 今週の最大ニュース", "- 該当データなし"))
+  }
+  top_line <- sprintf(
+    "- %s（%s）: importance_score %s / %s",
+    as.character(top_news$category[[1]]),
+    as.character(top_news$pref[[1]]),
+    fmt_num(top_news$importance_score[[1]], 2),
+    paste(unlist(top_news$flags[[1]]), collapse = ", ")
+  )
+  cand_lines <- if (nrow(candidates) > 0) {
+    candidates %>%
+      slice_head(n = 3) %>%
+      mutate(
+        line = sprintf(
+          "- %s（%s）: importance_score %s / %s",
+          category, pref, fmt_num(importance_score, 2), vapply(flags, function(x) paste(unlist(x), collapse = ", "), character(1))
+        )
+      ) %>%
+      pull(line)
+  } else {
+    "- 該当データなし"
+  }
+  c(
+    "## 今週の最大ニュース",
+    top_line,
+    "",
+    "## 注目候補",
+    cand_lines
+  )
+}
+
+detectAnomalies <- function(rows) {
+  rows %>%
+    mutate(
+      anomaly_z = mapply(
+        function(current_value, seasonal_mean, seasonal_std) {
+          computeSeasonalZscore(list(
+            current_value = current_value,
+            seasonal_mean = seasonal_mean,
+            seasonal_std = seasonal_std
+          ))
+        },
+        current_value, seasonal_mean, seasonal_std
+      ),
+      anomaly_ratio = if_else(
+        is.finite(seasonal_mean) & seasonal_mean >= MIN_CURRENT_MA4,
+        current_value / seasonal_mean,
+        NA_real_
+      ),
+      anomaly_diff = if_else(
+        is.finite(seasonal_mean),
+        current_value - seasonal_mean,
+        NA_real_
+      )
+    ) %>%
+    filter(pref == "全国") %>%
+    filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
+    filter(is.finite(seasonal_mean), seasonal_mean >= MIN_CURRENT_MA4) %>%
+    filter(is.finite(anomaly_z)) %>%
+    arrange(desc(anomaly_z), desc(anomaly_ratio), desc(anomaly_diff), desc(current_value)) %>%
+    slice_head(n = 3) %>%
+    mutate(seasonal_zscore = anomaly_z, seasonal_ratio = anomaly_ratio)
+}
+
+isMeaningfulSeries <- function(row) {
+  current_ok <- is.finite(row$current_value) && row$current_value >= MIN_CURRENT_MA4
+  prev_ok <- is.finite(row$previous_value) && row$previous_value >= MIN_CURRENT_MA4
+  current_ok && prev_ok
+}
+
+pick_top_major_first <- function(df, sort_exprs, n = 3) {
+  if (nrow(df) == 0) return(df)
+  major_df <- df %>% filter(is_major)
+  non_major_df <- df %>% filter(!is_major)
+  ordered_major <- major_df %>% arrange(!!!sort_exprs)
+  if (nrow(ordered_major) >= n) return(slice_head(ordered_major, n = n))
+  need <- n - nrow(ordered_major)
+  ordered_non_major <- non_major_df %>% arrange(!!!sort_exprs) %>% slice_head(n = need)
+  bind_rows(ordered_major, ordered_non_major)
+}
+
+selectLead <- function(rows) {
+  nationwide <- rows %>% filter(pref == "全国")
+
+  cand_growth <- nationwide %>%
+    filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
+    filter(is.finite(previous_value), previous_value >= MIN_CURRENT_MA4) %>%
+    filter(is.finite(growth1Rate)) %>%
+    mutate(growth_diff = current_value - previous_value) %>%
+    arrange(desc(growth1Rate), desc(current_value), desc(growth_diff))
+
+  if (nrow(cand_growth) > 0) {
+    return(list(row = cand_growth %>% slice(1), reason = "D: 全国で前週比増加率最大"))
+  }
+
+  cand_anomaly <- nationwide %>%
+    filter(is.finite(anomaly_z)) %>%
+    arrange(desc(anomaly_z), desc(anomaly_ratio), desc(anomaly_diff), desc(current_value))
+  if (nrow(cand_anomaly) > 0) {
+    return(list(row = cand_anomaly %>% slice(1), reason = "A: 全国で季節逸脱度最大"))
+  }
+
+  list(row = nationwide %>% arrange(desc(current_value)) %>% slice_head(n = 1), reason = "E: 代替（全国の現在値最大）")
+}
+
+computeAlertPrefCounts <- function(rows) {
+  counts <- rows %>%
+    filter(pref != "全国", is.finite(ratio_alert), ratio_alert >= 1) %>%
+    group_by(category) %>%
+    summarise(pref_alert_count = n(), .groups = "drop")
+  out <- counts$pref_alert_count
+  names(out) <- counts$category
+  out
+}
+
+integrateAnomalyIntoLead <- function(digest) {
+  anomalies_df <- digest$anomalies_df
+  rows <- digest$rows
+  if (nrow(anomalies_df) == 0) return(digest)
+
+  top_anom <- anomalies_df %>% slice(1)
+  target_cat <- as.character(top_anom$category[[1]])
+  nationwide_row <- rows %>%
+    filter(pref == "全国", category == target_cat) %>%
+    arrange(desc(ratio_alert), desc(current_ma4)) %>%
+    slice_head(n = 1)
+
+  digest$lead$category <- target_cat
+  digest$lead$reason <- sprintf(
+    "A: 季節パターン逸脱（%s %s, z=%s）",
+    target_cat,
+    as.character(top_anom$pref[[1]]),
+    fmt_num(top_anom$seasonal_zscore[[1]], 2)
+  )
+  if (nrow(nationwide_row) > 0) {
+    digest$lead$nationwide_ratio_alert <- ifelse(is.finite(nationwide_row$ratio_alert[[1]]), as.numeric(nationwide_row$ratio_alert[[1]]), NA_real_)
+    digest$lead$nationwide_current_ma4 <- ifelse(is.finite(nationwide_row$current_ma4[[1]]), as.numeric(nationwide_row$current_ma4[[1]]), NA_real_)
+    digest$lead_row <- nationwide_row
+  } else {
+    digest$lead$nationwide_ratio_alert <- NA_real_
+    digest$lead$nationwide_current_ma4 <- NA_real_
+    digest$lead_row <- rows %>% filter(category == target_cat) %>% arrange(desc(current_ma4)) %>% slice_head(n = 1)
+  }
+  digest$lead_category <- target_cat
+  digest
+}
+
+selectTopPrefectures <- function(rows, lead_row, anomalies_df = NULL, prefer_anomaly_prefs = FALSE) {
+  if (nrow(lead_row) == 0) return(rows %>% slice(0))
+  lead_cat <- as.character(lead_row$category[[1]])
+  base <- rows %>%
+    filter(category == lead_cat, pref != "全国") %>%
+    filter(is.finite(ratio_alert), current_ma4 >= MIN_CURRENT_MA4) %>%
+    mutate(priority_high = ratio_alert > 0.5) %>%
+    arrange(desc(priority_high), desc(ratio_alert), desc(current_ma4)) %>%
+    slice_head(n = 3)
+
+  if (!prefer_anomaly_prefs || is.null(anomalies_df) || nrow(anomalies_df) == 0) {
+    return(base)
+  }
+
+  anomaly_prefs <- anomalies_df %>%
+    filter(category == lead_cat) %>%
+    arrange(desc(seasonal_zscore)) %>%
+    pull(pref) %>%
+    unique()
+
+  if (length(anomaly_prefs) == 0) return(base)
+
+  rows %>%
+    filter(category == lead_cat, pref != "全国") %>%
+    filter(is.finite(ratio_alert), current_ma4 >= MIN_CURRENT_MA4) %>%
+    mutate(
+      priority_high = ratio_alert > 0.5,
+      anomaly_rank = match(pref, anomaly_prefs),
+      is_anomaly_pref = !is.na(anomaly_rank)
+    ) %>%
+    arrange(desc(is_anomaly_pref), anomaly_rank, desc(priority_high), desc(ratio_alert), desc(current_ma4)) %>%
+    slice_head(n = 3)
+}
+
+selectRising <- function(rows) {
+  base <- rows %>%
+    filter(pref == "全国") %>%
+    filter(is.finite(growth1Rate), growth1Rate >= 0.2) %>%
+    filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
+    filter(is.finite(previous_value), previous_value >= MIN_CURRENT_MA4) %>%
+    mutate(growth_diff = current_value - previous_value)
+  pick_top_major_first(base, rlang::quos(desc(growth1Rate), desc(current_value), desc(growth_diff)), n = 3)
+}
+
+selectPersistentAlerts <- function(rows) {
+  base <- rows %>%
+    filter(is.finite(ratio_alert), ratio_alert > 1) %>%
+    filter(is.finite(weeksOverAlert), weeksOverAlert >= 2) %>%
+    filter(is.finite(persistenceRate), current_ma4 >= MIN_CURRENT_MA4)
+  pick_top_major_first(base, rlang::quos(desc(persistenceRate), desc(ratio_alert), desc(weeksOverAlert), desc(current_ma4)), n = 3)
+}
+
+selectImproving <- function(rows) {
+  base <- rows %>%
+    filter(pref == "全国") %>%
+    filter(is.finite(growth1Rate), growth1Rate <= -0.2) %>%
+    filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
+    filter(!is.finite(anomaly_z) | anomaly_z < 2)
+  pick_top_major_first(base, rlang::quos(growth1Rate, desc(current_value)), n = 3)
+}
+
+as_item_list <- function(df, n = 3) {
+  if (nrow(df) == 0) return(list())
+  out <- df %>% slice_head(n = n)
+  lapply(seq_len(nrow(out)), function(i) {
+    row <- out[i, ]
+    list(
+      category = as.character(row$category[[1]]),
+      pref = as.character(row$pref[[1]]),
+      current_ma4 = ifelse(is.finite(row$current_ma4[[1]]), as.numeric(row$current_ma4[[1]]), NA_real_),
+      current_value = ifelse(is.finite(row$current_value[[1]]), as.numeric(row$current_value[[1]]), NA_real_),
+      previous_value = ifelse(is.finite(row$previous_value[[1]]), as.numeric(row$previous_value[[1]]), NA_real_),
+      ratio_alert = ifelse(is.finite(row$ratio_alert[[1]]), as.numeric(row$ratio_alert[[1]]), NA_real_),
+      ratio_yoy = ifelse(is.finite(row$ratio_yoy[[1]]), as.numeric(row$ratio_yoy[[1]]), NA_real_),
+      growth1Rate = ifelse(is.finite(row$growth1Rate[[1]]), as.numeric(row$growth1Rate[[1]]), NA_real_),
+      weeksOverAlert = ifelse(is.finite(row$weeksOverAlert[[1]]), as.integer(row$weeksOverAlert[[1]]), NA_integer_),
+      persistenceRate = ifelse(is.finite(row$persistenceRate[[1]]), as.numeric(row$persistenceRate[[1]]), NA_real_),
+      persistenceWindow = ifelse(is.finite(row$persistenceWindow[[1]]), as.integer(row$persistenceWindow[[1]]), NA_integer_),
+      importance_score = ifelse(is.finite(row$importance_score[[1]]), as.numeric(row$importance_score[[1]]), NA_real_)
+    )
+  })
+}
+
+as_anomaly_list <- function(df, n = 3) {
+  if (nrow(df) == 0) return(list())
+  out <- df %>% slice_head(n = n)
+  lapply(seq_len(nrow(out)), function(i) {
+    row <- out[i, ]
+    list(
+      category = as.character(row$category[[1]]),
+      pref = as.character(row$pref[[1]]),
+      current_ma4 = ifelse(is.finite(row$current_ma4[[1]]), as.numeric(row$current_ma4[[1]]), NA_real_),
+      current_value = ifelse(is.finite(row$current_value[[1]]), as.numeric(row$current_value[[1]]), NA_real_),
+      seasonal_mean = ifelse(is.finite(row$seasonal_mean[[1]]), as.numeric(row$seasonal_mean[[1]]), NA_real_),
+      seasonal_zscore = ifelse(is.finite(row$seasonal_zscore[[1]]), as.numeric(row$seasonal_zscore[[1]]), NA_real_),
+      importance_score = ifelse(is.finite(row$importance_score[[1]]), as.numeric(row$importance_score[[1]]), NA_real_)
+    )
+  })
+}
+
+as_candidate_list <- function(df) {
+  if (nrow(df) == 0) return(list())
+  lapply(seq_len(nrow(df)), function(i) {
+    row <- df[i, ]
+    list(
+      category = as.character(row$category[[1]]),
+      pref = as.character(row$pref[[1]]),
+      importance_score = ifelse(is.finite(row$importance_score[[1]]), as.numeric(row$importance_score[[1]]), NA_real_),
+      flags = unname(as.list(unlist(row$flags[[1]])))
+    )
+  })
+}
+
+as_top_news <- function(df) {
+  if (nrow(df) == 0) return(NULL)
+  row <- df[1, ]
+  list(
+    category = as.character(row$category[[1]]),
+    pref = as.character(row$pref[[1]]),
+    importance_score = ifelse(is.finite(row$importance_score[[1]]), as.numeric(row$importance_score[[1]]), NA_real_),
+    flags = unname(as.list(unlist(row$flags[[1]])))
+  )
+}
+
+buildSummary <- function(digest) {
+  lead_cat <- digest$lead$category
+  top_news <- digest$top_news
+  geo_context <- digest$geo_context
+  anomalies_df <- digest$anomalies_df
+  lead_anomalies <- if (!is.na(lead_cat)) anomalies_df %>% filter(category == lead_cat) else anomalies_df %>% slice(0)
+  top_pref_df <- digest$top_pref_df
+  rising_df <- digest$rising_df
+  persistent_df <- digest$persistent_df
+  top_pref_alert <- top_pref_df %>% filter(is.finite(ratio_alert), ratio_alert >= 1)
+
+  s1 <- if (nrow(top_news) > 0) {
+    t_cat <- as.character(top_news$category[[1]])
+    t_pref <- as.character(top_news$pref[[1]])
+    t_flags <- unlist(top_news$flags[[1]])
+    if ("persistent_alert" %in% t_flags) {
+      sprintf("%sは%sで警報超えが続いています。", t_cat, t_pref)
+    } else if ("anomaly" %in% t_flags) {
+      sprintf("%sは%sで例年の季節水準を大きく上回っています。", t_cat, t_pref)
+    } else if ("rising" %in% t_flags) {
+      sprintf("%sは%sで増加が目立っています。", t_cat, t_pref)
+    } else if (!is.na(lead_cat)) {
+      sprintf("全国では%sが引き続き高水準で推移しています。", lead_cat)
+    } else {
+      "全国では明確な主題となる感染症は確認されませんでした。"
+    }
+  } else if (!is.na(lead_cat)) {
+    sprintf("全国では%sが引き続き高水準で推移しています。", lead_cat)
+  } else {
+    "全国では明確な主題となる感染症は確認されませんでした。"
+  }
+
+  s2 <- if (!is.null(geo_context$sentence) && nzchar(geo_context$sentence)) {
+    geo_context$sentence
+  } else if (nrow(persistent_df) > 0) {
+    p <- paste(unique(head(persistent_df$pref, 3)), collapse = "・")
+    cat_p <- as.character(persistent_df$category[[1]])
+    sprintf("%sでは%sの警報超えが続いています。", p, cat_p)
+  } else if (nrow(top_pref_alert) > 0) {
+    pref_names <- paste(top_pref_alert$pref, collapse = "、")
+    sprintf("%sでは警報基準を上回っています。", pref_names)
+  } else if (nrow(top_pref_df) > 0) {
+    pref_names <- paste(top_pref_df$pref, collapse = "、")
+    sprintf("%sでは患者数が高水準です。", pref_names)
+  } else {
+    "警報継続が目立つ地域は限定的です。"
+  }
+
+  s3 <- if (nrow(anomalies_df) > 0) {
+    a_cat <- as.character(anomalies_df$category[[1]])
+    a_pref <- paste(unique(head((anomalies_df %>% filter(category == a_cat))$pref, 3)), collapse = "や")
+    sprintf("一方、%sは%sで例年の数倍の水準です。", a_cat, a_pref)
+  } else if (nrow(rising_df) > 0) {
+    r <- paste(unique(head(rising_df$pref, 2)), collapse = "・")
+    sprintf("%sで急増傾向がみられます。", r)
+  } else {
+    "季節逸脱や急増は限定的です。"
+  }
+  paste(c(s1, s2, s3), collapse = " ")
+}
+
+buildHeadline <- function(digest) {
+  top_news <- digest$top_news
+  if (nrow(top_news) > 0) {
+    t_cat <- as.character(top_news$category[[1]])
+    t_pref <- as.character(top_news$pref[[1]])
+    t_flags <- unlist(top_news$flags[[1]])
+    if ("anomaly" %in% t_flags) return(sprintf("%s、%sで例年の数倍", t_cat, t_pref))
+    if ("persistent_alert" %in% t_flags) return(sprintf("%s、%sで警報超えが継続", t_cat, t_pref))
+    if ("rising" %in% t_flags) return(sprintf("%s、%sで増加が目立つ", t_cat, t_pref))
+  }
+
+  lead_cat <- digest$lead$category
+  nationwide_ratio_alert <- digest$lead$nationwide_ratio_alert
+  anomalies_df <- digest$anomalies_df
+  persistent_df <- digest$persistent_df
+  top_pref_df <- digest$top_pref_df
+  anomaly_lead <- nrow(anomalies_df) > 0 && !is.na(lead_cat) && as.character(anomalies_df$category[[1]]) == lead_cat
+  if (is.na(lead_cat)) return("今週は全国で顕著な主題なし")
+  if (anomaly_lead) {
+    a <- anomalies_df %>% slice(1)
+    return(sprintf("%s、%sで例年の数倍", lead_cat, as.character(a$pref[[1]])))
+  }
+  if (is.finite(nationwide_ratio_alert) && nationwide_ratio_alert < 1) {
+    pref_src <- if (nrow(top_pref_df) > 0) top_pref_df else persistent_df
+    if (nrow(pref_src) > 0) {
+      pref_text <- paste(unique(head(pref_src$pref, 2)), collapse = "・")
+      return(sprintf("%s、%sなどで患者数が高水準", lead_cat, pref_text))
+    }
+    return(sprintf("%s、都道府県で患者数が高水準", lead_cat))
+  }
+  if (nrow(persistent_df) > 0) {
+    pref_text <- paste(unique(head(persistent_df$pref, 2)), collapse = "・")
+    return(sprintf("%sが各地で警報水準、%sで継続警戒", lead_cat, pref_text))
+  }
+  if (nrow(top_pref_df) > 0) {
+    pref_text <- paste(unique(head(top_pref_df$pref, 2)), collapse = "・")
+    return(sprintf("%sで警報水準が目立つ、%sに注目", lead_cat, pref_text))
+  }
+  sprintf("%sの動向に注目", lead_cat)
+}
+
+buildGeneratedText <- function(digest, top_pref_df, rising_df, persistent_df) {
+  summary_text <- buildSummary(list(
+    lead = digest$lead,
+    top_news = digest$top_news,
+    geo_context = digest$geo_context,
+    anomalies_df = digest$anomalies_df,
+    top_pref_df = top_pref_df,
+    rising_df = rising_df,
+    persistent_df = persistent_df
+  ))
+  headline_text <- buildHeadline(list(
+    lead = digest$lead,
+    top_news = digest$top_news,
+    anomalies_df = digest$anomalies_df,
+    top_pref_df = top_pref_df,
+    persistent_df = persistent_df
+  ))
+  top_phrase <- if (nrow(top_pref_df) == 0) {
+    "該当なし"
+  } else {
+    paste(sprintf("%sの%s", top_pref_df$pref, top_pref_df$category), collapse = "、")
+  }
+  use_alert_word <- nrow(top_pref_df) > 0 && all(is.finite(top_pref_df$ratio_alert) & top_pref_df$ratio_alert >= 1)
+  bullets <- c(
+    if (use_alert_word) sprintf("主な発生地域は%s", top_phrase) else sprintf("主な発生地域は%s", top_phrase),
+    sprintf("警報超え継続は%s", ifelse(nrow(persistent_df) > 0, paste(sprintf("%sの%s", persistent_df$pref, persistent_df$category), collapse = "、"), "該当なし")),
+    if (nrow(rising_df) > 0) {
+      sprintf(
+        "%sは%sで増加が目立つ",
+        as.character(rising_df$category[[1]]),
+        paste(unique(head(rising_df$pref, 3)), collapse = "、")
+      )
+    } else {
+      "増加が目立つ感染症は該当なし"
+    }
+  )
+  list(
+    headline = headline_text,
+    summary = summary_text,
+    bullets = unname(as.list(bullets))
+  )
+}
+
+# 週次系列（category + pref ごと）
+weekly_series <- by_week %>%
+  arrange(pref, category, year_week) %>%
+  group_by(pref, category) %>%
+  summarise(
+    ma4_series = list(ma4),
+    weekly_value_series = list(weekly_value),
+    year_series = list(yr),
+    week_series = list(wk),
+    .groups = "drop"
+  )
+
+news_base <- ranking %>%
+  left_join(weekly_series, by = c("pref", "category")) %>%
+  mutate(
+    is_major = is_major_category(category),
+    persistenceWindow = PERSISTENCE_WINDOW,
+    recent4_avg = map_dbl(ma4_series, ~ if (length(.x) >= 4) mean(tail(.x, 4), na.rm = TRUE) else NA_real_),
+    previous4_avg = map_dbl(ma4_series, ~ if (length(.x) >= 8) mean(tail(head(.x, length(.x) - 4), 4), na.rm = TRUE) else NA_real_),
+    growth4Rate = if_else(
+      is.finite(previous4_avg) & previous4_avg >= MIN_AVG_FOR_GROWTH & is.finite(recent4_avg),
+      (recent4_avg - previous4_avg) / previous4_avg,
+      NA_real_
+    ),
+    growth4Rate = if_else(is.finite(growth4Rate), pmax(pmin(growth4Rate, 10), -1), NA_real_),
+    current_value = map_dbl(weekly_value_series, ~ if (length(.x) >= 1) dplyr::last(.x) else NA_real_),
+    previous_value = map_dbl(weekly_value_series, ~ if (length(.x) >= 2) dplyr::nth(.x, length(.x) - 1) else NA_real_),
+    growth1Rate = if_else(
+      is.finite(previous_value) & previous_value >= MIN_CURRENT_MA4 & is.finite(current_value) & current_value >= MIN_CURRENT_MA4,
+      (current_value - previous_value) / previous_value,
+      NA_real_
+    ),
+    growth1Diff = if_else(
+      is.finite(current_value) & is.finite(previous_value),
+      current_value - previous_value,
+      NA_real_
+    ),
+    weeksOverAlert = map2_int(ma4_series, alert_start, ~ {
+      if (!is.finite(.y) || length(.x) == 0) return(NA_integer_)
+      sum(tail(.x, PERSISTENCE_WINDOW) > .y, na.rm = TRUE)
+    }),
+    persistenceRate = if_else(is.finite(weeksOverAlert), weeksOverAlert / persistenceWindow, NA_real_),
+    current_ma4 = safe_num(current_ma4, 4),
+    current_value = safe_num(current_value, 4),
+    previous_value = safe_num(previous_value, 4),
+    ratio_alert = safe_num(ratio_alert, 4),
+    ratio_yoy = safe_num(ratio_yoy, 4),
+    growth1Rate = safe_num(growth1Rate, 4),
+    growth1Diff = safe_num(growth1Diff, 4),
+    growth4Rate = safe_num(growth4Rate, 4),
+    persistenceRate = safe_num(persistenceRate, 4),
+    recent4_avg = safe_num(recent4_avg, 4),
+    previous4_avg = safe_num(previous4_avg, 4)
+  ) %>%
+  computeSeasonalBaseline() %>%
+  mutate(
+    anomaly_z = mapply(
+      function(current_value, seasonal_mean, seasonal_std) {
+        computeSeasonalZscore(list(
+          current_value = current_value,
+          seasonal_mean = seasonal_mean,
+          seasonal_std = seasonal_std
+        ))
+      },
+      current_value, seasonal_mean, seasonal_std
+    ),
+    anomaly_ratio = if_else(
+      is.finite(seasonal_mean) & seasonal_mean >= MIN_CURRENT_MA4,
+      current_value / seasonal_mean,
+      NA_real_
+    ),
+    anomaly_diff = if_else(
+      is.finite(seasonal_mean),
+      current_value - seasonal_mean,
+      NA_real_
+    ),
+    seasonal_zscore = anomaly_z
+  ) %>%
+  select(
+    category, pref, year_week, reference_date, is_major,
+    current_ma4, current_value, previous_value, ratio_alert, ratio_yoy,
+    recent4_avg, previous4_avg,
+    growth1Rate, growth1Diff, growth4Rate, weeksOverAlert, persistenceRate, persistenceWindow,
+    ma4_series, weekly_value_series, year_series, week_series,
+    seasonal_mean, seasonal_std, seasonal_zscore, anomaly_z, anomaly_ratio, anomaly_diff
+  ) %>%
+  filter(!is.na(category), !is.na(pref))
+
+alertPrefCountByDisease <- computeAlertPrefCounts(news_base)
+anomalies_df <- detectAnomalies(news_base)
+
+lead_pick <- selectLead(news_base)
+lead_row <- lead_pick$row
+lead_category <- if (nrow(lead_row) > 0) as.character(lead_row$category[[1]]) else NA_character_
+
+lead_bundle <- integrateAnomalyIntoLead(list(
+  lead = list(
+    category = lead_category,
+    nationwide_ratio_alert = if (nrow(lead_row) > 0 && is.finite(lead_row$ratio_alert[[1]])) as.numeric(lead_row$ratio_alert[[1]]) else NA_real_,
+    nationwide_current_ma4 = if (nrow(lead_row) > 0 && is.finite(lead_row$current_ma4[[1]])) as.numeric(lead_row$current_ma4[[1]]) else NA_real_,
+    reason = lead_pick$reason
+  ),
+  anomalies_df = anomalies_df,
+  rows = news_base,
+  lead_row = lead_row,
+  lead_category = lead_category
+))
+
+lead_row <- lead_bundle$lead_row
+lead_category <- lead_bundle$lead_category
+
+top_pref_df <- selectTopPrefectures(
+  news_base,
+  lead_row,
+  anomalies_df = anomalies_df,
+  prefer_anomaly_prefs = isTRUE(grepl("^A: 季節パターン逸脱", lead_bundle$lead$reason))
+)
+rising_df <- selectRising(news_base)
+persistent_df <- selectPersistentAlerts(news_base)
+improving_df <- selectImproving(news_base)
+
+top_pref_df <- attachImportanceScore(top_pref_df)
+rising_df <- attachImportanceScore(rising_df)
+persistent_df <- attachImportanceScore(persistent_df)
+improving_df <- attachImportanceScore(improving_df)
+anomalies_df <- attachImportanceScore(anomalies_df)
+
+news_candidates_df <- buildNewsCandidates(list(
+  anomalies_df = anomalies_df,
+  rising_df = rising_df,
+  persistent_df = persistent_df
+))
+top_news_df <- pickTopNews(news_candidates_df)
+geo_context <- buildGeoContext(list(
+  top_news = top_news_df,
+  top_pref_df = top_pref_df,
+  rising_df = rising_df,
+  persistent_df = persistent_df
+))
+lead_anomaly_df <- anomalies_df %>% filter(category == lead_category)
+lead_importance_score <- if (nrow(lead_anomaly_df) > 0) {
+  as.numeric(lead_anomaly_df$importance_score[[1]])
+} else if (nrow(lead_row) > 0) {
+  as.numeric(computeImportanceScore(lead_row[1, ]))
+} else {
+  NA_real_
+}
+
+generated_text <- buildGeneratedText(list(
+  lead = lead_bundle$lead,
+  anomalies_df = anomalies_df,
+  top_news = top_news_df,
+  geo_context = geo_context
+), top_pref_df, rising_df, persistent_df)
+
+lead_reason <- if (!is.null(lead_bundle$lead$reason)) {
+  lead_bundle$lead$reason
+} else if (nrow(lead_row) > 0) {
+  sprintf("%s（全国 ratio_alert=%s）", lead_pick$reason, fmt_num(lead_row$ratio_alert[[1]]))
+} else {
+  "該当データなし"
+}
+
+news_digest <- list(
+  week = as.character(reference_date),
+  lead = list(
+    category = ifelse(is.na(lead_category), NA_character_, lead_category),
+    nationwide_ratio_alert = lead_bundle$lead$nationwide_ratio_alert,
+    nationwide_current_ma4 = lead_bundle$lead$nationwide_current_ma4,
+    reason = lead_reason,
+    importance_score = lead_importance_score
+  ),
+  top_prefectures = as_item_list(top_pref_df, 3),
+  rising = as_item_list(rising_df, 3),
+  persistent_alerts = as_item_list(persistent_df, 3),
+  improving = as_item_list(improving_df, 3),
+  anomalies = as_anomaly_list(anomalies_df, 3),
+  news_candidates = as_candidate_list(news_candidates_df),
+  top_news = as_top_news(top_news_df),
+  spread_type = geo_context$spread_type,
+  affected_blocks = unname(as.list(geo_context$affected_blocks)),
+  generated_text = generated_text
+)
+
+writeLines(toJSON(news_digest, auto_unbox = TRUE, pretty = TRUE, na = "null"), "docs/results/news_digest.json")
+message("ニュースJSON出力: docs/results/news_digest.json")
+
+make_report_lines <- function(df, tag) {
+  if (nrow(df) == 0) return("- 該当データなし")
+  lines <- df %>% slice_head(n = 3) %>% mutate(
+    line = case_when(
+      tag == "high" ~ sprintf("- %s（%s）: 定点あたり患者数 %s", category, pref, fmt_num(current_ma4)),
+      tag == "rising" ~ sprintf("- %s（%s）: 前週比増加率 %s / 定点あたり患者数 %s", category, pref, fmt_num(growth1Rate), fmt_num(current_value)),
+      tag == "persistent" ~ sprintf("- %s（%s）: 継続週 %d/%d / 警報基準比 %s倍", category, pref, as.integer(weeksOverAlert), as.integer(persistenceWindow), fmt_num(ratio_alert)),
+      tag == "improving" ~ sprintf("- %s（%s）: 前週比増加率 %s / 定点あたり患者数 %s", category, pref, fmt_num(growth1Rate), fmt_num(current_value)),
+      TRUE ~ sprintf("- %s（%s）", category, pref)
+    )
+  ) %>% pull(line)
+  lines
+}
+
+make_anomaly_lines <- function(df) {
+  if (nrow(df) == 0) return("- 該当データなし")
+  df %>%
+    slice_head(n = 3) %>%
+    mutate(
+      line = sprintf(
+        "- %s（%s）: 季節平均 %s → 現在 %s / seasonal_zscore %s",
+        category, pref, fmt_num(seasonal_mean), fmt_num(current_value), fmt_num(seasonal_zscore)
+      )
+    ) %>%
+    pull(line)
+}
+
+weekly_lines <- c(
+  sprintf("# %s 時点の感染症動向", as.character(reference_date)),
+  "",
+  "## 概況",
+  generated_text$summary,
+  "",
+  buildTopNewsSection(list(
+    top_news = top_news_df,
+    news_candidates = news_candidates_df
+  )),
+  "",
+  "## 主な発生地域",
+  make_report_lines(top_pref_df %>% mutate(category = ifelse(is.na(lead_category), category, lead_category)), "high"),
+  "",
+  "## 地域分布",
+  geo_context$sentence,
+  "",
+  "## 上昇が目立つ感染症",
+  make_report_lines(rising_df, "rising"),
+  "",
+  "## 警報超えが続く感染症",
+  make_report_lines(persistent_df, "persistent"),
+  "",
+  "## 改善がみられる感染症",
+  make_report_lines(improving_df, "improving"),
+  "",
+  "## 季節パターンからの逸脱",
+  make_anomaly_lines(anomalies_df),
+  "",
+  "## 注記",
+  "自動生成レポート"
+)
+writeLines(weekly_lines, "docs/results/weekly_report.md")
+message("週報Markdown出力: docs/results/weekly_report.md")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+# 追加: 全国平均0.1以上の感染症から「危険・増加・季節外れ」を1件ずつ選ぶロジック
+
+以下は、**既存の `news_base` を作り終えたあと**に使うことを想定したコードです。  
+`news_base` にはすでに、全国値・前週値・警報基準比・季節基準に関わる列がかなり入っているため、
+ここではその流れを壊さずに、**選定ロジックだけを追加**する形にしています。
+
+- 対象は「直近の全国の定点あたり感染者数が 0.1 以上」の感染症です。
+- 1件目は `ratio_alert`（警報基準比）が最大の感染症です。
+- 2件目は `growth1Rate`（前週比増加率）が最大の感染症です。
+- 3件目は seasonal baseline を使って anomaly を再計算し、
+  `anomaly_z` → `anomaly_ratio` → `anomaly_diff` → `current_value` の順で並べて最上位を取ります。
+- `baseline_mean <= 0` や `baseline_sd <= 0` は `NA` 扱いにし、z-score を無理に作りません。
+- baseline 候補は「最新年を除く過去年の、同週±2週（循環比較）」です。
+
+```{r, eval=FALSE}
+# =========================================================
+# 追加ロジック: 全国で「もっとも危険 / もっとも増加 / もっとも季節外れ」を選ぶ
+# 前提:
+#   - 既存コードの cleaned_diseases と alert が作られていること
+#   - このチャンク単体でも読めるように、必要な整形をここで明示する
+# 出力:
+#   - danger_top    : 警報基準比が最大の感染症（全国, current_value>=0.1）
+#   - growth_top    : 前週比増加率が最大の感染症（全国, current_value>=0.1）
+#   - anomaly_top   : 季節外れ度が最大の感染症（全国, current_value>=0.1）
+#   - story_inputs  : 短い総括記事を書くための材料をまとめた表
+# =========================================================
+
+# ---------- 0) 必要最小限の前処理 ----------
+# cleaned_diseases から ISO year/week を作る。
+# 既存コードでも year/week を作っているが、
+# このロジックを独立して読めるように、ここで改めて明示する。
+weekly_base <- cleaned_diseases %>%
+  mutate(
+    date = as.Date(date),
+    iso_year = lubridate::isoyear(date),
+    iso_week = lubridate::isoweek(date)
+  ) %>%
+  arrange(pref, category, date)
+
+# 各 都道府県 × 感染症 で4週移動平均を作る。
+# 既存コードの ma4 と同じ考え方だが、
+# 今回の評価対象は「直近の全国値」なので、ここでも明示しておく。
+weekly_with_ma4 <- weekly_base %>%
+  group_by(pref, category) %>%
+  mutate(
+    ma4 = if_else(
+      row_number() >= 4,
+      (value + lag(value, 1) + lag(value, 2) + lag(value, 3)) / 4,
+      NA_real_
+    )
+  ) %>%
+  ungroup()
+
+# 「週」単位の代表値を作る。
+# 同一週に複数日が入る場合は、もっとも新しい日の weekly_value / ma4 を採用する。
+by_week_for_pick <- weekly_with_ma4 %>%
+  group_by(pref, category, iso_year, iso_week) %>%
+  slice_max(date, n = 1, with_ties = FALSE) %>%
+  ungroup() %>%
+  transmute(
+    pref,
+    category,
+    date,
+    iso_year,
+    iso_week,
+    weekly_value = value,
+    ma4
+  )
+
+# ---------- 1) 最新週と前週を決める ----------
+# 最新週は、データ中で最も新しい iso_year / iso_week の組を採用する。
+latest_week_key <- by_week_for_pick %>%
+  mutate(year_week_key = sprintf("%04d-%02d", iso_year, iso_week)) %>%
+  summarise(year_week_key = max(year_week_key, na.rm = TRUE)) %>%
+  pull(year_week_key)
+
+latest_iso_year <- as.integer(stringr::str_sub(latest_week_key, 1, 4))
+latest_iso_week <- as.integer(stringr::str_sub(latest_week_key, 6, 7))
+
+# 前週は date 順に見た1つ前の週を採用する。
+# 年またぎを安全に処理するため、単純に week-1 ではなく、
+# 実データ上の「直前の週」を取る。
+previous_week_ref <- by_week_for_pick %>%
+  distinct(iso_year, iso_week, date) %>%
+  arrange(date) %>%
+  mutate(year_week_key = sprintf("%04d-%02d", iso_year, iso_week)) %>%
+  distinct(year_week_key, .keep_all = TRUE) %>%
+  filter(year_week_key < latest_week_key) %>%
+  slice_tail(n = 1)
+
+previous_iso_year <- previous_week_ref$iso_year[[1]]
+previous_iso_week <- previous_week_ref$iso_week[[1]]
+
+# ---------- 2) 最新週の全国値と前週値を作る ----------
+# ここで「全国平均 0.1 以上」の対象を作る。
+# 1件目・2件目・3件目のすべての母集団はこの条件に合わせる。
+nationwide_latest <- by_week_for_pick %>%
+  filter(pref == "全国", iso_year == latest_iso_year, iso_week == latest_iso_week) %>%
+  transmute(
+    category,
+    current_date = date,
+    current_value = weekly_value,
+    current_ma4 = ma4
+  )
+
+nationwide_previous <- by_week_for_pick %>%
+  filter(pref == "全国", iso_year == previous_iso_year, iso_week == previous_iso_week) %>%
+  transmute(
+    category,
+    previous_value = weekly_value,
+    previous_ma4 = ma4
+  )
+
+# ---------- 3) 警報基準比と前週比増加率を計算する ----------
+# 既存の alert CSV を使い、警報開始基準に対する比率を作る。
+# 比率は current_value ベースで計算する。
+# ここは「定点あたり感染者数がいまどれだけ警報線から離れているか」を見るため。
+nationwide_metrics <- nationwide_latest %>%
+  left_join(nationwide_previous, by = "category") %>%
+  left_join(alert %>% select(category, alert_start), by = "category") %>%
+  mutate(
+    ratio_alert = if_else(
+      is.finite(alert_start) & alert_start > 0 & is.finite(current_value),
+      current_value / alert_start,
+      NA_real_
+    ),
+    growth1Rate = if_else(
+      is.finite(previous_value) & previous_value >= 0.1 & is.finite(current_value) & current_value >= 0.1,
+      (current_value - previous_value) / previous_value,
+      NA_real_
+    ),
+    growth1Diff = if_else(
+      is.finite(current_value) & is.finite(previous_value),
+      current_value - previous_value,
+      NA_real_
+    )
+  ) %>%
+  filter(is.finite(current_value), current_value >= 0.1)
+
+# ---------- 4) seasonal baseline を「同週±2週の過去年全国データ」で計算する ----------
+# 要件:
+#   - baseline 候補は、最新年を除く過去年
+#   - 最新週と同じ週番号、または前後2週
+#   - week 比較は循環的に扱う
+#   - 52週/53週は、その感染症系列に存在する最大週番号を見て安全に処理する
+#
+# 実装方針:
+#   - category ごとに series を list に入れず、
+#     できるだけ long table のまま処理する
+#   - max_week は category ごとに過去年を含む全国系列から計算する
+#   - circular distance = min(abs(diff), max_week - abs(diff))
+seasonal_baseline_stats <- by_week_for_pick %>%
+  filter(pref == "全国") %>%
+  group_by(category) %>%
+  mutate(max_week_in_series = max(iso_week[is.finite(iso_week)], na.rm = TRUE)) %>%
+  ungroup() %>%
+  filter(
+    iso_year < latest_iso_year,
+    pmin(
+      abs(iso_week - latest_iso_week),
+      max_week_in_series - abs(iso_week - latest_iso_week)
+    ) <= 2
+  ) %>%
+  group_by(category) %>%
+  summarise(
+    baseline_n = sum(is.finite(weekly_value)),
+    baseline_mean = if_else(sum(is.finite(weekly_value)) >= 1, mean(weekly_value, na.rm = TRUE), NA_real_),
+    baseline_sd = if_else(sum(is.finite(weekly_value)) >= 2, sd(weekly_value, na.rm = TRUE), NA_real_),
+    .groups = "drop"
+  ) %>%
+  mutate(
+    baseline_mean = if_else(is.finite(baseline_mean) & baseline_mean > 0, baseline_mean, NA_real_),
+    baseline_sd = if_else(is.finite(baseline_sd) & baseline_sd > 0, baseline_sd, NA_real_)
+  )
+
+# ---------- 5) anomaly 指標を計算する ----------
+# ルール:
+#   - baseline_mean <= 0 は NA
+#   - baseline_sd <= 0 は NA
+#   - baseline_mean >= 0.1 を候補条件に入れる
+#   - anomaly_z が計算できないものは除外
+nationwide_anomaly <- nationwide_metrics %>%
+  left_join(seasonal_baseline_stats, by = "category") %>%
+  mutate(
+    anomaly_z = if_else(
+      is.finite(current_value) & is.finite(baseline_mean) & baseline_mean >= 0.1 & is.finite(baseline_sd) & baseline_sd > 0,
+      (current_value - baseline_mean) / baseline_sd,
+      NA_real_
+    ),
+    anomaly_ratio = if_else(
+      is.finite(current_value) & is.finite(baseline_mean) & baseline_mean >= 0.1,
+      current_value / baseline_mean,
+      NA_real_
+    ),
+    anomaly_diff = if_else(
+      is.finite(current_value) & is.finite(baseline_mean),
+      current_value - baseline_mean,
+      NA_real_
+    )
+  )
+
+# ---------- 6) 3つの「1位」を選ぶ ----------
+# 1. もっとも危険 = 警報基準比が最大
+#    同値なら current_value, growth1Rate を見て順に決める。
+danger_top <- nationwide_metrics %>%
+  filter(is.finite(ratio_alert)) %>%
+  arrange(desc(ratio_alert), desc(current_value), desc(growth1Rate), desc(growth1Diff)) %>%
+  slice_head(n = 1)
+
+# 2. もっとも増加率が激しい = 前週比増加率が最大
+#    母数が小さすぎるノイズを避けるため、previous_value >= 0.1 を要求している。
+growth_top <- nationwide_metrics %>%
+  filter(is.finite(growth1Rate)) %>%
+  arrange(desc(growth1Rate), desc(current_value), desc(growth1Diff)) %>%
+  slice_head(n = 1)
+
+# 3. もっとも季節外れに多い = anomaly の順位規則で最上位
+#    優先順は要件どおり、z -> ratio -> diff -> current_value。
+anomaly_top <- nationwide_anomaly %>%
+  filter(is.finite(baseline_mean), baseline_mean >= 0.1) %>%
+  filter(is.finite(anomaly_z)) %>%
+  arrange(desc(anomaly_z), desc(anomaly_ratio), desc(anomaly_diff), desc(current_value)) %>%
+  slice_head(n = 1)
+
+# ---------- 7) 短い総括記事を書くための材料をまとめる ----------
+# 記事生成では「1つの指標だけ」で書くと雑になる。
+# なので、少なくとも以下を残す。
+#   - 現在値: 今どれくらい多いのか
+#   - 前週比: 今まさに増えているのか
+#   - 警報基準比: 制度上の危険水準にどれだけ近い/超えているか
+#   - anomaly系: 季節的に見てどれだけ異常か
+#   - baseline_mean: 例年同時期の通常水準
+story_inputs <- bind_rows(
+  danger_top %>% mutate(topic = "もっとも危険"),
+  growth_top %>% mutate(topic = "もっとも増加率が激しい"),
+  anomaly_top %>% mutate(topic = "もっとも季節外れに多い")
+) %>%
+  select(
+    topic,
+    category,
+    current_date,
+    current_value,
+    previous_value,
+    growth1Rate,
+    growth1Diff,
+    alert_start,
+    ratio_alert,
+    baseline_n,
+    baseline_mean,
+    baseline_sd,
+    anomaly_z,
+    anomaly_ratio,
+    anomaly_diff
+  )
+
+story_inputs
+```
+
+## 短い総括記事を書くためのロジック
+
+ここは**自動生成文のテンプレートをどう設計するか**の話です。  
+既存コードでは `importance_score` に多くを寄せていますが、今回の3本は**役割が違う**ので、
+同じ書き方に寄せるより、指標ごとに言い分を分けたほうが自然です。
+
+### 1. 「もっとも危険」の記事ロジック
+
+この見出しは、**制度上の閾値に最も近い / すでに超えているか**を伝える役目です。  
+したがって主語は `ratio_alert` です。  
+ただし `ratio_alert` だけで書くと、患者数そのものが極端に小さい場合でも大げさに見えるので、
+少なくとも次を同時に見るべきです。
+
+- `current_value`: 今の全国値がどれだけあるか
+- `ratio_alert`: 警報基準に対して何倍か
+- `growth1Rate`: いま増勢か、横ばいか
+- `anomaly_z`: 季節外れの動きも伴っているか
+
+書き分けの骨格は次の通りです。
+
+- `ratio_alert >= 1`: 「警報基準を上回る」
+- `ratio_alert < 1` かつ高位: 「警報基準に迫る」
+- さらに `growth1Rate > 0`: 「増加基調」
+- さらに `anomaly_z >= 2`: 「例年同時期と比べても高い」
+
+つまり、**危険記事は「制度基準」→「足元の増勢」→「季節逸脱」**の順で組み立てるのが筋です。
+
+### 2. 「もっとも増加率が激しい」の記事ロジック
+
+この見出しは、**いま上がる速度が最も速いもの**を示す役目です。  
+主語は `growth1Rate` ですが、前週値が低すぎると比率は簡単に跳ねるので、
+今回コードでは `previous_value >= 0.1` を必須にしています。これは妥当です。
+
+ただし、増加率だけを見出しにするとノイズを拾いやすいので、本文では次を必ず添えるべきです。
+
+- `previous_value` と `current_value`: 実数でどれだけ増えたか
+- `growth1Rate`: 何割・何倍増か
+- `ratio_alert`: その増加が危険水準に近いのか
+- `baseline_mean` と `anomaly_z`: 季節要因の範囲内か、逸脱か
+
+このロジックで書くと、
+「増えているがまだ低水準」なのか、
+「増えていて、しかも警報や季節逸脱も伴う」のかを分けられます。
+
+### 3. 「もっとも季節外れに多い」の記事ロジック
+
+この見出しは、**季節パターンから見て最も外れているもの**を示す役目です。  
+主語は `anomaly_z` で、同点処理として `anomaly_ratio` → `anomaly_diff` → `current_value` を使っています。
+
+ここで重要なのは、`anomaly_z` が高いことと、絶対数が大きいことは別だという点です。  
+そのため記事では、次の順に言うのが自然です。
+
+- `baseline_mean`: 例年同時期はどの程度か
+- `current_value`: 今回はどの程度か
+- `anomaly_z`: ばらつき基準でどれだけ外れているか
+- `anomaly_ratio`: 例年比で何倍か
+- `anomaly_diff`: 実数でどれだけ上振れたか
+- `ratio_alert`: 制度基準にも接近しているか
+
+つまり、**季節外れ記事は「例年の通常値」→「今回値」→「外れ方」→「実務上の危険度」**の順がよいです。
+
+## そのまま使える短文生成関数
+
+以下は、上の3種をそれぞれ1文で返す最小限の関数です。  
+文章を派手にするより、まずは指標の意味が崩れない文を返すことを優先しています。
+
+```{r, eval=FALSE}
+# 数値を雑に出さないための整形関数
+fmt1 <- function(x, digits = 1) ifelse(is.finite(x), format(round(x, digits), nsmall = digits), "—")
+fmt_pct <- function(x, digits = 0) ifelse(is.finite(x), paste0(format(round(x * 100, digits), nsmall = digits), "%"), "—")
+
+write_danger_sentence <- function(x) {
+  if (nrow(x) == 0) return("該当データがありません。")
+  paste0(
+    x$category[[1]], "は全国で定点あたり", fmt1(x$current_value[[1]], 2),
+    "人となり、警報基準比は", fmt1(x$ratio_alert[[1]], 2), "倍です。",
+    if (is.finite(x$ratio_alert[[1]]) && x$ratio_alert[[1]] >= 1) "警報基準を上回っています。" else "警報基準に近づいています。",
+    if (is.finite(x$growth1Rate[[1]]) && x$growth1Rate[[1]] > 0) paste0("前週比は", fmt_pct(x$growth1Rate[[1]]), "増で、足元でも増勢です。") else ""
+  )
+}
+
+write_growth_sentence <- function(x) {
+  if (nrow(x) == 0) return("該当データがありません。")
+  paste0(
+    x$category[[1]], "は全国で前週の", fmt1(x$previous_value[[1]], 2),
+    "人から", fmt1(x$current_value[[1]], 2), "人へ増え、増加率は", fmt_pct(x$growth1Rate[[1]]), "で最も高くなりました。",
+    if (is.finite(x$ratio_alert[[1]]) && x$ratio_alert[[1]] >= 1) "警報基準も上回っています。" else if (is.finite(x$ratio_alert[[1]])) paste0("警報基準比は", fmt1(x$ratio_alert[[1]], 2), "倍です。") else ""
+  )
+}
+
+write_anomaly_sentence <- function(x) {
+  if (nrow(x) == 0) return("該当データがありません。")
+  paste0(
+    x$category[[1]], "は全国で定点あたり", fmt1(x$current_value[[1]], 2),
+    "人で、例年同時期の平均", fmt1(x$baseline_mean[[1]], 2), "人を上回りました。",
+    "anomaly z-score は", fmt1(x$anomaly_z[[1]], 2), "、例年比は", fmt1(x$anomaly_ratio[[1]], 2), "倍です。"
+  )
+}
+
+# 実行例
+write_danger_sentence(danger_top)
+write_growth_sentence(growth_top)
+write_anomaly_sentence(anomaly_top)
+```
+
+## この追加コードの要点
+
+- 既存コードは `importance_score` にかなり寄せていますが、今回の3本は**目的関数が別**です。  
+  同じスコアでまとめると、何を「危険」と呼んでいるのか曖昧になります。
+- そのため、
+  - 危険 = `ratio_alert`
+  - 増加 = `growth1Rate`
+  - 季節外れ = `anomaly_z`
+  と、**評価軸を分離**しました。
+- anomaly は既存の `computeSeasonalBaseline()` とほぼ同じ思想ですが、
+  今回の要件に合わせて、
+  - 同週±2週
+  - 循環比較
+  - `baseline_mean <= 0` / `baseline_sd <= 0` は `NA`
+  - `baseline_mean >= 0.1` を候補条件に採用
+  を明示しています。
+- 前週比は、前週値が極端に小さいと暴れるので、`previous_value >= 0.1` を条件に入れています。  
+  これを入れないと「0.01 → 0.03」のようなノイズが上位に来やすく、記事として弱いです。
+- 既存コードは削除せず、**すべて `eval=FALSE` でマスク**しています。  
+  つまり、参照用に残しつつ、うっかり全体実行されない形です。
