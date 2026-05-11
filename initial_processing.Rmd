@@ -18,7 +18,7 @@ library(lubridate)
 ```{r, echo=FALSE}
 
 # 保存フォルダ内のCSVファイルを列挙
-csv_files <- list.files(path = "data", pattern = "\\.csv$", full.names = TRUE)
+csv_files <- list.files(path = "data", pattern = "-teiten\\.csv$", full.names = TRUE)
 
 
 # cp932のCSVをUTF-8の一時ファイルに変換してからread_csvに渡すヘルパー

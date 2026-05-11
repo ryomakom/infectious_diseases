@@ -242,36 +242,45 @@ for (week_label in distinct_weeks) {
       error = function(e) FALSE
     )
     if (success && file.exists(local_file)) {
-      df <- process_csv(local_file) %>%
-        mutate(year = as.double(str_sub(week, 1, 4))) %>%
-        mutate(pref = ifelse(pref == "総数", "全国", pref)) %>%
-        filter(!is.na(pref)) %>%
-        bind_cols(
-          str_match(.$week,
-            "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
+      df <- tryCatch({
+        process_csv(local_file) %>%
+          mutate(year = as.double(str_sub(week, 1, 4))) %>%
+          mutate(pref = ifelse(pref == "総数", "全国", pref)) %>%
+          filter(!is.na(pref)) %>%
+          bind_cols(
+            str_match(.$week,
+              "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
+            ) %>%
+              as_tibble(.name_repair = "minimal") %>%
+              setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
           ) %>%
-            as_tibble(.name_repair = "minimal") %>%
-            setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
-        ) %>%
-        mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
-        mutate(
-          date = as.Date(sprintf("%s-%02d-%02d", year_str, as.integer(m1), as.integer(d1))),
-          week_label_clean = ifelse(
-            is.na(year_str), NA_character_,
-            sprintf("%d月%d日～%d月%d日（%s年）",
-                    as.integer(m1), as.integer(d1),
-                    as.integer(m2), as.integer(d2), year_str)
-          )
-        ) %>%
-        dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
-        filter(str_detect(category, "定当")) %>%
-        mutate(category = str_remove(category, "_定当")) %>%
-        dplyr::select(date, pref, category, value, year, week_label_clean) %>%
-        mutate(value = as.double(value)) %>%
-        filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
-        mutate(value = ifelse(is.na(value), 0, value))
-      log_entry <- tibble(timestamp=as.character(ts), week_label=week_label, action="downloaded", rows=nrow(df))
-      data_list[[week_label]] <- df
+          mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
+          mutate(
+            date = as.Date(sprintf("%s-%02d-%02d", year_str, as.integer(m1), as.integer(d1))),
+            week_label_clean = ifelse(
+              is.na(year_str), NA_character_,
+              sprintf("%d月%d日～%d月%d日（%s年）",
+                      as.integer(m1), as.integer(d1),
+                      as.integer(m2), as.integer(d2), year_str)
+            )
+          ) %>%
+          dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
+          filter(str_detect(category, "定当")) %>%
+          mutate(category = str_remove(category, "_定当")) %>%
+          dplyr::select(date, pref, category, value, year, week_label_clean) %>%
+          mutate(value = as.double(value)) %>%
+          filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
+          mutate(value = ifelse(is.na(value), 0, value))
+      }, error = function(e) {
+        message("週データの処理に失敗しました (", week_label, "): ", conditionMessage(e))
+        NULL
+      })
+      if (!is.null(df)) {
+        log_entry <- tibble(timestamp=as.character(ts), week_label=week_label, action="downloaded", rows=nrow(df))
+        data_list[[week_label]] <- df
+      } else {
+        log_entry <- tibble(timestamp=as.character(ts), week_label=week_label, action="parse_error", rows=NA_integer_)
+      }
     } else {
       log_entry <- tibble(timestamp=as.character(ts), week_label=week_label, action="not_found", rows=NA_integer_)
     }

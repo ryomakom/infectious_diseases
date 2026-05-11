@@ -224,6 +224,12 @@ function downloadSingleChartCsv(category, data) {
   downloadCsv(category, rows);
 }
 
+// Daily cache-buster: forces browsers to revalidate CSVs once per day
+const _cacheBuster = (() => {
+  const d = new Date();
+  return `?v=${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+})();
+
 function buildPathCandidates(relativePath) {
   const p = String(relativePath || "").replace(/^\.\//, "");
   const candidates = [
@@ -241,7 +247,7 @@ async function loadCsvFlexible(relativePath, rowParser) {
   let lastError = null;
   for (const path of candidates) {
     try {
-      const data = await d3.csv(path, rowParser);
+      const data = await d3.csv(path + _cacheBuster, rowParser);
       console.log("Loaded CSV:", path, "(" + data.length + ")");
       return data;
     } catch (err) {
@@ -256,7 +262,7 @@ async function loadTextFlexible(relativePath) {
   let lastError = null;
   for (const path of candidates) {
     try {
-      const response = await fetch(path);
+      const response = await fetch(path + _cacheBuster);
       if (!response.ok) {
         throw new Error("HTTP " + response.status);
       }
