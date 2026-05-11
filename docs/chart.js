@@ -705,12 +705,18 @@ function drawFocusContextChart(category, data) {
     .y(d => yFocus(d.value));
 
   const prefGroups = drawLines(svgFocus, data, lineFocus);
-  drawPoints(svgFocus, prefGroups, xFocus, yFocus);
+
+  // 初期描画のドット・ラベルは表示窓内のデータだけに限定する。
+  // 全データ（最大700点超）でサークルを生成すると DOM ノード数が爆増して重くなるため。
+  // ブラッシュ移動時は brushed() でフィルタ済みデータから再生成されるので一貫性がある。
+  const initialVisible = data.filter(d => d.date >= initialExtent[0] && d.date <= initialExtent[1]);
+  const prefGroupsVisible = d3.groups(initialVisible, d => d.pref);
+  drawPoints(svgFocus, prefGroupsVisible, xFocus, yFocus);
 
   const svgFocusLabels = svgFocusRoot.append("g")
     .attr("class", "focus-end-labels")
     .attr("transform", focusTransform);
-  drawEndLabels(svgFocusLabels, prefGroups, xFocus, yFocus, initialExtent, focusWidth + focusMargin.right - 8, focusHeight, category);
+  drawEndLabels(svgFocusLabels, prefGroupsVisible, xFocus, yFocus, initialExtent, focusWidth + focusMargin.right - 8, focusHeight, category);
   drawBrush({
     category,
     data,
