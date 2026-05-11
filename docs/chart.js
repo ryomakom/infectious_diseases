@@ -276,11 +276,12 @@ async function _renderPlaceholder(placeholder) {
   }
 }
 
-// goToChart など「即座に描画が必要」な場合に呼ぶ
+// goToChart など「即座に描画が必要」な場合に呼ぶ。Promise を返すので await 可能。
 function ensureCategoryChartDrawn(category) {
   const key = cssSafe(category);
   const placeholder = document.querySelector(`#chart-container .chart-placeholder[data-category-key="${key}"]`);
-  if (placeholder) _renderPlaceholder(placeholder);
+  if (placeholder) return _renderPlaceholder(placeholder);
+  return Promise.resolve();
 }
 // ---------------------------------------------------------------------------
 
@@ -866,7 +867,7 @@ async function goToChart(pref, category) {
   renderChartDiseaseTags();
   state.highlightedPrefByCategory[category] = pref;
   await drawAllCharts(getSelectedDropdownPrefectures());
-  ensureCategoryChartDrawn(category); // placeholder なら即描画
+  await ensureCategoryChartDrawn(category); // placeholder なら描画完了まで待つ
   const charts = document.querySelectorAll(".chart");
   const chartContainer = document.getElementById("chart-container");
   if (chartContainer) chartContainer.querySelectorAll(".chart-target").forEach(el => el.classList.remove("chart-target"));
