@@ -79,16 +79,8 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
-            LAST_MSG=$(git log -1 --pretty=%s)
-            if [ "$LAST_MSG" = "Update disease CSV outputs" ]; then
-              # 前回もデータ更新コミットなら上書き（履歴を増やさない）
-              git commit --amend --no-edit
-              git push --force-with-lease
-            else
-              # コードコミットの直後など、新規コミットとして追加
-              git commit -m "Update disease CSV outputs"
-              git push
-            fi
+            git commit -m "Update disease CSV outputs"
+            git push
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

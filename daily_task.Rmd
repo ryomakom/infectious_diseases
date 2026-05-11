@@ -256,7 +256,7 @@ for (week_label in distinct_weeks) {
           ) %>%
           mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
           mutate(
-            date = as.Date(sprintf("%s-%02d-%02d", year_str, as.integer(m1), as.integer(d1))),
+            date = as.Date(sprintf("%s-%02d-%02d", year_str, as.integer(m2), as.integer(d2))),
             week_label_clean = ifelse(
               is.na(year_str), NA_character_,
               sprintf("%d月%d日～%d月%d日（%s年）",

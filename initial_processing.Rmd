@@ -96,20 +96,24 @@ process_csv <- function(file_path) {
 }
 
 # すべてのCSVファイルを処理し、結果を結合
+# 個別ファイルのパースエラーはスキップして続行する
 diseases <- csv_files %>%
-  lapply(process_csv) %>%
-  bind_rows() %>% 
-  mutate(year=as.double(str_sub(week,1,4))) %>% 
-  mutate(week_num=str_sub(week,6,7)) %>% 
-  mutate(date=as.Date(str_c(year,"-",str_sub(week,17,18),"-",str_sub(week,20,21)))) %>% 
-  dplyr::select(date,year,pref,category,value,everything()) %>% 
-  mutate(pref=ifelse(pref=="総数","全国",pref)) %>% 
+  lapply(function(f) {
+    tryCatch(process_csv(f), error = function(e) {
+      message("スキップ: ", basename(f), " — ", conditionMessage(e))
+      NULL
+    })
+  }) %>%
+  Filter(Negate(is.null), .) %>%
+  bind_rows() %>%
+  mutate(year=as.double(str_sub(week,1,4))) %>%
+  mutate(pref=ifelse(pref=="総数","全国",pref)) %>%
   filter(!is.na(pref))
 
 
 # D3ビジュアライズ用のデータ
+# regex で週テキストから日付・ラベルを抽出（文字位置に依存しないため堅牢）
 cleaned_diseases <- diseases %>%
-  # 日付部分を列に展開
   bind_cols(
     str_match(.$week,
       "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
@@ -117,19 +121,20 @@ cleaned_diseases <- diseases %>%
       as_tibble(.name_repair = "minimal") %>%
       setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
   ) %>%
-  # 必要な列を整数に変換
   mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
-  # ラベルを作成（条件付きで）
-  mutate(week_label_clean = ifelse(
-    is.na(year_str), NA_character_,
-    sprintf("%d月%d日～%d月%d日（%s年）",
-            m1, d1, m2, d2, year_str)
-  )) %>%
-  # 不要列削除
+  mutate(
+    # date = 週の終了日（daily_task.Rmd と統一）
+    date = as.Date(sprintf("%s-%02d-%02d", year_str, as.integer(m2), as.integer(d2))),
+    week_label_clean = ifelse(
+      is.na(year_str), NA_character_,
+      sprintf("%d月%d日～%d月%d日（%s年）",
+              as.integer(m1), as.integer(d1),
+              as.integer(m2), as.integer(d2), year_str)
+    )
+  ) %>%
   dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
-  # 以降の処理を継続
-  filter(str_detect(category, "定当")) %>% 
-  mutate(category = str_remove(category, "_定当")) %>% 
+  filter(str_detect(category, "定当")) %>%
+  mutate(category = str_remove(category, "_定当")) %>%
   dplyr::select(date, pref, category, value, year, week_label_clean) %>%
   mutate(value = as.double(value)) %>%
   filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
