@@ -103,78 +103,6 @@ category_to_display <- function(x) {
 cleaned_diseases <- read_csv("merged_data/merged_data.csv", show_col_types = FALSE) %>%
   mutate(category = category_to_display(category))
 
-# ── ディスク上の未処理テイテンファイルをバックフィル ──────────────────
-# merged_data に含まれていない週のテイテンCSVをすべて処理してデータを補完する。
-# initial_processing.Rmd が何らかの理由で失敗しても daily_task がカバーできる。
-{
-  existing_end_dates <- cleaned_diseases %>%
-    filter(!is.na(date)) %>%
-    pull(date) %>%
-    as.Date() %>%
-    unique()
-
-  disk_teiten <- list.files(data_dir, pattern = "-teiten\\.csv$", full.names = TRUE)
-
-  backfill_list <- list()
-
-  for (tfile in disk_teiten) {
-    wk <- basename(tfile) %>% str_remove("-teiten\\.csv$")
-    wk_end_date <- year_week %>% filter(year_week == wk) %>% pull(date)
-    if (length(wk_end_date) == 0) next          # year_week.csv に対応行なし
-    if (wk_end_date %in% existing_end_dates) next # 既にmerged_dataに存在
-
-    message("バックフィル処理: ", wk)
-    df_bf <- tryCatch({
-      process_csv(tfile) %>%
-        mutate(year = as.double(str_sub(week, 1, 4))) %>%
-        mutate(pref = ifelse(pref == "総数", "全国", pref)) %>%
-        filter(!is.na(pref)) %>%
-        bind_cols(
-          str_match(.$week,
-            "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
-          ) %>%
-            as_tibble(.name_repair = "minimal") %>%
-            setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
-        ) %>%
-        mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
-        mutate(
-          date = as.Date(sprintf("%s-%02d-%02d",
-                                 year_str, as.integer(m2), as.integer(d2))),
-          week_label_clean = ifelse(
-            is.na(year_str), NA_character_,
-            sprintf("%d月%d日～%d月%d日（%s年）",
-                    as.integer(m1), as.integer(d1),
-                    as.integer(m2), as.integer(d2), year_str)
-          )
-        ) %>%
-        dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
-        filter(str_detect(category, "定当")) %>%
-        mutate(category = str_remove(category, "_定当")) %>%
-        dplyr::select(date, pref, category, value, year, week_label_clean) %>%
-        mutate(value = as.double(value)) %>%
-        filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
-        mutate(value = ifelse(is.na(value), 0, value)) %>%
-        mutate(category = category_to_display(category))
-    }, error = function(e) {
-      message("バックフィル失敗: ", wk, " — ", conditionMessage(e))
-      NULL
-    })
-
-    if (!is.null(df_bf) && nrow(df_bf) > 0) {
-      message("  追加: ", nrow(df_bf), " 行 (date=", as.character(unique(df_bf$date)), ")")
-      backfill_list[[wk]] <- df_bf
-      existing_end_dates <- c(existing_end_dates, unique(as.Date(df_bf$date)))
-    }
-  }
-
-  if (length(backfill_list) > 0) {
-    cleaned_diseases <- bind_rows(cleaned_diseases, bind_rows(backfill_list)) %>%
-      distinct()
-    cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
-    message("バックフィル完了: ", length(backfill_list), " 週分を統合しました")
-  }
-}
-
 # cp932のCSVをUTF-8の一時ファイルに変換してからread_csvに渡すヘルパー
 # （Linux環境ではvroom/readrのlocale指定だけではcp932を正しく扱えないことがあるため、
 #   OSのiconvコマンドで一時ファイルに変換するのが最も確実）
@@ -271,6 +199,76 @@ data_dir <- "data"
 log_dir  <- "logs"
 if (!dir.exists(data_dir)) dir.create(data_dir)
 if (!dir.exists(log_dir))  dir.create(log_dir)
+
+# ── ディスク上の未処理テイテンファイルをバックフィル ──────────────────
+# merged_data に含まれていない週のファイルをすべて処理して補完する。
+# initial_processing.Rmd が失敗しても daily_task がカバーできるようにする。
+{
+  existing_end_dates <- cleaned_diseases %>%
+    filter(!is.na(date)) %>% pull(date) %>% as.Date() %>% unique()
+
+  disk_teiten <- list.files(data_dir, pattern = "-teiten\\.csv$", full.names = TRUE)
+  backfill_list <- list()
+
+  for (tfile in disk_teiten) {
+    wk <- basename(tfile) %>% str_remove("-teiten\\.csv$")
+    wk_end_date <- year_week %>% filter(year_week == wk) %>% pull(date)
+    if (length(wk_end_date) == 0) next
+    if (wk_end_date %in% existing_end_dates) next
+
+    message("バックフィル処理: ", wk)
+    df_bf <- tryCatch({
+      process_csv(tfile) %>%
+        mutate(year = as.double(str_sub(week, 1, 4))) %>%
+        mutate(pref = ifelse(pref == "総数", "全国", pref)) %>%
+        filter(!is.na(pref)) %>%
+        bind_cols(
+          str_match(.$week,
+            "(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)"
+          ) %>%
+            as_tibble(.name_repair = "minimal") %>%
+            setNames(c("full", "year_str", "m1", "d1", "m2", "d2"))
+        ) %>%
+        mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %>%
+        mutate(
+          date = as.Date(sprintf("%s-%02d-%02d",
+                                 year_str, as.integer(m2), as.integer(d2))),
+          week_label_clean = ifelse(
+            is.na(year_str), NA_character_,
+            sprintf("%d月%d日～%d月%d日（%s年）",
+                    as.integer(m1), as.integer(d1),
+                    as.integer(m2), as.integer(d2), year_str)
+          )
+        ) %>%
+        dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %>%
+        filter(str_detect(category, "定当")) %>%
+        mutate(category = str_remove(category, "_定当")) %>%
+        dplyr::select(date, pref, category, value, year, week_label_clean) %>%
+        mutate(value = as.double(value)) %>%
+        filter(!(category == "ＲＳウイルス感染症" & is.na(value))) %>%
+        mutate(value = ifelse(is.na(value), 0, value)) %>%
+        mutate(category = category_to_display(category))
+    }, error = function(e) {
+      message("バックフィル失敗: ", wk, " — ", conditionMessage(e)); NULL
+    })
+
+    if (!is.null(df_bf) && nrow(df_bf) > 0) {
+      message("  追加: ", nrow(df_bf), " 行 (date=",
+              paste(unique(as.character(df_bf$date)), collapse=","), ")")
+      backfill_list[[wk]] <- df_bf
+      existing_end_dates <- c(existing_end_dates, unique(as.Date(df_bf$date)))
+    }
+  }
+
+  if (length(backfill_list) > 0) {
+    cleaned_diseases <- bind_rows(cleaned_diseases, bind_rows(backfill_list)) %>%
+      distinct()
+    cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
+    message("バックフィル完了: ", length(backfill_list), " 週分を統合しました")
+  } else {
+    message("バックフィル: 未処理ファイルなし")
+  }
+}
 
 # — 累積ログファイル設定 —
 log_file <- file.path(log_dir, "log.csv")
