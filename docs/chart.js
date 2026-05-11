@@ -238,15 +238,31 @@ function getOrCreateLazyObserver() {
 }
 
 // placeholder を実チャートに置き換える（元の位置を保ったまま）
-function _renderPlaceholder(placeholder) {
+async function _renderPlaceholder(placeholder) {
   const pending = _pendingChartData.get(placeholder);
   if (!pending) return;
   if (!placeholder.isConnected) return; // DOMから切り離されていたら何もしない
   if (_lazyObserver) _lazyObserver.unobserve(placeholder);
+
+  // 非 always-loaded の都道府県は、この疾患分だけ今ロードする
+  if (typeof ensurePrefCatLoaded === "function" && pending.selectedPrefs) {
+    const alwaysLoaded = new Set(["全国", "東京都", "大阪府"]);
+    const toLoad = pending.selectedPrefs.filter(p => !alwaysLoaded.has(p));
+    if (toLoad.length) {
+      await Promise.all(toLoad.map(p => ensurePrefCatLoaded(p, pending.cat)));
+    }
+  }
+
+  // ロード後に state.allData から catData を再構築
+  const catData = pending.selectedPrefs
+    ? state.allData.filter(d => pending.selectedPrefs.includes(d.pref) && d.category === pending.cat)
+    : pending.catData;
+
+  if (!placeholder.isConnected) return; // ロード中に別操作で切り離された場合
   const nextSibling = placeholder.nextSibling;
   const parent = placeholder.parentNode;
   placeholder.remove();
-  drawFocusContextChart(pending.cat, pending.catData);
+  drawFocusContextChart(pending.cat, catData);
   const key = cssSafe(pending.cat);
   state.chartRenderCache[key] = pending.signature;
   // drawFocusContextChart はコンテナ末尾に追記するので元の位置へ戻す
@@ -267,14 +283,18 @@ function ensureCategoryChartDrawn(category) {
 // Diff-update charts by category key instead of clearing all DOM nodes.
 // 選択中の都道府県のデータがまだ読み込まれていない場合は先にロードしてから描画する。
 async function drawAllCharts(selectedPrefs) {
-  await Promise.all(selectedPrefs.map(p => ensurePrefLoaded(p)));
   _drawAllChartsSync(selectedPrefs);
 }
 function _drawAllChartsSync(selectedPrefs) {
   if (!els.chartContainer) return;
   const container = d3.select("#chart-container");
+  // state.selectedCategories に含まれる全カテゴリを描画対象とする。
+  // 非 always-loaded 県のデータは _renderPlaceholder がオンデマンドでロードする。
   const filtered = state.allData.filter(d => selectedPrefs.includes(d.pref));
-  let catGroups = d3.groups(filtered, d => d.category).filter(([cat]) => state.selectedCategories.has(cat));
+  let catGroups = [...state.selectedCategories].map(cat => {
+    const catData = filtered.filter(d => d.category === cat);
+    return [cat, catData];
+  });
   catGroups.sort((a, b) => {
     const ia = state.categoryDisplayOrder.indexOf(a[0]);
     const ib = state.categoryDisplayOrder.indexOf(b[0]);
@@ -328,7 +348,7 @@ function _drawAllChartsSync(selectedPrefs) {
       placeholder.className = "chart-placeholder";
       placeholder.setAttribute("data-category-key", key);
       placeholder.setAttribute("data-category", cat);
-      _pendingChartData.set(placeholder, { cat, catData, signature });
+      _pendingChartData.set(placeholder, { cat, selectedPrefs, signature });
       state.chartRenderCache[key] = signature; // placeholder 中もシグネチャを保持
       orderedNodes.push(placeholder);
       newPlaceholders.push(placeholder);

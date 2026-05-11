@@ -732,14 +732,16 @@ function refreshRankingTable() {
   const result = computeRanking();
   renderRanking(result);
 
-  // ランキングテーブルの可視行に必要な都道府県データが未ロードなら
+  // ランキングテーブルの可視行に必要な都道府県×疾患データが未ロードなら
   // バックグラウンドで取得してスパークラインを再描画する
-  if (typeof ensurePrefLoaded !== "function") return;
+  if (typeof ensurePrefCatLoaded !== "function") return;
   const alwaysLoaded = new Set(["全国", "東京都", "大阪府"]);
-  const unloaded = [...new Set(result.rows.map(r => r.pref))]
-    .filter(p => !alwaysLoaded.has(p) && !state.allData.some(d => d.pref === p));
-  if (!unloaded.length) return;
-  Promise.all(unloaded.map(p => ensurePrefLoaded(p))).then(() => {
+  const pairs = result.rows
+    .filter(r => !alwaysLoaded.has(r.pref))
+    .filter(r => !state.allData.some(d => d.pref === r.pref && d.category === r.category))
+    .map(r => ({ pref: r.pref, category: r.category }));
+  if (!pairs.length) return;
+  Promise.all(pairs.map(({ pref, category }) => ensurePrefCatLoaded(pref, category))).then(() => {
     renderRanking(computeRanking());
   });
 }

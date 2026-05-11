@@ -395,16 +395,20 @@ cleaned_diseases %>%
   filter(pref == "東京都") %>% write_excel_csv("docs/results/data-東京都.csv")
 cleaned_diseases %>%
   filter(pref == "大阪府") %>% write_excel_csv("docs/results/data-大阪府.csv")
-# 「その他」都道府県は1県1ファイルに分割して出力（JSが必要な県だけ都度ロードできるようにする）
+# 「その他」都道府県は 都道府県×感染症 の組み合わせで1ファイルずつ出力。
+# JS がチャートを描く直前に必要な1疾患分だけロードできるようにするため。
 dir.create("docs/results/pref", recursive = TRUE, showWarnings = FALSE)
 other_prefs <- cleaned_diseases %>%
   filter(!pref %in% c("全国", "東京都", "大阪府")) %>%
   distinct(pref) %>%
   pull(pref)
 for (p in other_prefs) {
-  cleaned_diseases %>%
-    filter(pref == p) %>%
-    write_excel_csv(paste0("docs/results/pref/data-", p, ".csv"))
+  cats_p <- cleaned_diseases %>% filter(pref == p) %>% distinct(category) %>% pull(category)
+  for (cat in cats_p) {
+    cleaned_diseases %>%
+      filter(pref == p, category == cat) %>%
+      write_excel_csv(paste0("docs/results/pref/data-", p, "-", cat, ".csv"))
+  }
 }
 
 # ---- ランキング用: 平年比・警報基準比（毎回実行・cleaned_diseases で算出） ----

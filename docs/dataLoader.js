@@ -165,8 +165,10 @@ async function initialize() {
       if (r && r.pref && !alwaysLoaded.has(r.pref)) prominentPrefs.add(r.pref);
     });
   }
+  // prominent prefs: ニュースダイジェストの上位県を表示疾患3種だけプリロード
   if (prominentPrefs.size > 0) {
-    await Promise.all([...prominentPrefs].map(p => ensurePrefLoaded(p)));
+    const initCats = ["新型コロナウイルス", "インフルエンザ", "RSウイルス"];
+    await Promise.all([...prominentPrefs].flatMap(p => initCats.map(c => ensurePrefCatLoaded(p, c))));
   }
 
   initializeUniqueLists();
@@ -210,7 +212,10 @@ async function initialize() {
       .forEach(d => { if (!alwaysLoaded.has(d.pref)) digestTopPrefsToLoad.add(d.pref); });
   });
   if (digestTopPrefsToLoad.size > 0) {
-    await Promise.all([...digestTopPrefsToLoad].map(p => ensurePrefLoaded(p)));
+    // digest シグナルカテゴリの上位県だけそのカテゴリのデータをプリロード
+    await Promise.all([...digestTopPrefsToLoad].flatMap(p =>
+      [...digestSignalCategories].map(c => ensurePrefCatLoaded(p, c))
+    ));
   }
 
   renderNewsDigestSection(state.newsDigest);
@@ -223,25 +228,25 @@ async function initialize() {
   setupResizeRedraw();
 }
 
-// 都道府県ごとのCSVをオンデマンドで読み込む。
-// 全国・東京都・大阪府は初期ロード済み。それ以外はユーザーが選んだときだけ取得する。
-// _prefLoadCache に Promise をキャッシュし、同じ県の二重ロードを防ぐ。
-const _prefLoadCache = {};
-async function ensurePrefLoaded(prefName) {
+// 都道府県×感染症ごとのCSVをオンデマンドで読み込む。
+// 全国・東京都・大阪府は初期ロード済み（全疾患）。
+// それ以外は表示するチャートの疾患1つ分だけをその場でロードする。
+// _prefCatLoadCache に Promise をキャッシュして二重ロードを防ぐ。
+const _prefCatLoadCache = {};
+function ensurePrefCatLoaded(prefName, catName) {
   const alwaysLoaded = ["全国", "東京都", "大阪府"];
-  if (alwaysLoaded.includes(prefName)) return;
-  if (state.allData.some(d => d.pref === prefName)) return; // 既にデータあり
-  if (_prefLoadCache[prefName]) return _prefLoadCache[prefName]; // ロード中
+  if (alwaysLoaded.includes(prefName)) return Promise.resolve();
+  const key = `${prefName}\x00${catName}`;
+  if (_prefCatLoadCache[key]) return _prefCatLoadCache[key];
 
-  _prefLoadCache[prefName] = loadData(`results/pref/data-${prefName}.csv`)
+  _prefCatLoadCache[key] = loadData(`results/pref/data-${prefName}-${catName}.csv`)
     .then(rows => {
       if (!rows.length) return;
       state.allData = state.allData.concat(rows);
-      initializeUniqueLists();
     })
-    .catch(err => console.warn(`Failed to load pref data: ${prefName}`, err));
+    .catch(err => console.warn(`Failed to load ${prefName}/${catName}`, err));
 
-  return _prefLoadCache[prefName];
+  return _prefCatLoadCache[key];
 }
 
 if (document.readyState === "loading") {
