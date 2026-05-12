@@ -1,5 +1,8 @@
 "use strict";
 
+// Detect coarse-pointer (touch) devices once at startup.
+const _isMobile = window.matchMedia("(pointer: coarse)").matches;
+
 function renderChartPrefectureTags() {
   if (!els.prefSelected) return;
   const prefs = getSelectedDropdownPrefectures();
@@ -513,7 +516,9 @@ function drawLines(svgFocus, data, lineFocus) {
 }
 
 // Draw data points (small markers + larger hit area) for interactions.
+// Skipped entirely on touch/mobile devices — lines-only keeps rendering fast.
 function drawPoints(svgFocus, prefGroups, xFocus, yFocus) {
+  if (_isMobile) return;
   prefGroups.forEach(([pref, arr]) => {
     const safe = cssSafe(pref);
     const pointColor = prefColor(pref);
@@ -769,7 +774,13 @@ function drawBrush(ctx) {
   const ctxAxisG = svgContext.append("g").attr("class", "axis x-axis").attr("transform", `translate(0,${contextHeight})`).call(xAxisContext);
   removeOverlappingTicksX(ctxAxisG);
 
-  const brush = d3.brushX().extent([[0, 0], [contextWidth, contextHeight]]).on("brush end", brushed);
+  // On mobile: only update dim/grips during drag ("brush"); run the full
+  // brushed logic only on release ("end") to avoid per-pixel DOM churn.
+  // On desktop: run the full handler on every "brush" event as before.
+  const brush = d3.brushX()
+    .extent([[0, 0], [contextWidth, contextHeight]])
+    .on("brush", _isMobile ? brushedLightweight : brushed)
+    .on("end",   brushed);
   const brushG = svgContext.append("g").attr("class", "brush").call(brush);
 
   const handleVisibleWidth = 28;
@@ -807,6 +818,19 @@ function drawBrush(ctx) {
   updateGrip(gripLeft, initialSel[0]);
   updateGrip(gripRight, initialSel[1]);
   updateChartVisibility(svgFocus, selectedPrefs, category);
+
+  // Lightweight handler used on mobile during drag — only updates the dim
+  // overlay and grip positions, no DOM node creation / axis redraw.
+  function brushedLightweight(event) {
+    const sel = event.selection;
+    if (!sel) return;
+    const [sx0, sx1] = sel;
+    dimLeft.attr("x", 0).attr("width", sx0);
+    dimRight.attr("x", sx1).attr("width", Math.max(0, contextWidth - sx1));
+    updateHandleHitAreas(sx0, sx1);
+    updateGrip(gripLeft, sx0);
+    updateGrip(gripRight, sx1);
+  }
 
   function brushed(event) {
     const sel = event.selection;
