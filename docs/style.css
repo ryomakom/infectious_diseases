@@ -2764,13 +2764,20 @@ header::after{
   }
 
   /* メインシグナルカード: 「定点あたり」改行 → 「患者数 N.NN人」同行
-     mobile-br を表示することでインラインフロー内に改行を入れる。
-     都道府県カード（.signal-tab-triggers 外）には影響しない。 */
+     font-size を 11px に下げてストラットを圧縮し行間を詰める。
+     metric-number は 26px を明示して表示サイズを維持する。 */
   .signal-tab-triggers .news-digest-spark-metric-value {
     display: block;
+    font-size: 11px;   /* strut = 11px → 行間が詰まる */
+    line-height: 1.3;
   }
   .signal-tab-triggers .mobile-br {
     display: inline;
+  }
+  .signal-tab-triggers .news-digest-spark-metric-number {
+    font-size: 26px;
+    line-height: 1;
+    margin-left: 30px; /* 1文字分追加：20px → 30px */
   }
 
   /* 警報閾値カード: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
@@ -2779,15 +2786,13 @@ header::after{
     flex-direction: row !important;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 1px 6px;
+    gap: 0 6px; /* row-gap: 0 で行間を詰める */
   }
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
+    line-height: 1; /* 高さを 11px に抑えて行間を詰める */
   }
-  /* 数値（●●人・●●倍）を右にずらして1行目ラベルと段差をつける */
-  .signal-tab-triggers .news-digest-spark-metric-number {
-    margin-left: 20px;
-  }
+  /* 数値（●●倍）を右にずらして1行目ラベルと段差をつける */
   .signal-tab-triggers .news-digest-spark-ratio {
     margin-left: 20px;
   }
