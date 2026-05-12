@@ -2277,7 +2277,8 @@ header::after{
    Hidden dropdown
    =================================================== */
 
-.controls-card .dropdown{
+.controls-card .dropdown,
+.ranking-section .dropdown{
   position: relative;
   display: inline-block;
   width: 100%;
@@ -2285,7 +2286,8 @@ header::after{
   text-align: left;
 }
 
-.controls-card .dropdown-btn{
+.controls-card .dropdown-btn,
+.ranking-section .dropdown-btn{
   position: relative;
   display: flex;
   align-items: center;
@@ -2305,11 +2307,13 @@ header::after{
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.controls-card .dropdown-btn.is-placeholder{
+.controls-card .dropdown-btn.is-placeholder,
+.ranking-section .dropdown-btn.is-placeholder{
   color: #94a3b8;
 }
 
-.controls-card .dropdown-btn::after{
+.controls-card .dropdown-btn::after,
+.ranking-section .dropdown-btn::after{
   content: "▾";
   position: absolute;
   right: 10px;
@@ -2320,11 +2324,13 @@ header::after{
   pointer-events: none;
 }
 
-.controls-card .dropdown-btn:hover{
+.controls-card .dropdown-btn:hover,
+.ranking-section .dropdown-btn:hover{
   border-color: var(--color-border-strong);
 }
 
-.controls-card .dropdown-content{
+.controls-card .dropdown-content,
+.ranking-section .dropdown-content{
   display: none;
   position: absolute;
   inset: calc(100% + 4px) 0 auto 0;
@@ -2339,7 +2345,8 @@ header::after{
 
 .dropdown.open .dropdown-content{ display: block; }
 
-.controls-card .option{
+.controls-card .option,
+.ranking-section .option{
   padding: 6px 10px;
   font-size: 13px;
   border-bottom: 1px solid var(--color-border);
@@ -2348,11 +2355,14 @@ header::after{
   transition: background 0.1s ease;
 }
 
-.controls-card .option:last-child{ border-bottom: none; }
+.controls-card .option:last-child,
+.ranking-section .option:last-child{ border-bottom: none; }
 
-.controls-card .option:hover{ background: var(--color-bg); }
+.controls-card .option:hover,
+.ranking-section .option:hover{ background: var(--color-bg); }
 
-.controls-card .option.selected{
+.controls-card .option.selected,
+.ranking-section .option.selected{
   background: var(--color-primary-muted);
   color: var(--color-primary);
   font-weight: 600;

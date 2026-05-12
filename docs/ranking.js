@@ -2,25 +2,19 @@
 
 let metricHelpInitialized = false;
 
-function updateSelectPlaceholderState(selectEl) {
-  if (!selectEl) return;
-  selectEl.classList.toggle("is-placeholder", !selectEl.value);
-}
-
-function refreshSelectOptions(selectEl, options, selectedSet, keepAllOption = false) {
-  if (!selectEl) return;
-  const current = selectEl.value;
-  const optionHtml = [];
-  optionHtml.push('<option value="">ここから追加</option>');
-  if (keepAllOption) optionHtml.push(`<option value="${RANKING_DISEASE_ALL_VALUE}">すべて</option>`);
-  options.forEach(v => {
-    if (!selectedSet.has(v)) optionHtml.push(`<option value="${v}">${v}</option>`);
-  });
-  selectEl.innerHTML = optionHtml.join("");
-  if (current && selectEl.querySelector(`option[value="${CSS.escape(current)}"]`)) {
-    selectEl.value = current;
+// Build/refresh the custom dropdown options for the ranking section.
+// Selected items stay in the list but are highlighted (same pattern as chart section).
+function refreshRankingDropdown(contentEl, options, selectedSet, keepAllOption = false) {
+  if (!contentEl) return;
+  let html = "";
+  if (keepAllOption) {
+    html += `<div class="option" role="option" data-value="${RANKING_DISEASE_ALL_VALUE}" aria-selected="false">すべて（フィルタなし）</div>`;
   }
-  updateSelectPlaceholderState(selectEl);
+  options.forEach(v => {
+    const on = selectedSet.has(v);
+    html += `<div class="option${on ? " selected" : ""}" role="option" data-value="${v}" aria-selected="${on}">${v}</div>`;
+  });
+  contentEl.innerHTML = html;
 }
 
 function renderRankingPrefTags() {
@@ -37,7 +31,7 @@ function renderRankingPrefTags() {
     const remove = () => {
       state.selectedRankingPrefectures.delete(pref);
       renderRankingPrefTags();
-      refreshSelectOptions(els.rankingPrefAdd, state.uniquePrefectures, state.selectedRankingPrefectures);
+      refreshRankingDropdown(els.rankingPrefDropdownContent, PREF_ORDER, state.selectedRankingPrefectures);
       state.visibleRows = RANKING_PAGE_SIZE;
       refreshRankingTable();
     };
@@ -72,7 +66,7 @@ function renderDiseaseTags() {
     const remove = () => {
       state.selectedDiseases.delete(cat);
       renderDiseaseTags();
-      refreshSelectOptions(els.rankingDiseaseAdd, state.uniqueCategories, state.selectedDiseases, true);
+      refreshRankingDropdown(els.rankingDiseaseDropdownContent, state.uniqueCategories, state.selectedDiseases, true);
       state.visibleRows = RANKING_PAGE_SIZE;
       refreshRankingTable();
     };
@@ -806,58 +800,120 @@ function initializeMetricHelpTriggers() {
 function initializePrefControls() {
   renderRankingPrefTags();
   renderDiseaseTags();
-  refreshSelectOptions(els.rankingPrefAdd, state.uniquePrefectures, state.selectedRankingPrefectures);
-  refreshSelectOptions(els.rankingDiseaseAdd, state.uniqueCategories, state.selectedDiseases, true);
+  // Populate both custom dropdowns.
+  refreshRankingDropdown(els.rankingPrefDropdownContent, PREF_ORDER, state.selectedRankingPrefectures);
+  refreshRankingDropdown(els.rankingDiseaseDropdownContent, state.uniqueCategories, state.selectedDiseases, true);
+
+  // "もっと見る" button
   if (els.rankingMoreBtn) {
     els.rankingMoreBtn.addEventListener("click", () => {
       state.visibleRows += RANKING_PAGE_SIZE;
       refreshRankingTable();
     });
   }
-  if (els.rankingDiseaseAdd) {
-    els.rankingDiseaseAdd.addEventListener("change", function () {
-      const v = this.value;
-      if (!v) return;
-      if (v === RANKING_DISEASE_ALL_VALUE) state.selectedDiseases.clear();
-      else state.selectedDiseases.add(v);
-      this.value = "";
-      state.visibleRows = RANKING_PAGE_SIZE;
-      renderDiseaseTags();
-      refreshSelectOptions(els.rankingDiseaseAdd, state.uniqueCategories, state.selectedDiseases, true);
-      refreshRankingTable();
+
+  // ---- Pref dropdown toggle ----
+  if (els.rankingPrefDropdownBtn) {
+    els.rankingPrefDropdownBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      const isOpen = !!(els.rankingPrefDropdown && els.rankingPrefDropdown.classList.contains("open"));
+      if (els.rankingPrefDropdown) els.rankingPrefDropdown.classList.toggle("open", !isOpen);
+      els.rankingPrefDropdownBtn.setAttribute("aria-expanded", String(!isOpen));
+      if (els.rankingDiseaseDropdown) els.rankingDiseaseDropdown.classList.remove("open");
+      if (els.rankingDiseaseDropdownBtn) els.rankingDiseaseDropdownBtn.setAttribute("aria-expanded", "false");
     });
   }
-  if (els.rankingDiseaseReset) {
-    els.rankingDiseaseReset.addEventListener("click", () => {
-      state.selectedDiseases.clear();
-      state.visibleRows = RANKING_PAGE_SIZE;
-      renderDiseaseTags();
-      refreshSelectOptions(els.rankingDiseaseAdd, state.uniqueCategories, state.selectedDiseases, true);
-      refreshRankingTable();
-    });
+  if (els.rankingPrefDropdown) {
+    els.rankingPrefDropdown.addEventListener("click", e => e.stopPropagation());
   }
-  if (els.rankingPrefAdd) {
-    els.rankingPrefAdd.addEventListener("change", function () {
-      const v = this.value;
+
+  // Pref option click (event delegation)
+  if (els.rankingPrefDropdownContent) {
+    els.rankingPrefDropdownContent.addEventListener("click", e => {
+      const opt = e.target.closest(".option");
+      if (!opt) return;
+      const v = opt.getAttribute("data-value");
       if (!v) return;
-      state.selectedRankingPrefectures.add(v);
-      this.value = "";
+      if (state.selectedRankingPrefectures.has(v)) {
+        state.selectedRankingPrefectures.delete(v);
+        if (!state.selectedRankingPrefectures.size) state.selectedRankingPrefectures.add("全国");
+      } else {
+        state.selectedRankingPrefectures.add(v);
+      }
       state.visibleRows = RANKING_PAGE_SIZE;
       renderRankingPrefTags();
-      refreshSelectOptions(els.rankingPrefAdd, state.uniquePrefectures, state.selectedRankingPrefectures);
+      refreshRankingDropdown(els.rankingPrefDropdownContent, PREF_ORDER, state.selectedRankingPrefectures);
       refreshRankingTable();
     });
   }
+
+  // Pref reset
   if (els.rankingPrefReset) {
     els.rankingPrefReset.addEventListener("click", () => {
       state.selectedRankingPrefectures.clear();
       state.selectedRankingPrefectures.add("全国");
       state.visibleRows = RANKING_PAGE_SIZE;
       renderRankingPrefTags();
-      refreshSelectOptions(els.rankingPrefAdd, state.uniquePrefectures, state.selectedRankingPrefectures);
+      refreshRankingDropdown(els.rankingPrefDropdownContent, PREF_ORDER, state.selectedRankingPrefectures);
       refreshRankingTable();
     });
   }
+
+  // ---- Disease dropdown toggle ----
+  if (els.rankingDiseaseDropdownBtn) {
+    els.rankingDiseaseDropdownBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      const isOpen = !!(els.rankingDiseaseDropdown && els.rankingDiseaseDropdown.classList.contains("open"));
+      if (els.rankingDiseaseDropdown) els.rankingDiseaseDropdown.classList.toggle("open", !isOpen);
+      els.rankingDiseaseDropdownBtn.setAttribute("aria-expanded", String(!isOpen));
+      if (els.rankingPrefDropdown) els.rankingPrefDropdown.classList.remove("open");
+      if (els.rankingPrefDropdownBtn) els.rankingPrefDropdownBtn.setAttribute("aria-expanded", "false");
+    });
+  }
+  if (els.rankingDiseaseDropdown) {
+    els.rankingDiseaseDropdown.addEventListener("click", e => e.stopPropagation());
+  }
+
+  // Disease option click (event delegation)
+  if (els.rankingDiseaseDropdownContent) {
+    els.rankingDiseaseDropdownContent.addEventListener("click", e => {
+      const opt = e.target.closest(".option");
+      if (!opt) return;
+      const v = opt.getAttribute("data-value");
+      if (!v) return;
+      if (v === RANKING_DISEASE_ALL_VALUE) {
+        state.selectedDiseases.clear();
+      } else if (state.selectedDiseases.has(v)) {
+        state.selectedDiseases.delete(v);
+      } else {
+        state.selectedDiseases.add(v);
+      }
+      state.visibleRows = RANKING_PAGE_SIZE;
+      renderDiseaseTags();
+      refreshRankingDropdown(els.rankingDiseaseDropdownContent, state.uniqueCategories, state.selectedDiseases, true);
+      refreshRankingTable();
+    });
+  }
+
+  // Disease reset
+  if (els.rankingDiseaseReset) {
+    els.rankingDiseaseReset.addEventListener("click", () => {
+      state.selectedDiseases.clear();
+      state.visibleRows = RANKING_PAGE_SIZE;
+      renderDiseaseTags();
+      refreshRankingDropdown(els.rankingDiseaseDropdownContent, state.uniqueCategories, state.selectedDiseases, true);
+      refreshRankingTable();
+    });
+  }
+
+  // Close ranking dropdowns on outside click
+  document.body.addEventListener("click", () => {
+    if (els.rankingPrefDropdown) els.rankingPrefDropdown.classList.remove("open");
+    if (els.rankingDiseaseDropdown) els.rankingDiseaseDropdown.classList.remove("open");
+    if (els.rankingPrefDropdownBtn) els.rankingPrefDropdownBtn.setAttribute("aria-expanded", "false");
+    if (els.rankingDiseaseDropdownBtn) els.rankingDiseaseDropdownBtn.setAttribute("aria-expanded", "false");
+  });
+
   $$(".ranking-table .sortable").forEach(th => {
     th.addEventListener("click", function () {
       const key = this.getAttribute("data-sort");

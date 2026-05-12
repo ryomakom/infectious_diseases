@@ -138,8 +138,9 @@
           <span class="ranking-filter-label">表示中の都道府県</span>
           <div id="ranking-pref-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の都道府県"></div>
           <div class="ranking-filter-row">
-            <div class="ranking-select-wrap">
-              <select id="ranking-pref-add" aria-label="都道府県をここから追加"></select>
+            <div id="ranking-pref-dropdown" class="dropdown">
+              <button type="button" id="ranking-pref-dropdown-btn" class="dropdown-btn is-placeholder" aria-label="都道府県を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
+              <div id="ranking-pref-dropdown-content" class="dropdown-content" role="listbox" aria-label="都道府県一覧"></div>
             </div>
             <button type="button" class="reset-btn reset-btn--icon-only" id="ranking-pref-reset" aria-label="都道府県の選択を全国に戻す" title="初期に戻す">
               <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>
@@ -150,8 +151,9 @@
           <span class="ranking-filter-label">表示中の感染症</span>
           <div id="ranking-disease-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の感染症"></div>
           <div class="ranking-filter-row">
-            <div class="ranking-select-wrap">
-              <select id="ranking-disease-add" aria-label="感染症をここから追加"></select>
+            <div id="ranking-disease-dropdown" class="dropdown">
+              <button type="button" id="ranking-disease-dropdown-btn" class="dropdown-btn is-placeholder" aria-label="感染症を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
+              <div id="ranking-disease-dropdown-content" class="dropdown-content" role="listbox" aria-label="感染症一覧"></div>
             </div>
             <button type="button" class="reset-btn reset-btn--icon-only" id="ranking-disease-reset" aria-label="感染症の選択をすべてに戻す" title="初期に戻す">
               <span class="reset-btn-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg></span>

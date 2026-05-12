@@ -83,10 +83,16 @@ function refreshDiseaseOptions() {
 
 function buildChartDropdownOptions() {
   if (els.dropdownContent) {
-    els.dropdownContent.innerHTML = state.uniquePrefectures.map(pref => `<div class="option" role="option" data-pref="${pref}" aria-selected="false">${pref}</div>`).join("");
+    // Use PREF_ORDER so all 47 prefs + 全国 are listed immediately;
+    // per-pref CSVs are lazy-loaded when a pref is first selected.
+    els.dropdownContent.innerHTML = PREF_ORDER.map(pref =>
+      `<div class="option" role="option" data-pref="${pref}" aria-selected="false">${pref}</div>`
+    ).join("");
   }
   if (els.diseaseDropdownContent) {
-    els.diseaseDropdownContent.innerHTML = state.uniqueCategories.map(cat => `<div class="option" role="option" data-disease="${cat}" aria-selected="false">${cat}</div>`).join("");
+    els.diseaseDropdownContent.innerHTML = state.uniqueCategories.map(cat =>
+      `<div class="option" role="option" data-disease="${cat}" aria-selected="false">${cat}</div>`
+    ).join("");
   }
 }
 
