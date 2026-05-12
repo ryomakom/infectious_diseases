@@ -2784,13 +2784,12 @@ header::after{
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
   }
-  /* 2行目（患者数・（N人）の）を右にずらして1行目と段差をつける */
-  .signal-tab-triggers .metric-label-sub {
-    display: inline-block;
-    margin-left: 10px;
+  /* 数値（●●人・●●倍）を右にずらして1行目ラベルと段差をつける */
+  .signal-tab-triggers .news-digest-spark-metric-number {
+    margin-left: 20px;
   }
-  .signal-tab-triggers .ratio-prefix-detail {
-    margin-left: 10px;
+  .signal-tab-triggers .news-digest-spark-ratio {
+    margin-left: 20px;
   }
 
   /* 前週比・平年比 (rising/anomaly): 縦積み */
