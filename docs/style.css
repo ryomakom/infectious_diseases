@@ -905,6 +905,9 @@ header::after{
   margin-right: 4px;
 }
 
+/* br が表示されると「定点あたり」の後で改行 ─ デスクトップでは非表示 */
+.mobile-br { display: none; }
+
 .news-digest-spark-metric-value{
   margin: 3px 0 0;
   font-size: 26px;
@@ -2760,22 +2763,30 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカードのみ縦積みレイアウト（都道府県カードは除外）。
-     テキストノードをラップした .news-digest-spark-metric-number があるため
-     flex column で確実にラベル→数値の順に縦積みできる。 */
+  /* メインシグナルカード: 「定点あたり」改行 → 「患者数 N.NN人」同行
+     mobile-br を表示することでインラインフロー内に改行を入れる。
+     都道府県カード（.signal-tab-triggers 外）には影響しない。 */
   .signal-tab-triggers .news-digest-spark-metric-value {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0;
+    display: block;
+  }
+  .signal-tab-triggers .mobile-br {
+    display: inline;
   }
 
-  .signal-tab-triggers .news-digest-spark-metric-label {
-    margin-right: 0;
-    margin-bottom: 2px;
+  /* 警報閾値カード: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
+     ratio-prefix-main を flex: 0 0 100% にして次行へ押し出す。 */
+  .signal-tab-triggers .news-digest-spark-alert-threshold--split {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 1px 6px;
+  }
+  .signal-tab-triggers .ratio-prefix-main {
+    flex: 0 0 100%;
   }
 
-  .signal-tab-triggers .news-digest-spark-alert-threshold {
+  /* 前週比・平年比 (rising/anomaly): 縦積み */
+  .signal-tab-triggers .news-digest-spark-alert-threshold:not(.news-digest-spark-alert-threshold--split) {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 2px;

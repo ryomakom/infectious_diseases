@@ -383,8 +383,8 @@ function buildSignalSparkCard(item) {
          </p>`;
     }
   } else if (alertThreshold !== null) {
-    alertThresholdHtml = `<p class="news-digest-spark-alert-threshold">
-        <span class="ratio-prefix">警報基準値（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
+    alertThresholdHtml = `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
+        <span class="ratio-prefix ratio-prefix-main">警報基準値</span><span class="ratio-prefix ratio-prefix-detail">（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
        </p>`;
   }
   const definition = asString(item.definition, "");
@@ -396,7 +396,7 @@ function buildSignalSparkCard(item) {
     <p class="news-digest-spark-category">${item.category}</p>
     <div class="news-digest-spark-body">
       <div class="news-digest-spark-metric-col">
-        <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span><span class="news-digest-spark-metric-number">${formatSmallNumber(currentMa4)}<span class="news-digest-spark-unit">人</span></span></p>
+        <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり<br class="mobile-br">患者数</span><span class="news-digest-spark-metric-number">${formatSmallNumber(currentMa4)}<span class="news-digest-spark-unit">人</span></span></p>
         ${alertThresholdHtml}
       </div>
       <div class="news-digest-spark-chart-col">
