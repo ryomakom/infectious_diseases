@@ -773,7 +773,11 @@ function drawFocusContextChart(category, data) {
         const x0 = xFocus.invert(mx);
         const [domStart, domEnd] = xFocus.domain();
 
-        const nearestPoints = [];
+        // For each pref find the nearest point by x (date), then pick the
+        // single pref whose y value is closest to the finger's y position.
+        const [, my] = d3.pointer(touch, this);
+        const y0 = yFocus.invert(my);
+        let best = null;
         sortedByPref.forEach((arr, pref) => {
           const visible = arr.filter(d => d.date >= domStart && d.date <= domEnd);
           if (!visible.length) return;
@@ -782,25 +786,26 @@ function drawFocusContextChart(category, data) {
           const d1 = visible[i];
           const d = !d0 ? d1 : !d1 ? d0 :
             (x0 - d0.date > d1.date - x0 ? d1 : d0);
-          if (d) nearestPoints.push({ pref, d });
+          if (!d) return;
+          const dist = Math.abs(d.value - y0);
+          if (!best || dist < best.dist) best = { pref, d, dist };
         });
-        if (!nearestPoints.length) return;
+        if (!best) return;
 
-        // Move each pref's dot to the nearest point on its line.
-        nearestPoints.forEach(({ pref, d }) => {
-          const dot = hoverDots.get(pref);
-          if (dot) dot.attr("display", null).attr("cx", xFocus(d.date)).attr("cy", yFocus(d.value));
-        });
+        // Show only the closest pref's dot; hide all others.
         hoverDots.forEach((dot, pref) => {
-          if (!nearestPoints.some(p => p.pref === pref)) dot.attr("display", "none");
+          if (pref === best.pref) {
+            dot.attr("display", null)
+               .attr("cx", xFocus(best.d.date))
+               .attr("cy", yFocus(best.d.value));
+          } else {
+            dot.attr("display", "none");
+          }
         });
 
-        const htmlLines = nearestPoints
-          .map(({ pref, d }) => `<strong>${pref}</strong><br>定点あたり患者数: ${d.value}　${d.weekLabel || ""}`)
-          .join("<hr style='margin:4px 0'>");
         tooltip
           .style("opacity", 0.9)
-          .html(htmlLines)
+          .html(`<strong>${best.pref}</strong><br>定点あたり患者数: ${best.d.value}　${best.d.weekLabel || ""}`)
           .style("left", `${touch.pageX + 10}px`)
           .style("top", `${touch.pageY - 28}px`);
       })
