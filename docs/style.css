@@ -2760,20 +2760,19 @@ header::after{
     font-size: 13px;
   }
 
-  /* ===== 診断用（確認後に削除） ===== */
-  /* A: .news-digest-spark-metric-label が存在するか？→黄色背景で確認 */
-  .news-digest-spark-metric-label {
-    background: yellow !important;
+  /* メインシグナルカードのみ縦積みレイアウト（都道府県カードは除外）。
+     テキストノードをラップした .news-digest-spark-metric-number があるため
+     flex column で確実にラベル→数値の順に縦積みできる。 */
+  .signal-tab-triggers .news-digest-spark-metric-value {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
   }
-  /* B: .signal-tab-triggers 子孫に届くか？→赤背景で確認 */
-  .signal-tab-triggers .news-digest-spark-metric-label {
-    background: red !important;
-  }
-  /* ===== 診断用ここまで ===== */
 
   .signal-tab-triggers .news-digest-spark-metric-label {
-    display: block !important;
     margin-right: 0;
+    margin-bottom: 2px;
   }
 
   .signal-tab-triggers .news-digest-spark-alert-threshold {

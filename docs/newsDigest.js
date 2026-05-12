@@ -396,7 +396,7 @@ function buildSignalSparkCard(item) {
     <p class="news-digest-spark-category">${item.category}</p>
     <div class="news-digest-spark-body">
       <div class="news-digest-spark-metric-col">
-        <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span>${formatSmallNumber(currentMa4)}<span class="news-digest-spark-unit">人</span></p>
+        <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span><span class="news-digest-spark-metric-number">${formatSmallNumber(currentMa4)}<span class="news-digest-spark-unit">人</span></span></p>
         ${alertThresholdHtml}
       </div>
       <div class="news-digest-spark-chart-col">
@@ -492,7 +492,7 @@ function buildTopPrefsSection(category, signalKey) {
       <p class="news-digest-spark-category">${row.pref}</p>
       <div class="news-digest-spark-body">
         <div class="news-digest-spark-metric-col">
-          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span>${Number.isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></p>
+          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span><span class="news-digest-spark-metric-number">${Number.isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></span></p>
           ${alertThresholdHtml}
         </div>
         <div class="news-digest-spark-chart-col">
