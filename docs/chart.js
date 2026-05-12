@@ -516,41 +516,52 @@ function drawLines(svgFocus, data, lineFocus) {
 }
 
 // Draw data points (small markers + larger hit area) for interactions.
-// Skipped entirely on touch/mobile devices — lines-only keeps rendering fast.
+// On mobile: only the last point (endpoint dot) per prefecture is rendered —
+// no hover hit areas, no intermediate markers.  This removes per-frame
+// DOM churn while preserving the visual endpoint indicator.
 function drawPoints(svgFocus, prefGroups, xFocus, yFocus) {
-  if (_isMobile) return;
   prefGroups.forEach(([pref, arr]) => {
     const safe = cssSafe(pref);
     const pointColor = prefColor(pref);
+
+    // On mobile render only the endpoint; on desktop render all points.
+    const renderArr = _isMobile
+      ? (arr.length ? [arr[arr.length - 1]] : [])
+      : arr;
+
     const pointG = svgFocus.selectAll(`g.point-wrap-${safe}`)
-      .data(arr)
+      .data(renderArr)
       .enter()
       .append("g")
       .attr("class", `point-wrap-${safe}`)
       .attr("transform", d => `translate(${xFocus(d.date)},${yFocus(d.value)})`);
 
     pointG.each(function (d, i) {
-      const isEnd = i === arr.length - 1;
+      // On mobile every rendered point is the endpoint; on desktop check index.
+      const isEnd = _isMobile || (i === arr.length - 1);
       const rVisible = isEnd ? 4.5 : 1.5;
       const rHit = isEnd ? 9 : 6;
       const g = d3.select(this);
-      g.append("circle")
-        .attr("class", "point-hit")
-        .attr("r", rHit)
-        .attr("fill", "transparent")
-        .style("pointer-events", "auto")
-        .style("cursor", "pointer")
-        .on("mouseover", function (event) {
-          g.select("circle.point-visible").classed("highlight-circle", true);
-          tooltip.transition().duration(200).style("opacity", 0.9);
-          tooltip.html(`<strong>${pref}</strong><br>定点あたり患者数: ${d.value}<br>${d.weekLabel || ""}`)
-            .style("left", `${event.pageX + 10}px`)
-            .style("top", `${event.pageY - 28}px`);
-        })
-        .on("mouseout", function () {
-          g.select("circle.point-visible").classed("highlight-circle", false);
-          tooltip.transition().duration(500).style("opacity", 0);
-        });
+      // Hover hit area only for desktop (touch devices don't have hover).
+      if (!_isMobile) {
+        g.append("circle")
+          .attr("class", "point-hit")
+          .attr("r", rHit)
+          .attr("fill", "transparent")
+          .style("pointer-events", "auto")
+          .style("cursor", "pointer")
+          .on("mouseover", function (event) {
+            g.select("circle.point-visible").classed("highlight-circle", true);
+            tooltip.transition().duration(200).style("opacity", 0.9);
+            tooltip.html(`<strong>${pref}</strong><br>定点あたり患者数: ${d.value}<br>${d.weekLabel || ""}`)
+              .style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY - 28}px`);
+          })
+          .on("mouseout", function () {
+            g.select("circle.point-visible").classed("highlight-circle", false);
+            tooltip.transition().duration(500).style("opacity", 0);
+          });
+      }
       g.append("circle")
         .attr("class", `point-${safe} point-visible`)
         .attr("r", rVisible)
@@ -779,8 +790,7 @@ function drawBrush(ctx) {
   // On desktop: run the full handler on every "brush" event as before.
   const brush = d3.brushX()
     .extent([[0, 0], [contextWidth, contextHeight]])
-    .on("brush", _isMobile ? brushedLightweight : brushed)
-    .on("end",   brushed);
+    .on("brush end", brushed);
   const brushG = svgContext.append("g").attr("class", "brush").call(brush);
 
   const handleVisibleWidth = 28;
@@ -818,19 +828,6 @@ function drawBrush(ctx) {
   updateGrip(gripLeft, initialSel[0]);
   updateGrip(gripRight, initialSel[1]);
   updateChartVisibility(svgFocus, selectedPrefs, category);
-
-  // Lightweight handler used on mobile during drag — only updates the dim
-  // overlay and grip positions, no DOM node creation / axis redraw.
-  function brushedLightweight(event) {
-    const sel = event.selection;
-    if (!sel) return;
-    const [sx0, sx1] = sel;
-    dimLeft.attr("x", 0).attr("width", sx0);
-    dimRight.attr("x", sx1).attr("width", Math.max(0, contextWidth - sx1));
-    updateHandleHitAreas(sx0, sx1);
-    updateGrip(gripLeft, sx0);
-    updateGrip(gripRight, sx1);
-  }
 
   function brushed(event) {
     const sel = event.selection;
