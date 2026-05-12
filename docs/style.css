@@ -2761,16 +2761,22 @@ header::after{
   }
 
   /* メインシグナルカード（.signal-tab-triggers 内）のみ縦積みレイアウト。
-     都道府県カード（.signal-top-prefs-grid 内）は除外される。 */
+     都道府県カード（.signal-top-prefs-grid 内）は除外される。
+     !important で既存の display:inline / flex-direction:row を確実に上書き。 */
   .signal-tab-triggers .news-digest-spark-metric-label {
-    display: block;
+    display: block !important;
     margin-right: 0;
   }
 
   .signal-tab-triggers .news-digest-spark-alert-threshold {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column !important;
+    align-items: flex-start !important;
     gap: 2px;
+  }
+
+  /* 著者クレジット：スマホでは fixed オーバーレイが邪魔になるため非表示 */
+  .author-credit {
+    display: none;
   }
 
   /* スマホでは外側カードの枠・角丸・背景を消してフル幅に展開する。
