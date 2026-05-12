@@ -2763,16 +2763,17 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカード: flex-column で gap を直接制御して行間を詰める。
-     metric-lbl-top (定点あたり) と metric-lbl-row2 (患者数＋数値) を
-     別 flex アイテムにすることで gap: Npx で確実に行間を管理できる。 */
+  /* メインシグナルカード: metric-lbl-top を display:block にして
+     margin-bottom で行間を直接制御する。
+     display:block の block は匿名ブロックを生成し、続く metric-lbl-row2
+     （患者数＋数値）が別ブロックに収まることで行間 = margin-bottom のみになる。 */
   .signal-tab-triggers .news-digest-spark-metric-value {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
+    display: block;
   }
   .signal-tab-triggers .metric-lbl-top {
+    display: block;
     line-height: 1;
+    margin-bottom: 2px;
     margin-right: 0;
   }
   .signal-tab-triggers .news-digest-spark-metric-number {
