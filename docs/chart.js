@@ -734,6 +734,82 @@ function drawFocusContextChart(category, data) {
     .attr("class", "focus-end-labels")
     .attr("transform", focusTransform);
   drawEndLabels(svgFocusLabels, prefGroupsVisible, xFocus, yFocus, initialExtent, focusWidth + focusMargin.right - 8, focusHeight, category);
+
+  // Mobile: transparent overlay + bisect-based tooltip (1 rect, 0 per-point listeners).
+  // The per-circle approach costs O(n) DOM nodes redrawn on every brush frame;
+  // this is O(1) regardless of data size.
+  if (_isMobile) {
+    const bisectDate = d3.bisector(d => d.date).left;
+
+    // Pre-sort per-pref arrays once so bisect is O(log n) on touchmove.
+    const sortedByPref = new Map();
+    d3.groups(data, d => d.pref).forEach(([pref, arr]) => {
+      sortedByPref.set(pref, arr.slice().sort((a, b) => a.date - b.date));
+    });
+
+    // One dot per pref, hidden until finger touches the chart.
+    const hoverDots = new Map();
+    sortedByPref.forEach((_, pref) => {
+      hoverDots.set(pref, svgFocus.append("circle")
+        .attr("class", "hover-dot")
+        .attr("r", 5)
+        .attr("fill", prefColor(pref))
+        .attr("display", "none")
+        .style("pointer-events", "none"));
+    });
+
+    // One transparent rect covers the whole focus area and catches all touches.
+    svgFocus.append("rect")
+      .attr("class", "hover-area")
+      .attr("width", focusWidth)
+      .attr("height", focusHeight)
+      .attr("fill", "transparent")
+      .style("pointer-events", "all")
+      .on("touchmove", function(event) {
+        event.preventDefault();
+        const touch = event.touches[0] || event.changedTouches[0];
+        if (!touch) return;
+        const [mx] = d3.pointer(touch, this);
+        const x0 = xFocus.invert(mx);
+        const [domStart, domEnd] = xFocus.domain();
+
+        const nearestPoints = [];
+        sortedByPref.forEach((arr, pref) => {
+          const visible = arr.filter(d => d.date >= domStart && d.date <= domEnd);
+          if (!visible.length) return;
+          const i = bisectDate(visible, x0, 1);
+          const d0 = visible[i - 1];
+          const d1 = visible[i];
+          const d = !d0 ? d1 : !d1 ? d0 :
+            (x0 - d0.date > d1.date - x0 ? d1 : d0);
+          if (d) nearestPoints.push({ pref, d });
+        });
+        if (!nearestPoints.length) return;
+
+        // Move each pref's dot to the nearest point on its line.
+        nearestPoints.forEach(({ pref, d }) => {
+          const dot = hoverDots.get(pref);
+          if (dot) dot.attr("display", null).attr("cx", xFocus(d.date)).attr("cy", yFocus(d.value));
+        });
+        hoverDots.forEach((dot, pref) => {
+          if (!nearestPoints.some(p => p.pref === pref)) dot.attr("display", "none");
+        });
+
+        const htmlLines = nearestPoints
+          .map(({ pref, d }) => `<strong>${pref}</strong><br>定点あたり患者数: ${d.value}　${d.weekLabel || ""}`)
+          .join("<hr style='margin:4px 0'>");
+        tooltip
+          .style("opacity", 0.9)
+          .html(htmlLines)
+          .style("left", `${touch.pageX + 10}px`)
+          .style("top", `${touch.pageY - 28}px`);
+      })
+      .on("touchend touchcancel", function() {
+        hoverDots.forEach(dot => dot.attr("display", "none"));
+        tooltip.style("opacity", 0);
+      });
+  }
+
   drawBrush({
     category,
     data,
@@ -871,6 +947,8 @@ function drawBrush(ctx) {
 
     svgFocus.selectAll('g[class^="point-wrap-"]').remove();
     drawPoints(svgFocus, prefGroupsLocal, xFocus, yFocus);
+    // Keep hover-area on top so touch events always reach it.
+    svgFocus.select(".hover-area").raise();
     drawEndLabels(svgFocusLabels, prefGroupsLocal, xFocus, yFocus, [x0, x1], focusWidth + focusMargin.right - 8, focusHeight, category);
     updateChartVisibility(svgFocus, getSelectedDropdownPrefectures(), category);
   }
