@@ -2750,9 +2750,29 @@ header::after{
     font-size: 13px;
   }
 
+  /* スマホでは外側カードの枠・角丸・背景を消してフル幅に展開する。
+     内側の子カード（spark-card 等）は独自スタイルを維持する。 */
+  header,
+  .page-summary,
+  .ranking-section,
+  .controls-card,
+  .news-digest-card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  header::after {
+    display: none;
+  }
+
   .ranking-section,
   .controls-card{
-    padding: 16px 18px 20px;
+    padding-top: 16px;
+    padding-bottom: 20px;
   }
 
   .filter-actions{
