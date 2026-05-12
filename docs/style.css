@@ -2784,6 +2784,14 @@ header::after{
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
   }
+  /* 2行目（患者数・（N人）の）を右にずらして1行目と段差をつける */
+  .signal-tab-triggers .metric-label-sub {
+    display: inline-block;
+    margin-left: 10px;
+  }
+  .signal-tab-triggers .ratio-prefix-detail {
+    margin-left: 10px;
+  }
 
   /* 前週比・平年比 (rising/anomaly): 縦積み */
   .signal-tab-triggers .news-digest-spark-alert-threshold:not(.news-digest-spark-alert-threshold--split) {
