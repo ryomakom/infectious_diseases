@@ -2760,15 +2760,14 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカード（[data-signal-key] 付き）のみ縦積みレイアウト。
-     「患者がとくに多い都道府県は」の都道府県カード（.signal-top-prefs-grid 内）
-     は除外する。 */
-  .news-digest-spark-card-wrap[data-signal-key] .news-digest-spark-metric-label {
+  /* メインシグナルカード（.signal-tab-triggers 内）のみ縦積みレイアウト。
+     都道府県カード（.signal-top-prefs-grid 内）は除外される。 */
+  .signal-tab-triggers .news-digest-spark-metric-label {
     display: block;
     margin-right: 0;
   }
 
-  .news-digest-spark-card-wrap[data-signal-key] .news-digest-spark-alert-threshold {
+  .signal-tab-triggers .news-digest-spark-alert-threshold {
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
