@@ -8,7 +8,7 @@ function refreshRankingDropdown(contentEl, options, selectedSet, keepAllOption =
   if (!contentEl) return;
   let html = "";
   if (keepAllOption) {
-    html += `<div class="option" role="option" data-value="${RANKING_DISEASE_ALL_VALUE}" aria-selected="false">すべて（フィルタなし）</div>`;
+    html += `<div class="option" role="option" data-value="${RANKING_DISEASE_ALL_VALUE}" aria-selected="false">すべて</div>`;
   }
   options.forEach(v => {
     const on = selectedSet.has(v);
