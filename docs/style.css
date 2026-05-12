@@ -2763,21 +2763,22 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカード: 「定点あたり」改行 → 「患者数 N.NN人」同行
-     font-size を 11px に下げてストラットを圧縮し行間を詰める。
-     metric-number は 26px を明示して表示サイズを維持する。 */
+  /* メインシグナルカード: flex-column で gap を直接制御して行間を詰める。
+     metric-lbl-top (定点あたり) と metric-lbl-row2 (患者数＋数値) を
+     別 flex アイテムにすることで gap: Npx で確実に行間を管理できる。 */
   .signal-tab-triggers .news-digest-spark-metric-value {
-    display: block;
-    font-size: 11px;   /* strut = 11px → 行間が詰まる */
-    line-height: 1.3;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
   }
-  .signal-tab-triggers .mobile-br {
-    display: inline;
+  .signal-tab-triggers .metric-lbl-top {
+    line-height: 1;
+    margin-right: 0;
   }
   .signal-tab-triggers .news-digest-spark-metric-number {
     font-size: 26px;
     line-height: 1;
-    margin-left: 30px; /* 1文字分追加：20px → 30px */
+    margin-left: 30px;
   }
 
   /* 警報閾値カード: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
