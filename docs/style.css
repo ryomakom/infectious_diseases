@@ -2760,17 +2760,18 @@ header::after{
     font-size: 13px;
   }
 
-  /* シグナルカード：「定点あたり患者数」ラベルと数値を改行で分ける */
-  .news-digest-spark-metric-label {
+  /* メインシグナルカード（[data-signal-key] 付き）のみ縦積みレイアウト。
+     「患者がとくに多い都道府県は」の都道府県カード（.signal-top-prefs-grid 内）
+     は除外する。 */
+  .news-digest-spark-card-wrap[data-signal-key] .news-digest-spark-metric-label {
     display: block;
     margin-right: 0;
   }
 
-  /* 「警報基準値（〓人）の」と倍数を改行で分ける */
-  .news-digest-spark-alert-threshold {
+  .news-digest-spark-card-wrap[data-signal-key] .news-digest-spark-alert-threshold {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0;
+    gap: 2px;
   }
 
   /* スマホでは外側カードの枠・角丸・背景を消してフル幅に展開する。
