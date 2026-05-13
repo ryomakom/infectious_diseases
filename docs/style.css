@@ -1924,10 +1924,6 @@ header::after{
   background: rgba(245, 158, 11, 0.15);
   color: #b45309;
 }
-.ranking-table td.ratio-wow--low{
-  background: rgba(16, 185, 129, 0.10);
-  color: #065f46;
-}
 .ranking-table td.ratio-alert--danger,
 .ranking-table td.ratio-yoy--very-high{
   background: rgba(239, 68, 68, 0.12);

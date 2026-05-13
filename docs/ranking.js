@@ -210,7 +210,6 @@ function formatWow(v) {
 function wowClass(v) {
   if (!isFinite(v)) return "";
   if (v >= 1.5) return "ratio-yoy--high";
-  if (v <= 0.67) return "ratio-wow--low";
   return "";
 }
 

@@ -509,23 +509,32 @@ category_to_display &lt;- function(x) {
 cleaned_diseases &lt;- read_csv(&quot;merged_data/merged_data.csv&quot;, show_col_types = FALSE) %&gt;%
   mutate(category = category_to_display(category))
 
+# cp932のCSVをUTF-8の一時ファイルに変換してからread_csvに渡すヘルパー
+# （Linux環境ではvroom/readrのlocale指定だけではcp932を正しく扱えないことがあるため、
+#   OSのiconvコマンドで一時ファイルに変換するのが最も確実）
+read_cp932_csv &lt;- function(file_path, ...) {
+  tmp &lt;- tempfile(fileext = &quot;.csv&quot;)
+  on.exit(unlink(tmp), add = TRUE)
+  system2(&quot;iconv&quot;, c(&quot;-f&quot;, &quot;CP932&quot;, &quot;-t&quot;, &quot;UTF-8&quot;, file_path), stdout = tmp)
+  read_csv(tmp, ...)
+}
+
 # CSVファイルを処理する関数
 process_csv &lt;- function(file_path) {
-  # 2行目1列目のテキストを読み込む（エンコーディングを指定）
-  week_text &lt;- read_csv(
-    file_path, 
-    locale = locale(encoding = &quot;cp932&quot;), 
-    col_names = FALSE, 
-    skip = 1, 
+  # 2行目1列目のテキストを読み込む
+  week_text &lt;- read_cp932_csv(
+    file_path,
+    col_names = FALSE,
+    skip = 1,
     n_max = 1
   ) %&gt;%
     pull(1)
-  
+
   # デバッグ情報を表示
   cat(&quot;Processing file:&quot;, file_path, &quot;Week text:&quot;, week_text, &quot;\n&quot;)
-  
+
   # CSVファイルをすべて読み込み
-  data &lt;- read_csv(file_path, locale = locale(encoding = &quot;cp932&quot;), col_names = FALSE)
+  data &lt;- read_cp932_csv(file_path, col_names = FALSE)
   
   # 3行目の奇数列（3列目以降）のNAを左隣の値で埋める
   data[3, ] &lt;- data[3, ] %&gt;%
@@ -558,7 +567,7 @@ process_csv &lt;- function(file_path) {
     })
   
   # 列名を変更
-  colnames(data) &lt;- new_col_names
+  colnames(data) &lt;- make.unique(new_col_names)
   
   # データの整形
   data &lt;- data %&gt;%
@@ -590,7 +599,7 @@ year_week &lt;- read_csv(&quot;year_week.csv&quot;) %&gt;%
 today           &lt;- Sys.Date()
 five_days_before &lt;- today - days(5)
 
-# — 5日前以前の最新2週取得 —
+# — 5日前以前の最新2週取得（新規ダウンロード対象） —
 distinct_weeks &lt;- year_week %&gt;%
   filter(date &lt;= five_days_before) %&gt;%
   arrange(date) %&gt;%
@@ -603,7 +612,77 @@ log_dir  &lt;- &quot;logs&quot;
 if (!dir.exists(data_dir)) dir.create(data_dir)
 if (!dir.exists(log_dir))  dir.create(log_dir)
 
-# — 累積ログファイル設定 —
+# ── ディスク上の未処理テイテンファイルをバックフィル ──────────────────
+# merged_data に含まれていない週のファイルをすべて処理して補完する。
+# initial_processing.Rmd が失敗しても daily_task がカバーできるようにする。
+{
+  existing_end_dates &lt;- cleaned_diseases %&gt;%
+    filter(!is.na(date)) %&gt;% pull(date) %&gt;% as.Date() %&gt;% unique()
+
+  disk_teiten &lt;- list.files(data_dir, pattern = &quot;-teiten\\.csv$&quot;, full.names = TRUE)
+  backfill_list &lt;- list()
+
+  for (tfile in disk_teiten) {
+    wk &lt;- basename(tfile) %&gt;% str_remove(&quot;-teiten\\.csv$&quot;)
+    wk_end_date &lt;- year_week %&gt;% filter(year_week == wk) %&gt;% pull(date)
+    if (length(wk_end_date) == 0) next
+    if (wk_end_date %in% existing_end_dates) next
+
+    message(&quot;バックフィル処理: &quot;, wk)
+    df_bf &lt;- tryCatch({
+      process_csv(tfile) %&gt;%
+        mutate(year = as.double(str_sub(week, 1, 4))) %&gt;%
+        mutate(pref = ifelse(pref == &quot;総数&quot;, &quot;全国&quot;, pref)) %&gt;%
+        filter(!is.na(pref)) %&gt;%
+        bind_cols(
+          str_match(.$week,
+            &quot;(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)&quot;
+          ) %&gt;%
+            as_tibble(.name_repair = &quot;minimal&quot;) %&gt;%
+            setNames(c(&quot;full&quot;, &quot;year_str&quot;, &quot;m1&quot;, &quot;d1&quot;, &quot;m2&quot;, &quot;d2&quot;))
+        ) %&gt;%
+        mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %&gt;%
+        mutate(
+          date = as.Date(sprintf(&quot;%s-%02d-%02d&quot;,
+                                 year_str, as.integer(m2), as.integer(d2))),
+          week_label_clean = ifelse(
+            is.na(year_str), NA_character_,
+            sprintf(&quot;%d月%d日～%d月%d日（%s年）&quot;,
+                    as.integer(m1), as.integer(d1),
+                    as.integer(m2), as.integer(d2), year_str)
+          )
+        ) %&gt;%
+        dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %&gt;%
+        filter(str_detect(category, &quot;定当&quot;)) %&gt;%
+        mutate(category = str_remove(category, &quot;_定当&quot;)) %&gt;%
+        dplyr::select(date, pref, category, value, year, week_label_clean) %&gt;%
+        mutate(value = as.double(value)) %&gt;%
+        filter(!(category == &quot;ＲＳウイルス感染症&quot; &amp; is.na(value))) %&gt;%
+        mutate(value = ifelse(is.na(value), 0, value)) %&gt;%
+        mutate(category = category_to_display(category))
+    }, error = function(e) {
+      message(&quot;バックフィル失敗: &quot;, wk, &quot; — &quot;, conditionMessage(e)); NULL
+    })
+
+    if (!is.null(df_bf) &amp;&amp; nrow(df_bf) &gt; 0) {
+      message(&quot;  追加: &quot;, nrow(df_bf), &quot; 行 (date=&quot;,
+              paste(unique(as.character(df_bf$date)), collapse=&quot;,&quot;), &quot;)&quot;)
+      backfill_list[[wk]] &lt;- df_bf
+      existing_end_dates &lt;- c(existing_end_dates, unique(as.Date(df_bf$date)))
+    }
+  }
+
+  if (length(backfill_list) &gt; 0) {
+    cleaned_diseases &lt;- bind_rows(cleaned_diseases, bind_rows(backfill_list)) %&gt;%
+      distinct()
+    cleaned_diseases %&gt;% write_excel_csv(&quot;merged_data/merged_data.csv&quot;)
+    message(&quot;バックフィル完了: &quot;, length(backfill_list), &quot; 週分を統合しました&quot;)
+  } else {
+    message(&quot;バックフィル: 未処理ファイルなし&quot;)
+  }
+}</code></pre>
+<pre><code>## バックフィル: 未処理ファイルなし</code></pre>
+<pre class="r"><code># — 累積ログファイル設定 —
 log_file &lt;- file.path(log_dir, &quot;log.csv&quot;)
 
 # — 既存ログ読み込みまたは空の tibble —
@@ -630,37 +709,76 @@ if (file.exists(log_file)) {
 log_entries &lt;- list()
 data_list   &lt;- list()
 
-# ▼▼▼ テスト用：ウェブ取得スキップ ▼▼▼
-# for (week_label in distinct_weeks) {
-#   ts        &lt;- Sys.time()
-#   parts     &lt;- str_split(week_label, &quot;-&quot;)[[1]]
-#   url       &lt;- sprintf(
-#     &quot;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv&quot;,
-#     parts[1], parts[2], week_label
-#   )
-#   local_file &lt;- file.path(data_dir, sprintf(&quot;%s-teiten.csv&quot;, week_label))
-#
-#   if (!file.exists(local_file)) {
-#     success &lt;- tryCatch(
-#       { download.file(url, destfile = local_file, mode = &quot;wb&quot;); TRUE },
-#       error = function(e) FALSE
-#     )
-#     if (success &amp;&amp; file.exists(local_file)) {
-#       df &lt;- process_csv(local_file) %&gt;% ...
-#       log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;downloaded&quot;, rows=nrow(df))
-#       data_list[[week_label]] &lt;- df
-#     } else {
-#       log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;not_found&quot;, rows=NA_integer_)
-#     }
-#   } else {
-#     log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;skipped&quot;, rows=NA_integer_)
-#   }
-#   log_entries &lt;- append(log_entries, list(log_entry))
-#   Sys.sleep(5)
-# }
-# ▲▲▲ テスト用：ウェブ取得スキップ ▲▲▲
+for (week_label in distinct_weeks) {
+  ts        &lt;- Sys.time()
+  parts     &lt;- str_split(week_label, &quot;-&quot;)[[1]]
+  url       &lt;- sprintf(
+    &quot;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv&quot;,
+    parts[1], parts[2], week_label
+  )
+  local_file &lt;- file.path(data_dir, sprintf(&quot;%s-teiten.csv&quot;, week_label))
 
-# — ログ結合＆出力 —
+  if (!file.exists(local_file)) {
+    success &lt;- tryCatch(
+      { download.file(url, destfile = local_file, mode = &quot;wb&quot;); TRUE },
+      error = function(e) FALSE
+    )
+    if (success &amp;&amp; file.exists(local_file)) {
+      df &lt;- tryCatch({
+        process_csv(local_file) %&gt;%
+          mutate(year = as.double(str_sub(week, 1, 4))) %&gt;%
+          mutate(pref = ifelse(pref == &quot;総数&quot;, &quot;全国&quot;, pref)) %&gt;%
+          filter(!is.na(pref)) %&gt;%
+          bind_cols(
+            str_match(.$week,
+              &quot;(\\d{4})年\\d+週\\((\\d{1,2})月(\\d{1,2})日～(\\d{1,2})月(\\d{1,2})日\\)&quot;
+            ) %&gt;%
+              as_tibble(.name_repair = &quot;minimal&quot;) %&gt;%
+              setNames(c(&quot;full&quot;, &quot;year_str&quot;, &quot;m1&quot;, &quot;d1&quot;, &quot;m2&quot;, &quot;d2&quot;))
+          ) %&gt;%
+          mutate(across(c(m1, d1, m2, d2), ~ as.integer(.))) %&gt;%
+          mutate(
+            date = as.Date(sprintf(&quot;%s-%02d-%02d&quot;, year_str, as.integer(m2), as.integer(d2))),
+            week_label_clean = ifelse(
+              is.na(year_str), NA_character_,
+              sprintf(&quot;%d月%d日～%d月%d日（%s年）&quot;,
+                      as.integer(m1), as.integer(d1),
+                      as.integer(m2), as.integer(d2), year_str)
+            )
+          ) %&gt;%
+          dplyr::select(-full, -year_str, -m1, -d1, -m2, -d2) %&gt;%
+          filter(str_detect(category, &quot;定当&quot;)) %&gt;%
+          mutate(category = str_remove(category, &quot;_定当&quot;)) %&gt;%
+          dplyr::select(date, pref, category, value, year, week_label_clean) %&gt;%
+          mutate(value = as.double(value)) %&gt;%
+          filter(!(category == &quot;ＲＳウイルス感染症&quot; &amp; is.na(value))) %&gt;%
+          mutate(value = ifelse(is.na(value), 0, value))
+      }, error = function(e) {
+        message(&quot;週データの処理に失敗しました (&quot;, week_label, &quot;): &quot;, conditionMessage(e))
+        NULL
+      })
+      if (!is.null(df)) {
+        log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;downloaded&quot;, rows=nrow(df))
+        data_list[[week_label]] &lt;- df
+      } else {
+        log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;parse_error&quot;, rows=NA_integer_)
+      }
+    } else {
+      log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;not_found&quot;, rows=NA_integer_)
+    }
+  } else {
+    log_entry &lt;- tibble(timestamp=as.character(ts), week_label=week_label, action=&quot;skipped&quot;, rows=NA_integer_)
+  }
+  log_entries &lt;- append(log_entries, list(log_entry))
+  Sys.sleep(5)
+}</code></pre>
+<pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): downloaded
+## length 0 != reported length 0</code></pre>
+<pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): cannot open
+## URL
+## &#39;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/2026/18/2026-18-teiten.csv&#39;:
+## HTTP status was &#39;404 Not Found&#39;</code></pre>
+<pre class="r"><code># — ログ結合＆出力 —
 new_logs &lt;- bind_rows(log_entries)
 all_logs &lt;- bind_rows(existing_logs, new_logs) %&gt;%
   distinct()
@@ -694,9 +812,31 @@ cleaned_diseases %&gt;%
   filter(pref == &quot;東京都&quot;) %&gt;% write_excel_csv(&quot;docs/results/data-東京都.csv&quot;)
 cleaned_diseases %&gt;%
   filter(pref == &quot;大阪府&quot;) %&gt;% write_excel_csv(&quot;docs/results/data-大阪府.csv&quot;)
-cleaned_diseases %&gt;%
+# 「その他」都道府県は 都道府県×感染症 の組み合わせで1ファイルずつ出力。
+# JS がチャートを描く直前に必要な1疾患分だけロードできるようにするため。
+# ファイル名は JS の categoryToDisplay() と同じ表示名を使う（名前不一致による404を防ぐ）。
+category_to_display &lt;- function(cat) {
+  dplyr::case_when(
+    cat == &quot;COVID-19&quot;                  ~ &quot;新型コロナウイルス&quot;,
+    cat == &quot;ＲＳウイルス感染症&quot;         ~ &quot;RSウイルス&quot;,
+    cat == &quot;Ａ群溶血性レンサ球菌咽頭炎&quot; ~ &quot;A群溶血性レンサ球菌咽頭炎&quot;,
+    TRUE ~ cat
+  )
+}
+dir.create(&quot;docs/results/pref&quot;, recursive = TRUE, showWarnings = FALSE)
+other_prefs &lt;- cleaned_diseases %&gt;%
   filter(!pref %in% c(&quot;全国&quot;, &quot;東京都&quot;, &quot;大阪府&quot;)) %&gt;%
-  write_excel_csv(&quot;docs/results/data-その他.csv&quot;)
+  distinct(pref) %&gt;%
+  pull(pref)
+for (p in other_prefs) {
+  cats_p &lt;- cleaned_diseases %&gt;% filter(pref == p) %&gt;% distinct(category) %&gt;% pull(category)
+  for (cat in cats_p) {
+    file_cat &lt;- category_to_display(cat)
+    cleaned_diseases %&gt;%
+      filter(pref == p, category == cat) %&gt;%
+      write_excel_csv(paste0(&quot;docs/results/pref/data-&quot;, p, &quot;-&quot;, file_cat, &quot;.csv&quot;))
+  }
+}
 
 # ---- ランキング用: 平年比・警報基準比（毎回実行・cleaned_diseases で算出） ----
 # 出典: docs/DASHBOARD_SPEC.md, data/alert_thresholds.csv
@@ -775,10 +915,9 @@ ranking &lt;- current_ma4 %&gt;%
   ) %&gt;%
   select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert)
 
-write_excel_csv(ranking, &quot;docs/results/ranking.csv&quot;)
-message(&quot;ランキング出力: docs/results/ranking.csv&quot;)</code></pre>
-<pre><code>## ランキング出力: docs/results/ranking.csv</code></pre>
-<pre class="r"><code># ---- トップ要点カード用: 事前計算済みJSON（全国 + 上位3都道府県） ----
+# ranking.csv は news_base 計算後に ratio_wow を付与してから書き出す（下記）
+
+# ---- トップ要点カード用: 事前計算済みJSON（全国 + 上位3都道府県） ----
 ranking_valid &lt;- ranking %&gt;%
   filter(!is.na(ratio_alert))
 
@@ -1675,7 +1814,23 @@ news_base &lt;- ranking %&gt;%
   ) %&gt;%
   filter(!is.na(category), !is.na(pref))
 
-alertPrefCountByDisease &lt;- computeAlertPrefCounts(news_base)
+# ---- ranking.csv に ratio_wow（前週比）を付与して書き出す ----
+ranking_wow &lt;- news_base %&gt;%
+  mutate(ratio_wow = if_else(
+    is.finite(previous_value) &amp; previous_value &gt; 0 &amp; is.finite(current_value),
+    round(current_value / previous_value, 4),
+    NA_real_
+  )) %&gt;%
+  select(category, pref, ratio_wow)
+
+ranking &lt;- ranking %&gt;%
+  left_join(ranking_wow, by = c(&quot;category&quot;, &quot;pref&quot;)) %&gt;%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+
+write_excel_csv(ranking, &quot;docs/results/ranking.csv&quot;)
+message(&quot;ランキング出力: docs/results/ranking.csv&quot;)</code></pre>
+<pre><code>## ランキング出力: docs/results/ranking.csv</code></pre>
+<pre class="r"><code>alertPrefCountByDisease &lt;- computeAlertPrefCounts(news_base)
 anomalies_df &lt;- detectAnomalies(news_base)
 
 lead_pick &lt;- selectLead(news_base)
