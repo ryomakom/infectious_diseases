@@ -559,7 +559,7 @@ function drawPoints(svgFocus, prefGroups, xFocus, yFocus) {
           .on("mouseover", function (event) {
             g.select("circle.point-visible").classed("highlight-circle", true);
             tooltip.transition().duration(200).style("opacity", 0.9);
-            tooltip.html(`<strong>${pref}</strong><br>定点あたり患者数: ${d.value}<br>${d.weekLabel || ""}`)
+            tooltip.html(`<strong>${pref}</strong><br>定点あたり患者数: ${d.value}人<br>${d.weekLabel || ""}`)
               .style("left", `${event.pageX + 10}px`)
               .style("top", `${event.pageY - 28}px`);
           })
@@ -811,7 +811,7 @@ function drawFocusContextChart(category, data) {
 
         tooltip
           .style("opacity", 0.9)
-          .html(`<strong>${best.pref}</strong><br>定点あたり患者数: ${best.d.value}　${best.d.weekLabel || ""}`)
+          .html(`<strong>${best.pref}</strong><br>定点あたり患者数: ${best.d.value}人<br>${best.d.weekLabel || ""}`)
           .style("left", `${touch.pageX + 10}px`)
           .style("top", `${touch.pageY - 28}px`);
       })
