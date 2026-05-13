@@ -2824,7 +2824,8 @@ header::after{
     margin-top: -4px;
   }
 
-  /* 前週比・平年比 (rising/anomaly): 縦積み */
+  /* --split を持たない alert-threshold へのフォールバック（現状 rising/anomaly も
+     --split を使うため通常はマッチしないが、将来追加されるカード用に縦積みを残す） */
   .signal-tab-triggers .news-digest-spark-alert-threshold:not(.news-digest-spark-alert-threshold--split) {
     flex-direction: column !important;
     align-items: flex-start !important;

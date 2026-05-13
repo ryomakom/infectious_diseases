@@ -370,16 +370,16 @@ function buildSignalSparkCard(item) {
   if (item.key === "rising") {
     const wow = Number.isFinite(item.wowRatio) ? item.wowRatio : null;
     alertThresholdHtml = wow !== null
-      ? `<p class="news-digest-spark-alert-threshold">
-          <span class="ratio-prefix">前の週と比べて</span><span class="news-digest-spark-ratio ${wow >= 2 ? "is-over" : ""}"><span class="ratio-num">${Math.round((wow - 1) * 100)}</span><span class="ratio-unit">%増</span></span>
+      ? `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
+          <span class="ratio-prefix ratio-prefix-main">前の週と</span><span class="ratio-prefix ratio-prefix-detail">比べて</span><span class="news-digest-spark-ratio ${wow >= 2 ? "is-over" : ""}"><span class="ratio-num">${Math.round((wow - 1) * 100)}</span><span class="ratio-unit">%増</span></span>
          </p>`
       : "";
   } else if (item.key === "anomaly") {
     const ryoy = (metricRow?.ratio_yoy != null && Number.isFinite(metricRow.ratio_yoy)) ? metricRow.ratio_yoy : null;
     if (ryoy !== null) {
       const pct = Math.round((ryoy - 1) * 100);
-      alertThresholdHtml = `<p class="news-digest-spark-alert-threshold">
-          <span class="ratio-prefix">平年同時期より</span><span class="news-digest-spark-ratio ${ryoy >= 2 ? "is-over" : ""}"><span class="ratio-num">${pct}</span><span class="ratio-unit">%多い</span></span>
+      alertThresholdHtml = `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
+          <span class="ratio-prefix ratio-prefix-main">平年同時期</span><span class="ratio-prefix ratio-prefix-detail">より</span><span class="news-digest-spark-ratio ${ryoy >= 2 ? "is-over" : ""}"><span class="ratio-num">${pct}</span><span class="ratio-unit">%多い</span></span>
          </p>`;
     }
   } else if (alertThreshold !== null) {
