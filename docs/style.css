@@ -660,6 +660,25 @@ header::after{
   }
 }
 
+/* 2列レイアウト（641-980px）：選択中カードが1行目のとき、パネルを行間に挿入する。
+   DOM順: card1(nth-child 1), card2(2), card3(3), panel(4)。
+   order デフォルト 0 のカード1・2 → 1行目、
+   card3 を order:3、panel をデフォルト order:4 にして card3 の後ろへ。
+   card1 or card2 が選択中なら panel を order:2 にして1行目の直下へ引き上げる。 */
+@media (max-width: 980px) and (min-width: 641px) {
+  .signal-tab-triggers > .news-digest-spark-card-wrap:nth-child(3) {
+    order: 3;
+  }
+  .signal-tab-triggers > .signal-tab-panel {
+    order: 4; /* デフォルト：card3 の後 */
+  }
+  /* 1行目カード（card1 or card2）が選択中 → パネルを1行目直下に */
+  .signal-tab-triggers:has(> .news-digest-spark-card-wrap:nth-child(1)[data-active-tab="1"]) > .signal-tab-panel,
+  .signal-tab-triggers:has(> .news-digest-spark-card-wrap:nth-child(2)[data-active-tab="1"]) > .signal-tab-panel {
+    order: 2;
+  }
+}
+
 @media (max-width: 640px){
   .news-digest-spark-grid{
     grid-template-columns: 1fr;
@@ -706,6 +725,12 @@ header::after{
   /* 矢印はアクティブカード（右列）の下から出す */
   .signal-tab-triggers > .news-digest-spark-card-wrap[data-active-tab="1"]::after{
     left: 50%;
+  }
+
+  /* パネルはミニカードグリッド（3行×2列）の下に配置 */
+  .signal-tab-triggers > .signal-tab-panel {
+    grid-column: 1 / -1;
+    order: 100;
   }
 }
 
@@ -987,7 +1012,12 @@ header::after{
 }
 
 .signal-tab-panel{
-  margin-top: 18px;
+  /* グリッドアイテムとして signal-tab-triggers の子になる。
+     grid-column:1/-1 で全列スパン。order:100 でデフォルト最後尾。
+     2列時は order を JS が付与した data-active-tab に応じて上書きする（後述）。 */
+  grid-column: 1 / -1;
+  order: 100;
+  margin-top: 8px; /* grid-gap(10px) + 8px = 18px の視覚的な隙間を維持 */
   border: 2px solid var(--color-primary);
   border-radius: var(--radius-sm);
   padding: 16px;
@@ -1684,7 +1714,7 @@ header::after{
 
 .ranking-table{
   width: 100%;
-  min-width: 500px;
+  min-width: 580px; /* スマホ時の最小幅に合わせる（中間サイズでも列が狭くならないよう）*/
   border-collapse: collapse;
   font-size: 14px;
   table-layout: fixed;
@@ -1696,7 +1726,7 @@ header::after{
 .ranking-table th:nth-child(2),
 .ranking-table td:nth-child(2){ width: 70px; min-width: 70px; }
 .ranking-table th:nth-child(3),
-.ranking-table td:nth-child(3){ width: 16%; min-width: 98px; }
+.ranking-table td:nth-child(3){ width: 17%; min-width: 98px; }
 .ranking-table th:nth-child(4),
 .ranking-table td:nth-child(4),
 .ranking-table th:nth-child(5),
@@ -1749,20 +1779,20 @@ header::after{
     min-width: 580px;
   }
 
-  /* ? ボタンを右上角に絶対配置し、テキスト + ↑↓ をインラインで流す。
-     padding-right は増やさず、既存の 14px 余白内に収める。 */
-  .ranking-table th.has-inline-help {
-    position: relative;
-  }
-  .ranking-table th.has-inline-help .th-with-help {
-    display: inline; /* インライン化することで ::after (↑↓) と同一インラインフローに */
-    position: static; /* th を基準にするため th-with-help の position:relative を解除 */
-  }
-  .ranking-table th.has-inline-help .metric-help-trigger {
-    position: absolute;
-    bottom: 6px; /* th の下端から 6px 上 */
-    right: 6px;  /* th の右端から 6px 左 */
-  }
+  /* ? ボタンの絶対配置・th-with-help のインライン化はグローバルルールで常時適用済み。
+     ここでの再宣言は不要だが、スマホ固有のオーバーライドが必要になれば追加する。 */
+}
+
+/* ? ボタンは常に th の右下隅に絶対配置する。
+   th-with-help が display:inline かつ position:static なので th が containing block になる。
+   container-type は table-cell には不安定なため使用しない。 */
+.ranking-table th.has-inline-help {
+  position: relative; /* ? ボタンの絶対配置の基準 */
+}
+.ranking-table th.has-inline-help .metric-help-trigger {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
 }
 
 .ranking-table th,
@@ -1815,10 +1845,10 @@ header::after{
 }
 
 .ranking-table th .th-with-help{
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  position: relative;
+  /* inline にして ::after（↑↓）と同一フローに置く。
+     display:inline-flex だと ? ボタンが行内を占有して折り返しが増えるため常に inline を使う */
+  display: inline;
+  position: static; /* th を containing block にするため */
 }
 
 .metric-help-trigger{
@@ -1967,6 +1997,18 @@ header::after{
   padding-right: 4px !important;
   vertical-align: middle;
   white-space: nowrap;
+  overflow: hidden;
+  /* コンテナクエリでセル幅を監視し、狭いときにスパークラインを丸ごと隠す */
+  container-type: inline-size;
+}
+
+/* セル幅 < 130px のときスパークラインを完全非表示（数値だけ残す）。
+   130px = 数値幅(~70px) + margin(~9px) + sparkline(52px) の合計。
+   モバイルは別途 @media で display:none !important 済みなので影響なし。 */
+@container (max-width: 129px) {
+  .ranking-sparkline {
+    display: none;
+  }
 }
 
 .ranking-table td.ranking-cell-value .ranking-value-num{

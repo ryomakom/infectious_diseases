@@ -671,7 +671,7 @@ function renderNewsDigestSection(rawDigest) {
   tabPanel.className = "signal-tab-panel";
   tabPanel.dataset.signalKey = state.activeSignalKey || "alert";
   tabPanel.appendChild(topPrefs);
-  tabsContainer.appendChild(tabPanel);
+  cardsWrap.appendChild(tabPanel); // グリッド内に入れて CSS order でパネル位置を行単位に制御する
 
   if (typeof window.startMiniSparklineDotAnimations === "function") {
     window.startMiniSparklineDotAnimations(tabPanel);
