@@ -742,10 +742,10 @@ function refreshRankingTable() {
 const _isHoverDevice = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 
 function _closeAllHelp() {
-  $$(".metric-help-trigger, .top-help-trigger").forEach(b =>
+  $$(".metric-help-trigger, .top-help-trigger, .signal-info-btn").forEach(b =>
     b.setAttribute("aria-expanded", "false")
   );
-  $$(".metric-help-popover.is-open, .top-help-popover.is-open").forEach(p => {
+  $$(".metric-help-popover.is-open, .top-help-popover.is-open, .signal-definition.is-open").forEach(p => {
     p.classList.remove("is-open");
     p.style.removeProperty("transform");
     p.classList.remove("popover-above");
@@ -845,7 +845,7 @@ function initializeMetricHelpTriggers() {
   // タッチデバイス: 外側タップで全閉じ
   if (!_isHoverDevice) {
     document.addEventListener("click", e => {
-      if (!e.target.closest(".metric-help-trigger, .metric-help-popover, .top-help-trigger, .top-help-popover, .th-with-help")) {
+      if (!e.target.closest(".metric-help-trigger, .metric-help-popover, .top-help-trigger, .top-help-popover, .th-with-help, .signal-info-btn, .signal-definition, .signal-info-wrap")) {
         _closeAllHelp();
       }
     });

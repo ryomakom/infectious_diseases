@@ -411,6 +411,13 @@ function buildSignalSparkCard(item) {
     <p class="news-digest-spark-kicker">${item.label}${infoHtml}</p>
     <p class="news-digest-spark-no-data">${noDataMessage}</p>
   `;
+  // 「?」ボタンにホバー/タップ挙動を付与（ranking.js の共通ユーティリティを使用）
+  const infoBtn = card.querySelector(".signal-info-btn");
+  const infoDef = card.querySelector(".signal-definition");
+  if (infoBtn && infoDef && typeof initHelpTrigger === "function") {
+    initHelpTrigger(infoBtn, infoDef);
+  }
+
   card.addEventListener("click", () => {
     if (item.category) {
       handleIntroSignalClick(item.category, item.key, wrap);

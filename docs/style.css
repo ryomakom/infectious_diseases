@@ -787,8 +787,13 @@ header::after{
   pointer-events: none;
 }
 
-.signal-info-wrap:hover .signal-definition{
+.signal-definition.is-open{
   display: block;
+  pointer-events: auto;
+}
+.signal-definition.popover-above{
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 /* シグナルテーマカラー */
