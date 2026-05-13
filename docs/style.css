@@ -2807,7 +2807,7 @@ header::after{
     flex-direction: row !important;
     flex-wrap: wrap;
     align-items: flex-start; /* 「（N人）の」を 2行目の上端に置き、「警報基準値」とのギャップを 2px に保つ */
-    gap: 2px 6px; /* row-gap: 2px で「定点あたり」/「患者数」行間と揃える */
+    gap: 1px 6px; /* row-gap: 1px で「警報基準値」と「（N人）の」の行間を詰める */
   }
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
