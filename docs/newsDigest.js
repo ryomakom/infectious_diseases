@@ -482,9 +482,10 @@ function buildTopPrefsSection(category, signalKey) {
 
     const alertThreshold = (row.alert_start != null && Number.isFinite(row.alert_start)) ? row.alert_start : null;
     const ratioAlert = (row.ratio_alert != null && Number.isFinite(row.ratio_alert)) ? row.ratio_alert : null;
+    // アラートカードと同じ split 構造: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
     const alertThresholdHtml = alertThreshold !== null
-      ? `<p class="news-digest-spark-alert-threshold">
-          <span class="ratio-prefix">警報基準値（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
+      ? `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
+          <span class="ratio-prefix ratio-prefix-main">警報基準値</span><span class="ratio-prefix ratio-prefix-detail">（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
          </p>`
       : "";
 
@@ -492,7 +493,7 @@ function buildTopPrefsSection(category, signalKey) {
       <p class="news-digest-spark-category">${row.pref}</p>
       <div class="news-digest-spark-body">
         <div class="news-digest-spark-metric-col">
-          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label">定点あたり患者数</span><span class="news-digest-spark-metric-number">${Number.isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></span></p>
+          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label metric-lbl-top">定点あたり</span><span class="metric-lbl-row2"><span class="news-digest-spark-metric-label">患者数</span><span class="news-digest-spark-metric-number">${Number.isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></span></span></p>
           ${alertThresholdHtml}
         </div>
         <div class="news-digest-spark-chart-col">

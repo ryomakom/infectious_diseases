@@ -1011,6 +1011,68 @@ header::after{
   overflow: visible;
 }
 
+/* シグナルカード（3つの切り口）をコンテナとして登録する。
+   カード自体の幅で改行の有無を判断するためコンテナクエリを使う。 */
+.signal-tab-triggers > .news-digest-spark-card-wrap {
+  container-type: inline-size;
+  container-name: signal-card;
+}
+
+@container signal-card (max-width: 300px) {
+  /* 「定点あたり」1行目・「患者数 [数値]」2行目 */
+  .news-digest-spark-metric-value {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .metric-lbl-top {
+    line-height: 1;
+  }
+  .metric-lbl-row2 {
+    display: flex;
+    align-items: flex-start;
+    line-height: 1;
+  }
+  .metric-lbl-row2 .news-digest-spark-metric-label {
+    margin-right: 0;
+  }
+  /* 数値（26px）を -12px 引き上げてベースラインを「患者数」(11px) に揃える */
+  .news-digest-spark-metric-number {
+    font-size: 26px;
+    line-height: 1;
+    margin-left: 30px;
+    margin-top: -12px;
+  }
+  /* 「警報基準値」1行目・「（N人）の 0.40倍」2行目 */
+  .news-digest-spark-alert-threshold--split {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1px 6px;
+    line-height: 1;
+  }
+  .ratio-prefix-main {
+    flex: 0 0 100%;
+    line-height: 1;
+  }
+  .news-digest-spark-alert-threshold--split .ratio-prefix-main + .ratio-prefix-detail {
+    margin-left: 0;
+  }
+  .news-digest-spark-ratio {
+    margin-left: 5px;
+    margin-top: -4px;
+  }
+  /* カード種別ごとの数値位置調整 */
+  [data-signal-key="rising"]  .news-digest-spark-ratio { margin-left: 10px; }
+  [data-signal-key="anomaly"] .news-digest-spark-ratio { margin-left: 35px; }
+  /* --split でない alert-threshold のフォールバック */
+  .news-digest-spark-alert-threshold:not(.news-digest-spark-alert-threshold--split) {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px;
+  }
+}
+
 .signal-tab-panel{
   /* グリッドアイテムとして signal-tab-triggers の子になる。
      grid-column:1/-1 で全列スパン。order:100 でデフォルト最後尾。
@@ -1056,7 +1118,11 @@ header::after{
 
 .signal-top-prefs-grid{
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* auto-fit + minmax で 3→2→1 列を自動切替。
+     各カードが最低 284px 確保できるときに列を増やす。
+     パネル内余白を除いた実効幅 (viewport − 72px) で計算すると
+       ≥940px で 3 列、648-939px で 2 列、<648px で 1 列になる。 */
+  grid-template-columns: repeat(auto-fit, minmax(284px, 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -1069,9 +1135,54 @@ header::after{
   color: var(--color-text-subtle);
 }
 
-@media (max-width: 640px){
-  .signal-top-prefs-grid{
-    grid-template-columns: 1fr;
+/* 都道府県カード: カード自体の幅で split を判断するためコンテナクエリを使う。
+   card-wrap を container にし、カード幅 ≤ 360px のとき split レイアウトを適用。
+   同じビューポート幅でも 2列（広い）と 3列（狭い）でカード幅が異なるため、
+   画面幅ではなくカード幅で判断するのが正しい。 */
+.signal-top-prefs-grid > .news-digest-spark-card-wrap {
+  container-type: inline-size;
+  container-name: pref-card;
+}
+
+@container pref-card (max-width: 300px) {
+  .news-digest-spark-metric-value {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .metric-lbl-top {
+    line-height: 1;
+  }
+  .metric-lbl-row2 {
+    display: flex;
+    align-items: flex-start;
+    line-height: 1;
+  }
+  .metric-lbl-row2 .news-digest-spark-metric-label {
+    margin-right: 0;
+  }
+  .news-digest-spark-metric-number {
+    line-height: 1;
+    margin-left: 31px;        /* 「患者数」の右にインデント */
+    margin-top: -12px;        /* (26px数値 − 11px患者数) × 0.8 = 12px でベースライン揃え */
+  }
+  .news-digest-spark-alert-threshold--split {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1px 4px;
+    line-height: 1;
+  }
+  .ratio-prefix-main {
+    flex: 0 0 100%;
+    line-height: 1;
+  }
+  .news-digest-spark-alert-threshold--split .ratio-prefix-main + .ratio-prefix-detail {
+    margin-left: 0;
+  }
+  .news-digest-spark-ratio {
+    margin-left: 11px;
+    margin-top: -4px;
   }
 }
 
@@ -2841,81 +2952,8 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカード:
-     - 外側の <p> は flex-column で「定点あたり」と「患者数+数値」を縦に並べる
-     - 内側の metric-lbl-row2 も flex にして align-items: flex-start にすることで
-       「患者数」を 26px 行ボックスの上端に揃える（ベースライン揃えだと約12px下がる）
-     これで「定点あたり」と「患者数」の見た目の隙間 = gap の値だけになる。 */
-  .signal-tab-triggers .news-digest-spark-metric-value {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .signal-tab-triggers .metric-lbl-top {
-    line-height: 1;
-  }
-  .signal-tab-triggers .metric-lbl-row2 {
-    display: flex;
-    align-items: flex-start; /* 「患者数」を行の上端に置き、「定点あたり」とのギャップを 2px に保つ */
-    line-height: 1;
-  }
-  .signal-tab-triggers .metric-lbl-row2 .news-digest-spark-metric-label {
-    margin-right: 0;
-  }
-  /* 数値（26px）を負の margin-top で 12px 引き上げ、ベースラインを「患者数」(11px)
-     のベースラインに揃える。算出: (26 - 11) × 0.8 = 12px。
-     これで「患者数」と「3.23人」の見た目の下端（ベースライン）が一致しつつ、
-     「定点あたり」と「患者数」のギャップは 2px のまま保たれる。 */
-  .signal-tab-triggers .news-digest-spark-metric-number {
-    font-size: 26px;
-    line-height: 1;
-    margin-left: 30px;
-    margin-top: -12px;
-  }
-
-  /* 警報閾値カード: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
-     ratio-prefix-main を flex: 0 0 100% にして次行へ押し出す。 */
-  .signal-tab-triggers .news-digest-spark-alert-threshold--split {
-    flex-direction: row !important;
-    flex-wrap: wrap;
-    align-items: flex-start; /* 「（N人）の」を 2行目の上端に置き、「警報基準値」とのギャップを 2px に保つ */
-    gap: 1px 6px; /* row-gap: 1px で「警報基準値」と「（N人）の」の行間を詰める */
-    line-height: 1; /* body から継承する 1.6 を打ち消して 2行目のハーフレディングを除去
-                       （これがないと PC では各行ボックスが (font-size × 1.6) に膨らみ、
-                       グリフ上下に余白が生まれて gap が広く見える） */
-  }
-  .signal-tab-triggers .ratio-prefix-main {
-    flex: 0 0 100%;
-    line-height: 1; /* 高さを 11px に抑えて行間を詰める */
-  }
-  /* モバイルでは detail が改行で line 2 に来るため、デスクトップで gap を打ち消すための
-     負の margin-left をリセットする（そうしないと line 2 の行頭が左へずれる） */
-  .signal-tab-triggers .news-digest-spark-alert-threshold--split .ratio-prefix-main + .ratio-prefix-detail {
-    margin-left: 0;
-  }
-  /* 数値（●●倍）を右にずらし、負の margin-top で 4px 引き上げてベースラインを
-     「（N人）の」(11px) に揃える。算出: (16 - 11) × 0.8 = 4px（ratio-num が 16px）。
-     これで「（N人）の」と「0.40倍」の下端が揃いつつ、行間 2px は維持される。 */
-  .signal-tab-triggers .news-digest-spark-ratio {
-    margin-left: 5px; /* 「0.40倍」を 1.5 文字分左に寄せる（20px → 5px） */
-    margin-top: -4px;
-  }
-  /* 「最も増加が激しい」カードだけ「44%増」を 0.5 文字分右にずらす */
-  .signal-tab-triggers [data-signal-key="rising"] .news-digest-spark-ratio {
-    margin-left: 10px;
-  }
-  /* 「最も季節外れの増加」カードだけ「43%多い」を 3 文字分右にずらす */
-  .signal-tab-triggers [data-signal-key="anomaly"] .news-digest-spark-ratio {
-    margin-left: 35px;
-  }
-
-  /* --split を持たない alert-threshold へのフォールバック（現状 rising/anomaly も
-     --split を使うため通常はマッチしないが、将来追加されるカード用に縦積みを残す） */
-  .signal-tab-triggers .news-digest-spark-alert-threshold:not(.news-digest-spark-alert-threshold--split) {
-    flex-direction: column !important;
-    align-items: flex-start !important;
-    gap: 2px;
-  }
+  /* シグナルカードの split レイアウトはコンテナクエリ（signal-card）で制御するため
+     ここには記述しない。 */
 
   /* 著者クレジット：スマホでは fixed オーバーレイが邪魔になるため非表示 */
   .author-credit {
