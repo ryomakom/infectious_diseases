@@ -2823,6 +2823,10 @@ header::after{
     margin-left: 5px; /* 「0.40倍」を 1.5 文字分左に寄せる（20px → 5px） */
     margin-top: -4px;
   }
+  /* 「最も季節外れの増加」カードだけ「43%多い」を 2 文字分右にずらす */
+  .signal-tab-triggers [data-signal-key="anomaly"] .news-digest-spark-ratio {
+    margin-left: 25px;
+  }
 
   /* --split を持たない alert-threshold へのフォールバック（現状 rising/anomaly も
      --split を使うため通常はマッチしないが、将来追加されるカード用に縦積みを残す） */
