@@ -2784,16 +2784,21 @@ header::after{
   }
   .signal-tab-triggers .metric-lbl-row2 {
     display: flex;
-    align-items: flex-end; /* 「患者数」の下部を「3.23人」の下部に揃える */
+    align-items: flex-start; /* 「患者数」を行の上端に置き、「定点あたり」とのギャップを 2px に保つ */
     line-height: 1;
   }
   .signal-tab-triggers .metric-lbl-row2 .news-digest-spark-metric-label {
     margin-right: 0;
   }
+  /* 数値（26px）を負の margin-top で 12px 引き上げ、ベースラインを「患者数」(11px)
+     のベースラインに揃える。算出: (26 - 11) × 0.8 = 12px。
+     これで「患者数」と「3.23人」の見た目の下端（ベースライン）が一致しつつ、
+     「定点あたり」と「患者数」のギャップは 2px のまま保たれる。 */
   .signal-tab-triggers .news-digest-spark-metric-number {
     font-size: 26px;
     line-height: 1;
     margin-left: 30px;
+    margin-top: -12px;
   }
 
   /* 警報閾値カード: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
@@ -2801,16 +2806,19 @@ header::after{
   .signal-tab-triggers .news-digest-spark-alert-threshold--split {
     flex-direction: row !important;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: flex-start; /* 「（N人）の」を 2行目の上端に置き、「警報基準値」とのギャップを 2px に保つ */
     gap: 2px 6px; /* row-gap: 2px で「定点あたり」/「患者数」行間と揃える */
   }
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
     line-height: 1; /* 高さを 11px に抑えて行間を詰める */
   }
-  /* 数値（●●倍）を右にずらして1行目ラベルと段差をつける */
+  /* 数値（●●倍）を右にずらし、負の margin-top で 4px 引き上げてベースラインを
+     「（N人）の」(11px) に揃える。算出: (16 - 11) × 0.8 = 4px（ratio-num が 16px）。
+     これで「（N人）の」と「0.40倍」の下端が揃いつつ、行間 2px は維持される。 */
   .signal-tab-triggers .news-digest-spark-ratio {
     margin-left: 20px;
+    margin-top: -4px;
   }
 
   /* 前週比・平年比 (rising/anomaly): 縦積み */
