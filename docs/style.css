@@ -905,6 +905,12 @@ header::after{
   margin-right: 4px;
 }
 
+/* metric-lbl-top はデスクトップで「定点あたり」と「患者数」をくっつけるため
+   margin-right を打ち消す。 */
+.metric-lbl-top {
+  margin-right: 0;
+}
+
 /* br が表示されると「定点あたり」の後で改行 ─ デスクトップでは非表示 */
 .mobile-br { display: none; }
 
@@ -2763,17 +2769,25 @@ header::after{
     font-size: 13px;
   }
 
-  /* メインシグナルカード: metric-lbl-top を display:block にして
-     margin-bottom で行間を直接制御する。
-     display:block の block は匿名ブロックを生成し、続く metric-lbl-row2
-     （患者数＋数値）が別ブロックに収まることで行間 = margin-bottom のみになる。 */
+  /* メインシグナルカード:
+     - 外側の <p> は flex-column で「定点あたり」と「患者数+数値」を縦に並べる
+     - 内側の metric-lbl-row2 も flex にして align-items: flex-start にすることで
+       「患者数」を 26px 行ボックスの上端に揃える（ベースライン揃えだと約12px下がる）
+     これで「定点あたり」と「患者数」の見た目の隙間 = gap の値だけになる。 */
   .signal-tab-triggers .news-digest-spark-metric-value {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
   }
   .signal-tab-triggers .metric-lbl-top {
-    display: block;
     line-height: 1;
-    margin-bottom: 2px;
+  }
+  .signal-tab-triggers .metric-lbl-row2 {
+    display: flex;
+    align-items: flex-start; /* 「患者数」を 26px 行ボックスの上端に揃える */
+    line-height: 1;
+  }
+  .signal-tab-triggers .metric-lbl-row2 .news-digest-spark-metric-label {
     margin-right: 0;
   }
   .signal-tab-triggers .news-digest-spark-metric-number {
