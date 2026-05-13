@@ -641,7 +641,12 @@ function computeRanking() {
 
   let filtered = highlightSource.slice();
   if (state.selectedRankingPrefectures.size) filtered = filtered.filter(d => state.selectedRankingPrefectures.has(d.pref));
-  filtered.forEach(row => { if (row._wow === undefined) row._wow = getWowRatio(row.category, row.pref); });
+  filtered.forEach(row => {
+    if (row._wow === undefined) {
+      // CSV の ratio_wow を優先。未ロードの都道府県でもマイナス含め正しく表示できる
+      row._wow = (row.ratio_wow != null) ? row.ratio_wow : getWowRatio(row.category, row.pref);
+    }
+  });
   if (state.sortKey === "ratio_wow") {
     filtered = filtered.slice().sort((a, b) => {
       const av = Number.isFinite(a._wow) ? a._wow : -Infinity;

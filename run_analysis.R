@@ -115,8 +115,7 @@ ranking <- current_ma4 %>%
   ) %>%
   select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert)
 
-write_excel_csv(ranking, "docs/results/ranking.csv")
-cat("ranking.csv written.\n")
+# ranking.csv は news_base 計算後に ratio_wow を付与してから書き出す（下記）
 
 # ---- Top highlights JSON ----
 ranking_valid <- ranking %>% filter(!is.na(ratio_alert))
@@ -551,6 +550,22 @@ news_base <- ranking %>%
          recent4_avg,previous4_avg,growth1Rate,growth1Diff,growth4Rate,weeksOverAlert,persistenceRate,persistenceWindow,
          ma4_series,weekly_value_series,year_series,week_series,seasonal_mean,seasonal_std,seasonal_zscore,anomaly_z,anomaly_ratio,anomaly_diff) %>%
   filter(!is.na(category),!is.na(pref))
+
+# ---- ranking.csv に ratio_wow（前週比）を付与して書き出す ----
+ranking_wow <- news_base %>%
+  mutate(ratio_wow = if_else(
+    is.finite(previous_value) & previous_value > 0 & is.finite(current_value),
+    round(current_value / previous_value, 4),
+    NA_real_
+  )) %>%
+  select(category, pref, ratio_wow)
+
+ranking <- ranking %>%
+  left_join(ranking_wow, by = c("category", "pref")) %>%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+
+write_excel_csv(ranking, "docs/results/ranking.csv")
+cat("ranking.csv written.\n")
 
 anomalies_df <- detectAnomalies(news_base)
 lead_pick <- selectLead(news_base)

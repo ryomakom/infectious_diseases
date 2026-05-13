@@ -46,7 +46,8 @@ function loadRankingCsv() {
       ratio_yoy: Number.isFinite(+d.ratio_yoy) ? +d.ratio_yoy : null,
       ratio_alert: d.ratio_alert === "" || Number.isNaN(+d.ratio_alert) ? null : +d.ratio_alert,
       current_ma4: +d.current_ma4,
-      alert_start: (d.alert_start === "" || d.alert_start === "NA" || d.alert_start == null || Number.isNaN(+d.alert_start)) ? null : +d.alert_start
+      alert_start: (d.alert_start === "" || d.alert_start === "NA" || d.alert_start == null || Number.isNaN(+d.alert_start)) ? null : +d.alert_start,
+      ratio_wow: (d.ratio_wow === "" || d.ratio_wow === "NA" || d.ratio_wow == null || Number.isNaN(+d.ratio_wow)) ? null : +d.ratio_wow
     })))
     .catch(() => []);
 }

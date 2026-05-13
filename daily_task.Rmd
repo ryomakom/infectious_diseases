@@ -498,8 +498,7 @@ ranking <- current_ma4 %>%
   ) %>%
   select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert)
 
-write_excel_csv(ranking, "docs/results/ranking.csv")
-message("ランキング出力: docs/results/ranking.csv")
+# ranking.csv は news_base 計算後に ratio_wow を付与してから書き出す（下記）
 
 # ---- トップ要点カード用: 事前計算済みJSON（全国 + 上位3都道府県） ----
 ranking_valid <- ranking %>%
@@ -1397,6 +1396,22 @@ news_base <- ranking %>%
     seasonal_mean, seasonal_std, seasonal_zscore, anomaly_z, anomaly_ratio, anomaly_diff
   ) %>%
   filter(!is.na(category), !is.na(pref))
+
+# ---- ranking.csv に ratio_wow（前週比）を付与して書き出す ----
+ranking_wow <- news_base %>%
+  mutate(ratio_wow = if_else(
+    is.finite(previous_value) & previous_value > 0 & is.finite(current_value),
+    round(current_value / previous_value, 4),
+    NA_real_
+  )) %>%
+  select(category, pref, ratio_wow)
+
+ranking <- ranking %>%
+  left_join(ranking_wow, by = c("category", "pref")) %>%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+
+write_excel_csv(ranking, "docs/results/ranking.csv")
+message("ランキング出力: docs/results/ranking.csv")
 
 alertPrefCountByDisease <- computeAlertPrefCounts(news_base)
 anomalies_df <- detectAnomalies(news_base)

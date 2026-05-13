@@ -135,8 +135,8 @@
       </div>
       <div class="ranking-filters ranking-filters-row">
         <div class="ranking-filter-group">
-          <span class="ranking-filter-label">表示中の都道府県</span>
-          <div id="ranking-pref-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の都道府県"></div>
+          <span class="ranking-filter-label">表示中の地域</span>
+          <div id="ranking-pref-tags" class="ranking-filter-tags ranking-filter-tags--above" role="list" aria-label="表示中の地域"></div>
           <div class="ranking-filter-row">
             <div id="ranking-pref-dropdown" class="dropdown">
               <button type="button" id="ranking-pref-dropdown-btn" class="dropdown-btn is-placeholder" aria-label="都道府県を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
@@ -178,7 +178,7 @@
                     aria-label="警報基準比の説明を表示"
                     aria-expanded="false"
                   >?</button>
-                  <span id="help-ratio-alert" class="metric-help-popover" role="tooltip">患者数が警報基準の何倍かを示す指標。基準がない感染症は「ー」で表示</span>
+                  <span id="help-ratio-alert" class="metric-help-popover" role="tooltip">定点あたり患者数が警報基準値の何倍にあたるかを示す。基準がない感染症では「—」としている</span>
                 </span>
               </th>
               <th scope="col" class="sortable has-inline-help" data-sort="ratio_wow" data-sort-hint="クリックで並べ替え" id="th-ratio-wow" aria-sort="none" title="クリックで並べ替え">
@@ -204,7 +204,7 @@
                     aria-label="平年比の説明を表示"
                     aria-expanded="false"
                   >?</button>
-                  <span id="help-ratio-yoy" class="metric-help-popover" role="tooltip">過去3年の同時期にあった4週間の移動平均に対する比率。1なら平年並み、2なら平年の2倍</span>
+                  <span id="help-ratio-yoy" class="metric-help-popover" role="tooltip">過去3年の同時期にあった4週間の移動平均と比べた増減。平年の2倍なら「+100％」になる</span>
                 </span>
               </th>
             </tr>
@@ -225,8 +225,8 @@
 
       <div class="controls-filters-row">
         <div class="filter-group">
-          <span class="filter-group-label">表示中の都道府県</span>
-          <div id="pref-selected" class="filter-tags filter-tags--above" role="list" aria-label="表示中の都道府県"></div>
+          <span class="filter-group-label">表示中の地域</span>
+          <div id="pref-selected" class="filter-tags filter-tags--above" role="list" aria-label="表示中の地域"></div>
           <div class="filter-row">
             <div id="pref-dropdown" class="dropdown">
               <button type="button" id="dropdown-btn" class="dropdown-btn" aria-label="都道府県を選択" aria-haspopup="listbox" aria-expanded="false">ここから追加</button>
