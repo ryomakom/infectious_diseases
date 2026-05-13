@@ -2836,6 +2836,10 @@ header::after{
     margin-left: 5px; /* 「0.40倍」を 1.5 文字分左に寄せる（20px → 5px） */
     margin-top: -4px;
   }
+  /* 「最も増加が激しい」カードだけ「44%増」を 0.5 文字分右にずらす */
+  .signal-tab-triggers [data-signal-key="rising"] .news-digest-spark-ratio {
+    margin-left: 10px;
+  }
   /* 「最も季節外れの増加」カードだけ「43%多い」を 3 文字分右にずらす */
   .signal-tab-triggers [data-signal-key="anomaly"] .news-digest-spark-ratio {
     margin-left: 35px;
