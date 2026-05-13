@@ -2784,7 +2784,7 @@ header::after{
   }
   .signal-tab-triggers .metric-lbl-row2 {
     display: flex;
-    align-items: flex-start; /* 「患者数」を 26px 行ボックスの上端に揃える */
+    align-items: flex-end; /* 「患者数」の下部を「3.23人」の下部に揃える */
     line-height: 1;
   }
   .signal-tab-triggers .metric-lbl-row2 .news-digest-spark-metric-label {
@@ -2802,7 +2802,7 @@ header::after{
     flex-direction: row !important;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 0 6px; /* row-gap: 0 で行間を詰める */
+    gap: 2px 6px; /* row-gap: 2px で「定点あたり」/「患者数」行間と揃える */
   }
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
