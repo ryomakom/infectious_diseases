@@ -586,14 +586,7 @@ function renderTopHighlights(payload, signalKey) {
     const topHelpTrigger = left.querySelector(".top-help-trigger");
     const topHelpPopover = left.querySelector(".top-help-popover");
     if (topHelpTrigger && topHelpPopover) {
-      topHelpTrigger.addEventListener("click", e => {
-        e.preventDefault();
-        e.stopPropagation();
-        const willOpen = topHelpTrigger.getAttribute("aria-expanded") !== "true";
-        topHelpTrigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
-        topHelpPopover.classList.toggle("is-open", willOpen);
-      });
-      topHelpPopover.addEventListener("click", e => e.stopPropagation());
+      initHelpTrigger(topHelpTrigger, topHelpPopover);
     }
     left.addEventListener("click", () => goToChart(nationwideRow.pref, nationwideRow.category));
     left.addEventListener("keydown", e => {
@@ -744,6 +737,78 @@ function refreshRankingTable() {
   });
 }
 
+// ── ヘルプポップオーバー共通ユーティリティ ─────────────────────────────
+// (hover: hover) and (pointer: fine) = マウス／トラックパッドのみ
+const _isHoverDevice = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+function _closeAllHelp() {
+  $$(".metric-help-trigger, .top-help-trigger").forEach(b =>
+    b.setAttribute("aria-expanded", "false")
+  );
+  $$(".metric-help-popover.is-open, .top-help-popover.is-open").forEach(p => {
+    p.classList.remove("is-open");
+    p.style.removeProperty("transform");
+    p.classList.remove("popover-above");
+  });
+}
+
+function _positionPopover(popover) {
+  // まずリセット
+  popover.style.removeProperty("transform");
+  popover.classList.remove("popover-above");
+
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  const margin = 8;
+
+  // 下にはみ出す場合は上に表示
+  let rect = popover.getBoundingClientRect();
+  if (rect.bottom > vh - margin) {
+    popover.classList.add("popover-above");
+    rect = popover.getBoundingClientRect();
+  }
+
+  // 水平方向: translateX でビューポート内に収める
+  let tx = 0;
+  if (rect.right > vw - margin) tx = -(rect.right - (vw - margin));
+  if (rect.left + tx < margin) tx = margin - rect.left;
+  if (tx !== 0) popover.style.transform = `translateX(${tx}px)`;
+}
+
+function initHelpTrigger(btn, popover) {
+  const open = () => {
+    _closeAllHelp();
+    btn.setAttribute("aria-expanded", "true");
+    popover.classList.add("is-open");
+    _positionPopover(popover);
+  };
+  const close = () => {
+    btn.setAttribute("aria-expanded", "false");
+    popover.classList.remove("is-open");
+    popover.style.removeProperty("transform");
+    popover.classList.remove("popover-above");
+  };
+
+  if (_isHoverDevice) {
+    // PCのみ: ホバーで表示
+    btn.addEventListener("mouseenter", open);
+    btn.addEventListener("mouseleave", close);
+    btn.addEventListener("focus",      open);
+    btn.addEventListener("blur",       close);
+  } else {
+    // タッチデバイス: タップでトグル
+    btn.addEventListener("click", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const isOpen = btn.getAttribute("aria-expanded") === "true";
+      _closeAllHelp();
+      if (!isOpen) open();
+    });
+    popover.addEventListener("click", e => e.stopPropagation());
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────
+
 function initializeMetricHelpTriggers() {
   if (metricHelpInitialized) return;
   metricHelpInitialized = true;
@@ -751,53 +816,43 @@ function initializeMetricHelpTriggers() {
   const triggers = $$(".metric-help-trigger");
   if (!triggers.length) return;
 
-  const closeAll = () => {
-    $$(".metric-help-trigger").forEach(btn => btn.setAttribute("aria-expanded", "false"));
-    $$(".metric-help-popover.is-open").forEach(pop => pop.classList.remove("is-open"));
-  };
-
   triggers.forEach(btn => {
+    // ソートヒントのtitle属性をホバー中に非表示（ツールチップ競合防止）
     const parentSortableTh = btn.closest("th.sortable");
     const hideSortHintTitle = () => {
       if (!parentSortableTh) return;
-      const currentTitle = parentSortableTh.getAttribute("title");
-      if (currentTitle != null) {
-        parentSortableTh.dataset.sortHintTitle = currentTitle;
+      const t = parentSortableTh.getAttribute("title");
+      if (t != null) {
+        parentSortableTh.dataset.sortHintTitle = t;
         parentSortableTh.removeAttribute("title");
       }
     };
     const showSortHintTitle = () => {
-      if (!parentSortableTh) return;
-      if (parentSortableTh.hasAttribute("title")) return;
+      if (!parentSortableTh || parentSortableTh.hasAttribute("title")) return;
       parentSortableTh.setAttribute("title", parentSortableTh.dataset.sortHintTitle || "クリックで並べ替え");
     };
-
     btn.addEventListener("mouseenter", hideSortHintTitle);
-    btn.addEventListener("focus", hideSortHintTitle);
+    btn.addEventListener("focus",      hideSortHintTitle);
     btn.addEventListener("mouseleave", showSortHintTitle);
-    btn.addEventListener("blur", showSortHintTitle);
+    btn.addEventListener("blur",       showSortHintTitle);
 
-    btn.addEventListener("click", e => {
-      e.preventDefault();
-      e.stopPropagation();
-      const targetId = btn.getAttribute("data-help-target");
-      const popover = targetId ? document.getElementById(targetId) : null;
-      if (!popover) return;
-      const willOpen = btn.getAttribute("aria-expanded") !== "true";
-      closeAll();
-      if (willOpen) {
-        btn.setAttribute("aria-expanded", "true");
-        popover.classList.add("is-open");
+    const targetId = btn.getAttribute("data-help-target");
+    const popover = targetId ? document.getElementById(targetId) : null;
+    if (!popover) return;
+    initHelpTrigger(btn, popover);
+  });
+
+  // タッチデバイス: 外側タップで全閉じ
+  if (!_isHoverDevice) {
+    document.addEventListener("click", e => {
+      if (!e.target.closest(".metric-help-trigger, .metric-help-popover, .top-help-trigger, .top-help-popover, .th-with-help")) {
+        _closeAllHelp();
       }
     });
-  });
-
-  document.addEventListener("click", e => {
-    if (!e.target.closest(".th-with-help")) closeAll();
-  });
+  }
 
   document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeAll();
+    if (e.key === "Escape") _closeAllHelp();
   });
 }
 

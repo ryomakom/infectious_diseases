@@ -2009,9 +2009,11 @@ header::after{
   display: block;
 }
 
-.th-with-help .metric-help-trigger:hover + .metric-help-popover,
-.th-with-help .metric-help-trigger:focus-visible + .metric-help-popover{
-  display: block;
+/* 上表示（画面下端あふれ時） */
+.metric-help-popover.popover-above,
+.top-help-popover.popover-above {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 
 
