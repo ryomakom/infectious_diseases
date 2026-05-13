@@ -2808,6 +2808,9 @@ header::after{
     flex-wrap: wrap;
     align-items: flex-start; /* 「（N人）の」を 2行目の上端に置き、「警報基準値」とのギャップを 2px に保つ */
     gap: 1px 6px; /* row-gap: 1px で「警報基準値」と「（N人）の」の行間を詰める */
+    line-height: 1; /* body から継承する 1.6 を打ち消して 2行目のハーフレディングを除去
+                       （これがないと PC では各行ボックスが (font-size × 1.6) に膨らみ、
+                       グリフ上下に余白が生まれて gap が広く見える） */
   }
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
