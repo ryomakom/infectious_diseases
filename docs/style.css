@@ -2820,7 +2820,7 @@ header::after{
      「（N人）の」(11px) に揃える。算出: (16 - 11) × 0.8 = 4px（ratio-num が 16px）。
      これで「（N人）の」と「0.40倍」の下端が揃いつつ、行間 2px は維持される。 */
   .signal-tab-triggers .news-digest-spark-ratio {
-    margin-left: 20px;
+    margin-left: 5px; /* 「0.40倍」を 1.5 文字分左に寄せる（20px → 5px） */
     margin-top: -4px;
   }
 
