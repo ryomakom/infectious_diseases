@@ -1711,7 +1711,7 @@ header::after{
   .ranking-table th:nth-child(2),
   .ranking-table td:nth-child(2){ width: 70px; min-width: 70px; }
   .ranking-table th:nth-child(3),
-  .ranking-table td:nth-child(3){ width: 15%; min-width: 98px; }
+  .ranking-table td:nth-child(3){ width: 17%; min-width: 98px; } /* 1文字分拡大 (15%→17%) */
   .ranking-table td.ranking-cell-value .ranking-sparkline{
     display: none !important;
     width: 0 !important;
@@ -1741,6 +1741,28 @@ header::after{
   .ranking-table td:nth-child(5),
   .ranking-table th:nth-child(6),
   .ranking-table td:nth-child(6){ width: 15%; min-width: 98px; }
+
+  /* スマホ: テーブル幅を広げて列の内容幅を確保する。
+     table-layout: fixed のため min-width は列幅に効かず、
+     テーブル自体の min-width を増やすことで各列が広くなる。 */
+  .ranking-table {
+    min-width: 580px;
+  }
+
+  /* ? ボタンを右上角に絶対配置し、テキスト + ↑↓ をインラインで流す。
+     padding-right は増やさず、既存の 14px 余白内に収める。 */
+  .ranking-table th.has-inline-help {
+    position: relative;
+  }
+  .ranking-table th.has-inline-help .th-with-help {
+    display: inline; /* インライン化することで ::after (↑↓) と同一インラインフローに */
+    position: static; /* th を基準にするため th-with-help の position:relative を解除 */
+  }
+  .ranking-table th.has-inline-help .metric-help-trigger {
+    position: absolute;
+    bottom: 6px; /* th の下端から 6px 上 */
+    right: 6px;  /* th の右端から 6px 左 */
+  }
 }
 
 .ranking-table th,
