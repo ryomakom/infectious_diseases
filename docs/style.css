@@ -959,6 +959,14 @@ header::after{
   font-size: 11px;
 }
 
+/* --split のときは main / detail を 1 つの連続テキストとして見せたいので、
+   親 flex の gap: 4px をネガティブマージンで打ち消す。
+   モバイルでは flex-wrap により detail が改行されるので、下の media query 内で
+   リセットして行頭にずれないようにする。 */
+.news-digest-spark-alert-threshold--split .ratio-prefix-main + .ratio-prefix-detail{
+  margin-left: -4px;
+}
+
 .news-digest-spark-chart-col{
   flex-shrink: 0;
   line-height: 0;
@@ -2815,6 +2823,11 @@ header::after{
   .signal-tab-triggers .ratio-prefix-main {
     flex: 0 0 100%;
     line-height: 1; /* 高さを 11px に抑えて行間を詰める */
+  }
+  /* モバイルでは detail が改行で line 2 に来るため、デスクトップで gap を打ち消すための
+     負の margin-left をリセットする（そうしないと line 2 の行頭が左へずれる） */
+  .signal-tab-triggers .news-digest-spark-alert-threshold--split .ratio-prefix-main + .ratio-prefix-detail {
+    margin-left: 0;
   }
   /* 数値（●●倍）を右にずらし、負の margin-top で 4px 引き上げてベースラインを
      「（N人）の」(11px) に揃える。算出: (16 - 11) × 0.8 = 4px（ratio-num が 16px）。
