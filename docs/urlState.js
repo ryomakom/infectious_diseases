@@ -1,5 +1,35 @@
 "use strict";
 
+// ── シェアボタンのURLに今週の ISO 週番号を付与（OGPキャッシュ対策） ──────
+// 例: https://...?w=2026-W19
+// 週ごとに「新しいURL」となるため、Twitter等のOGPキャッシュが切り替わる
+(function updateShareButtonUrls() {
+  function isoWeek(d) {
+    const t = new Date(d);
+    t.setHours(0, 0, 0, 0);
+    // 週の木曜日で年を判定（ISO 8601）
+    t.setDate(t.getDate() + 3 - ((t.getDay() + 6) % 7));
+    const week1 = new Date(t.getFullYear(), 0, 4);
+    const weekNum =
+      1 + Math.round(((t - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+    return { year: t.getFullYear(), week: weekNum };
+  }
+  function ready(fn) {
+    if (document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+  ready(function () {
+    const { year, week } = isoWeek(new Date());
+    const wTag = `${year}-W${String(week).padStart(2, "0")}`;
+    const base = "https://ryomakom.github.io/infectious_diseases/";
+    const encOld = encodeURIComponent(base);
+    const encNew = encodeURIComponent(`${base}?w=${wTag}`);
+    document.querySelectorAll(".share-buttons a.share-btn").forEach(a => {
+      a.href = a.href.split(encOld).join(encNew);
+    });
+  });
+})();
+
 // ── URL でグラフ状態を共有する ──────────────────────────────────────────────
 // クエリパラメータ:
 //   pref … 選択中の地域（カンマ区切り）
