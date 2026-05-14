@@ -1046,7 +1046,7 @@ header::after{
     margin-left: 30px;
     margin-top: -12px;
   }
-  /* 「警報基準値」1行目・「（N人）の 0.40倍」2行目 */
+  /* 「警報開始」1行目・「基準値の 0.40倍」2行目 */
   .news-digest-spark-alert-threshold--split {
     flex-direction: row !important;
     flex-wrap: wrap;
@@ -1921,21 +1921,15 @@ header::after{
   min-width: 0;
 }
 
-/* 警報基準比・平年比の危険度による色分け */
-.ranking-table td.ratio-alert--caution,
-.ranking-table td.ratio-yoy--high{
-  background: rgba(245, 158, 11, 0.15);
-  color: #b45309;
-}
-.ranking-table td.ratio-alert--danger,
-.ranking-table td.ratio-yoy--very-high{
+/* 警報レベル（開始基準値を超えてから終息基準値を下回るまで）のセルのみ赤く塗る */
+.ranking-table td.ratio-alert--danger{
   background: rgba(239, 68, 68, 0.12);
   color: #b91c1c;
 }
-.ranking-table td.ratio-alert--normal,
-.ranking-table td.ratio-yoy--normal{
-  background: rgba(148, 163, 184, 0.08);
-  color: var(--color-text-muted);
+
+/* ランキング表スパークライン: 警報レベル区間を赤で描画 */
+.ranking-sparkline-path--alert {
+  stroke: #ef4444;
 }
 
 .ranking-table th{

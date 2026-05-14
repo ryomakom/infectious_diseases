@@ -395,13 +395,13 @@ display: none;
 
 
 <pre class="r"><code>library(tidyverse)</code></pre>
-<pre><code>## ── Attaching core tidyverse packages ──────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
+<pre><code>## ── Attaching core tidyverse packages ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse 2.0.0 ──
 ## ✔ dplyr     1.2.1     ✔ readr     2.2.0
 ## ✔ forcats   1.0.1     ✔ stringr   1.6.0
 ## ✔ ggplot2   4.0.2     ✔ tibble    3.3.1
 ## ✔ lubridate 1.9.5     ✔ tidyr     1.3.2
 ## ✔ purrr     1.2.2     
-## ── Conflicts ────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+## ── Conflicts ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()
 ## ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
@@ -589,7 +589,7 @@ process_csv &lt;- function(file_path) {
 year_week &lt;- read_csv(&quot;year_week.csv&quot;) %&gt;%
   mutate(date = as.Date(date))</code></pre>
 <pre><code>## Rows: 313 Columns: 2
-## ── Column specification ────────────────────────────────────────────────────────────────────────────────────────────────
+## ── Column specification ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
 ## chr (2): date, year_week
 ## 
@@ -771,14 +771,9 @@ for (week_label in distinct_weeks) {
   }
   log_entries &lt;- append(log_entries, list(log_entry))
   Sys.sleep(5)
-}</code></pre>
-<pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): downloaded
-## length 0 != reported length 0</code></pre>
-<pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): cannot open
-## URL
-## &#39;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/2026/18/2026-18-teiten.csv&#39;:
-## HTTP status was &#39;404 Not Found&#39;</code></pre>
-<pre class="r"><code># — ログ結合＆出力 —
+}
+
+# — ログ結合＆出力 —
 new_logs &lt;- bind_rows(log_entries)
 all_logs &lt;- bind_rows(existing_logs, new_logs) %&gt;%
   distinct()
@@ -1814,7 +1809,7 @@ news_base &lt;- ranking %&gt;%
   ) %&gt;%
   filter(!is.na(category), !is.na(pref))
 
-# ---- ranking.csv に ratio_wow（前週比）を付与して書き出す ----
+# ---- ranking.csv に ratio_wow（前週比）と in_alert_level（警報レベル状態）を付与して書き出す ----
 ranking_wow &lt;- news_base %&gt;%
   mutate(ratio_wow = if_else(
     is.finite(previous_value) &amp; previous_value &gt; 0 &amp; is.finite(current_value),
@@ -1823,9 +1818,37 @@ ranking_wow &lt;- news_base %&gt;%
   )) %&gt;%
   select(category, pref, ratio_wow)
 
+# 警報レベル状態：alert_start を一度超えたら alert_end を下回るまで継続
+in_alert_now &lt;- by_week %&gt;%
+  left_join(alert %&gt;% select(category, alert_start, alert_end), by = &quot;category&quot;) %&gt;%
+  filter(!is.na(alert_start) &amp; alert_start &gt; 0) %&gt;%
+  arrange(pref, category, year_week) %&gt;%
+  group_by(pref, category) %&gt;%
+  mutate(in_alert = {
+    a_start &lt;- first(alert_start)
+    a_end &lt;- first(alert_end)
+    if (is.na(a_end) || !is.finite(a_end) || a_end &lt;= 0) a_end &lt;- a_start
+    flag &lt;- FALSE
+    state &lt;- logical(length(weekly_value))
+    for (i in seq_along(weekly_value)) {
+      v &lt;- weekly_value[i]
+      if (is.finite(v)) {
+        if (!flag &amp;&amp; v &gt; a_start) flag &lt;- TRUE
+        else if (flag &amp;&amp; v &lt; a_end) flag &lt;- FALSE
+      }
+      state[i] &lt;- flag
+    }
+    state
+  }) %&gt;%
+  filter(year_week == latest_yr_wk) %&gt;%
+  ungroup() %&gt;%
+  select(pref, category, in_alert_level = in_alert)
+
 ranking &lt;- ranking %&gt;%
   left_join(ranking_wow, by = c(&quot;category&quot;, &quot;pref&quot;)) %&gt;%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+  left_join(in_alert_now, by = c(&quot;category&quot;, &quot;pref&quot;)) %&gt;%
+  mutate(in_alert_level = if_else(is.na(in_alert_level), FALSE, in_alert_level)) %&gt;%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow, in_alert_level)
 
 write_excel_csv(ranking, &quot;docs/results/ranking.csv&quot;)
 message(&quot;ランキング出力: docs/results/ranking.csv&quot;)</code></pre>
@@ -2012,6 +2035,12 @@ weekly_lines &lt;- c(
 <pre class="r"><code>writeLines(weekly_lines, &quot;docs/results/weekly_report.md&quot;)
 message(&quot;週報Markdown出力: docs/results/weekly_report.md&quot;)</code></pre>
 <pre><code>## 週報Markdown出力: docs/results/weekly_report.md</code></pre>
+<pre class="r"><code># OGP画像（SNSシェア用サムネイル）を生成。失敗してもパイプライン全体は止めない
+tryCatch(
+  source(&quot;generate_ogp.R&quot;),
+  error = function(e) message(&quot;OGP画像生成に失敗: &quot;, conditionMessage(e))
+)</code></pre>
+<pre><code>## OGP画像を生成: docs/ogp.png</code></pre>
 
 
 

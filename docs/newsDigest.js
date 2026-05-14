@@ -291,9 +291,9 @@ function buildIntroSignals(digest) {
       key: "alert",
       label: "最も警戒が必要",
       category: pickAlertLeadCategoryFromNationwide() || asString(digest?.lead?.category, ""),
-      description: "（全国平均の警報基準比が最も高い）",
+      description: "（全国平均の警報開始基準比が最も高い）",
       noDataMessage: "今週は警戒が必要な感染症はありません",
-      definition: "定点あたり患者数を、警報を出すときの基準となる人数で割った値（警報基準比）が最も高い感染症。1.0倍を超えると警報水準を突破している状態"
+      definition: "定点あたり患者数を、警報を出すときの基準となる人数で割った値（警報開始基準比）が最も高い感染症。1.0倍を超えると警報水準を突破している状態"
     },
     {
       key: "rising",
@@ -384,7 +384,7 @@ function buildSignalSparkCard(item) {
     }
   } else if (alertThreshold !== null) {
     alertThresholdHtml = `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
-        <span class="ratio-prefix ratio-prefix-main">警報基準値</span><span class="ratio-prefix ratio-prefix-detail">（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
+        <span class="ratio-prefix ratio-prefix-main">警報開始</span><span class="ratio-prefix ratio-prefix-detail">基準値の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
        </p>`;
   }
   const definition = asString(item.definition, "");
@@ -400,7 +400,7 @@ function buildSignalSparkCard(item) {
         ${alertThresholdHtml}
       </div>
       <div class="news-digest-spark-chart-col">
-        <svg class="top-metric-sparkline" aria-hidden="true" width="100" height="52" viewBox="0 0 100 52" data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}" data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}" data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
+        <svg class="top-metric-sparkline" aria-hidden="true" width="100" height="52" viewBox="0 0 100 52" data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}" data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}" data-alert-states="${spark.alertStates ? spark.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
           <path class="top-metric-sparkline-path" d="${spark.normalPath}"></path>
           <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${spark.alertPath}"></path>
           <circle class="top-metric-spark-dot" cx="0" cy="0" r="3"></circle>
@@ -489,10 +489,10 @@ function buildTopPrefsSection(category, signalKey) {
 
     const alertThreshold = (row.alert_start != null && Number.isFinite(row.alert_start)) ? row.alert_start : null;
     const ratioAlert = (row.ratio_alert != null && Number.isFinite(row.ratio_alert)) ? row.ratio_alert : null;
-    // アラートカードと同じ split 構造: 「警報基準値」1行目、「（N人）の 0.40倍」2行目
+    // 「警報開始」+「基準値の 0.40倍」split 構造（狭いとき自動改行）
     const alertThresholdHtml = alertThreshold !== null
       ? `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">
-          <span class="ratio-prefix ratio-prefix-main">警報基準値</span><span class="ratio-prefix ratio-prefix-detail">（${Math.round(alertThreshold)}人）の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
+          <span class="ratio-prefix ratio-prefix-main">警報開始</span><span class="ratio-prefix ratio-prefix-detail">基準値の</span>${ratioAlert !== null ? `<span class="news-digest-spark-ratio ${ratioAlert >= 1 ? "is-over" : ""}"><span class="ratio-num">${ratioAlert.toFixed(2)}</span><span class="ratio-unit">倍</span></span>` : ""}
          </p>`
       : "";
 
@@ -507,6 +507,7 @@ function buildTopPrefsSection(category, signalKey) {
           <svg class="top-metric-sparkline" aria-hidden="true" width="100" height="52" viewBox="0 0 100 52"
             data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}"
             data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}"
+            data-alert-states="${spark.alertStates ? spark.alertStates.map(b => b ? '1' : '0').join('') : ''}"
             data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
             <path class="top-metric-sparkline-path" d="${spark.normalPath}"></path>
             <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${spark.alertPath}"></path>

@@ -21,12 +21,16 @@ function loadAlertThresholds() {
   return loadCsvFlexible("data/alert_thresholds.csv")
     .then(rows => {
       const map = {};
+      const endMap = {};
       rows.forEach(d => {
         const cat = categoryToDisplay(d.category);
         const v = parseFloat(d.alert_start);
         if (!Number.isNaN(v) && v > 0) map[cat] = v;
+        const e = parseFloat(d.alert_end);
+        if (!Number.isNaN(e) && e > 0) endMap[cat] = e;
       });
       state.alertThresholdsMap = map;
+      state.alertEndMap = endMap;
       return map;
     })
     .catch(() => ({}));
@@ -47,7 +51,8 @@ function loadRankingCsv() {
       ratio_alert: d.ratio_alert === "" || Number.isNaN(+d.ratio_alert) ? null : +d.ratio_alert,
       current_ma4: +d.current_ma4,
       alert_start: (d.alert_start === "" || d.alert_start === "NA" || d.alert_start == null || Number.isNaN(+d.alert_start)) ? null : +d.alert_start,
-      ratio_wow: (d.ratio_wow === "" || d.ratio_wow === "NA" || d.ratio_wow == null || Number.isNaN(+d.ratio_wow)) ? null : +d.ratio_wow
+      ratio_wow: (d.ratio_wow === "" || d.ratio_wow === "NA" || d.ratio_wow == null || Number.isNaN(+d.ratio_wow)) ? null : +d.ratio_wow,
+      in_alert_level: (d.in_alert_level === "TRUE" || d.in_alert_level === "true")
     })))
     .catch(() => []);
 }

@@ -170,15 +170,15 @@
               <th scope="col" class="sortable" data-sort="current_ma4" id="th-current-value" aria-sort="none" title="クリックで並べ替え">定点あたり患者数</th>
               <th scope="col" class="sortable sort-active sort-desc has-inline-help" data-sort="ratio_alert" data-sort-hint="クリックで並べ替え" id="th-ratio-alert" aria-sort="descending" title="クリックで並べ替え">
                 <span class="th-with-help">
-                  警報基準比
+                  警報開始基準比
                   <button
                     type="button"
                     class="metric-help-trigger"
                     data-help-target="help-ratio-alert"
-                    aria-label="警報基準比の説明を表示"
+                    aria-label="警報開始基準比の説明を表示"
                     aria-expanded="false"
                   >?</button>
-                  <span id="help-ratio-alert" class="metric-help-popover" role="tooltip">定点あたり患者数が警報基準値の何倍にあたるかを示す。基準がない感染症では「—」としている</span>
+                  <span id="help-ratio-alert" class="metric-help-popover" role="tooltip">定点あたり患者数が警報開始基準値の何倍にあたるかを示す。基準がない感染症では「—」としている。一度開始基準値を超えると、終息基準値を下回るまで「警報レベル」とみなしてセルを赤く塗る</span>
                 </span>
               </th>
               <th scope="col" class="sortable has-inline-help" data-sort="ratio_wow" data-sort-hint="クリックで並べ替え" id="th-ratio-wow" aria-sort="none" title="クリックで並べ替え">

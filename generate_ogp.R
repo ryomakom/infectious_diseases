@@ -51,13 +51,23 @@ latest_data_date <- if (!is.null(ts_data) && "date" %in% names(ts_data)) {
   suppressWarnings(max(as.Date(ts_data$date), na.rm = TRUE))
 } else NA
 
-# 警報基準値マップ
+# 警報基準値マップ（開始 / 終息）
 alert_th_path <- "docs/data/alert_thresholds.csv"
-alert_thresholds <- if (file.exists(alert_th_path)) {
-  th <- readr::read_csv(alert_th_path, show_col_types = FALSE,
-                        locale = locale(encoding = "UTF-8"))
-  setNames(suppressWarnings(as.numeric(th$alert_start)), th$category)
-} else stats::setNames(numeric(0), character(0))
+alert_thresholds_df <- if (file.exists(alert_th_path)) {
+  readr::read_csv(alert_th_path, show_col_types = FALSE,
+                  locale = locale(encoding = "UTF-8"))
+} else NULL
+get_alert_thresholds <- function(category) {
+  if (is.null(alert_thresholds_df) || is.na(category)) {
+    return(list(start = NA_real_, end = NA_real_))
+  }
+  r <- alert_thresholds_df %>% dplyr::filter(category == !!category)
+  if (nrow(r) == 0) return(list(start = NA_real_, end = NA_real_))
+  list(
+    start = suppressWarnings(as.numeric(r$alert_start[[1]])),
+    end   = suppressWarnings(as.numeric(r$alert_end[[1]]))
+  )
+}
 
 # ---- 補助関数 -------------------------------------------------------------
 nat_prefs <- c("全国", "全国平均")
@@ -111,47 +121,89 @@ wrap_jp <- function(s, max_per_line = 7) {
   s
 }
 
-get_spark_values <- function(category, n_weeks = 26) {
+# カテゴリの全時系列値（昇順）を返す
+get_all_values <- function(category) {
   if (is.null(ts_data) || is.na(category)) return(numeric(0))
   d <- ts_data %>%
     dplyr::filter(category == !!category) %>%
-    dplyr::arrange(date) %>%
-    dplyr::slice_tail(n = n_weeks)
-  if (nrow(d) < 2) return(numeric(0))
+    dplyr::arrange(date)
+  if (nrow(d) < 1) return(numeric(0))
   as.numeric(d$value)
 }
 
-get_ratio_alert <- function(category) {
-  if (is.na(category) || category == "—") return(NA)
-  r <- ranking %>% dplyr::filter(pref %in% nat_prefs, category == !!category)
-  if (nrow(r) > 0) r$ratio_alert[[1]] else NA
+# 直近 N 週分の値と警報状態を返す（警報状態は全期間からウォークして算出）
+get_recent_with_states <- function(category, n_weeks = 52) {
+  vals <- get_all_values(category)
+  if (length(vals) == 0) return(list(values = numeric(0), states = logical(0)))
+  th <- get_alert_thresholds(category)
+  states <- compute_warning_states(vals, th$start, th$end)
+  total <- length(vals)
+  start <- max(1, total - n_weeks + 1)
+  list(values = vals[start:total], states = states[start:total],
+       alert_start = th$start, alert_end = th$end)
 }
 
+# 現在（最新週）に警報レベルにあるか
 is_in_alert <- function(category) {
-  ra <- get_ratio_alert(category)
-  isTRUE(is.finite(ra) && ra > 1)
+  vals <- get_all_values(category)
+  if (length(vals) == 0) return(FALSE)
+  th <- get_alert_thresholds(category)
+  states <- compute_warning_states(vals, th$start, th$end)
+  isTRUE(tail(states, 1))
 }
 
-# 値の系列を閾値で分割し、超過/非超過のラン（連続区間）に分ける
-split_runs_at_threshold <- function(values, threshold) {
+# 警報レベルの時系列ウォーク: alert_start を一度超えたら alert_end を下回るまで継続
+compute_warning_states <- function(values, alert_start, alert_end) {
+  n <- length(values)
+  if (n == 0) return(logical(0))
+  has_th <- !is.na(alert_start) && is.finite(alert_start) && alert_start > 0
+  if (!has_th) return(rep(FALSE, n))
+  if (is.na(alert_end) || !is.finite(alert_end) || alert_end <= 0) {
+    alert_end <- alert_start
+  }
+  states <- logical(n)
+  flag <- FALSE
+  for (i in seq_len(n)) {
+    v <- values[i]
+    if (is.finite(v)) {
+      if (!flag && v > alert_start) flag <- TRUE
+      else if (flag && v < alert_end) flag <- FALSE
+    }
+    states[i] <- flag
+  }
+  states
+}
+
+# 警報レベル区間に分割（クロス位置を線形補間で挿入）
+split_runs_at_warning_level <- function(values, alert_start, alert_end) {
   n <- length(values)
   if (n < 2) return(list())
-  has_th <- !is.na(threshold) && is.finite(threshold) && threshold > 0
+  has_th <- !is.na(alert_start) && is.finite(alert_start) && alert_start > 0
+  if (!has_th) {
+    return(list(list(idx = seq_len(n), val = values, alert = rep(FALSE, n))))
+  }
+  if (is.na(alert_end) || !is.finite(alert_end) || alert_end <= 0) {
+    alert_end <- alert_start
+  }
+
+  states <- compute_warning_states(values, alert_start, alert_end)
+
   pi <- numeric(0); pv <- numeric(0); pa <- logical(0)
-  pi <- c(pi, 1); pv <- c(pv, values[1])
-  pa <- c(pa, if (has_th) values[1] > threshold else FALSE)
+  pi <- c(pi, 1); pv <- c(pv, values[1]); pa <- c(pa, states[1])
+
   for (i in seq_len(n - 1)) {
     v1 <- values[i]; v2 <- values[i + 1]
-    a1 <- if (has_th) v1 > threshold else FALSE
-    a2 <- if (has_th) v2 > threshold else FALSE
-    if (has_th && a1 != a2 && v2 != v1) {
+    s1 <- states[i]; s2 <- states[i + 1]
+    if (s1 != s2 && v2 != v1) {
+      # 入る場合は alert_start クロス、出る場合は alert_end クロス
+      threshold <- if (s2) alert_start else alert_end
       t <- (threshold - v1) / (v2 - v1)
       cross <- i + t
       pi <- c(pi, cross, cross)
       pv <- c(pv, threshold, threshold)
-      pa <- c(pa, a1, a2)
+      pa <- c(pa, s1, s2)
     }
-    pi <- c(pi, i + 1); pv <- c(pv, v2); pa <- c(pa, a2)
+    pi <- c(pi, i + 1); pv <- c(pv, v2); pa <- c(pa, s2)
   }
   runs <- list()
   cur <- list(idx = pi[1], val = pv[1], alert = pa[1])
@@ -339,33 +391,66 @@ for (i in seq_along(cards)) {
   }
 
   # 右カラム：スパークライン
-  values <- get_spark_values(c$category, n_weeks = 52)
+  recent <- get_recent_with_states(c$category, n_weeks = 52)
+  values <- recent$values
+  states <- recent$states
+  alert_start <- recent$alert_start
+  alert_end <- recent$alert_end
   if (length(values) >= 2) {
     spark_y0 <- body_y_bot + 0.15
     spark_y1 <- body_y_top - 0.05
     n <- length(values)
-    threshold <- alert_thresholds[c$category]
-    if (is.null(threshold) || length(threshold) == 0) threshold <- NA_real_
 
     vmin <- 0
     vmax <- max(values, na.rm = TRUE) * 1.15
     if (vmax <= 0) vmax <- 1
-    if (!is.na(threshold) && is.finite(threshold) &&
-        threshold <= max(values, na.rm = TRUE) * 1.3) {
-      vmax <- max(vmax, threshold * 1.05)
+    if (!is.na(alert_start) && is.finite(alert_start) &&
+        alert_start <= max(values, na.rm = TRUE) * 1.3) {
+      vmax <- max(vmax, alert_start * 1.05)
     }
 
     to_vis_x <- function(idx) spark_x0 + (idx - 1) / (n - 1) * (spark_x1 - spark_x0)
     to_vis_y <- function(v)   spark_y0 + (v - vmin) / (vmax - vmin) * (spark_y1 - spark_y0)
 
-    if (!is.na(threshold) && is.finite(threshold) && threshold <= vmax) {
-      th_y <- to_vis_y(threshold)
+    # 警報開始基準値の水平線（範囲内のとき）
+    if (!is.na(alert_start) && is.finite(alert_start) && alert_start <= vmax) {
+      th_y <- to_vis_y(alert_start)
       p <- p +
         annotate("segment", x = spark_x0, xend = spark_x1, y = th_y, yend = th_y,
                  color = "#cbd5e1", linewidth = 0.3, linetype = "dashed")
     }
 
-    runs <- split_runs_at_threshold(values, threshold)
+    # 警報レベル区間で分割して描画
+    # states は外部ウォーク済みなので、ここでは直接 split する
+    pi <- numeric(0); pv <- numeric(0); pa <- logical(0)
+    pi <- c(pi, 1); pv <- c(pv, values[1]); pa <- c(pa, states[1])
+    for (i in seq_len(n - 1)) {
+      v1 <- values[i]; v2 <- values[i + 1]
+      s1 <- states[i]; s2 <- states[i + 1]
+      if (s1 != s2 && v2 != v1) {
+        threshold_x <- if (s2) alert_start else alert_end
+        if (!is.na(threshold_x) && is.finite(threshold_x)) {
+          t <- (threshold_x - v1) / (v2 - v1)
+          cross <- i + t
+          pi <- c(pi, cross, cross)
+          pv <- c(pv, threshold_x, threshold_x)
+          pa <- c(pa, s1, s2)
+        }
+      }
+      pi <- c(pi, i + 1); pv <- c(pv, v2); pa <- c(pa, s2)
+    }
+    runs <- list()
+    cur <- list(idx = pi[1], val = pv[1], alert = pa[1])
+    for (k in 2:length(pi)) {
+      if (pa[k] == cur$alert) {
+        cur$idx <- c(cur$idx, pi[k]); cur$val <- c(cur$val, pv[k])
+      } else {
+        runs[[length(runs) + 1]] <- cur
+        cur <- list(idx = pi[k], val = pv[k], alert = pa[k])
+      }
+    }
+    runs[[length(runs) + 1]] <- cur
+
     for (run in runs) {
       if (length(run$idx) < 2) next
       df <- data.frame(x = to_vis_x(run$idx), y = to_vis_y(run$val))
@@ -376,7 +461,7 @@ for (i in seq_along(cards)) {
                          inherit.aes = FALSE)
     }
 
-    end_alert <- !is.na(threshold) && is.finite(threshold) && values[n] > threshold
+    end_alert <- isTRUE(tail(states, 1))
     p <- p + annotate("point",
                        x = to_vis_x(n), y = to_vis_y(values[n]),
                        color = if (end_alert) SPARK_RED else SPARK_GRAY, size = 1.5)

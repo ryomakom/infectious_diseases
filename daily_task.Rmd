@@ -1397,7 +1397,7 @@ news_base <- ranking %>%
   ) %>%
   filter(!is.na(category), !is.na(pref))
 
-# ---- ranking.csv に ratio_wow（前週比）を付与して書き出す ----
+# ---- ranking.csv に ratio_wow（前週比）と in_alert_level（警報レベル状態）を付与して書き出す ----
 ranking_wow <- news_base %>%
   mutate(ratio_wow = if_else(
     is.finite(previous_value) & previous_value > 0 & is.finite(current_value),
@@ -1406,9 +1406,37 @@ ranking_wow <- news_base %>%
   )) %>%
   select(category, pref, ratio_wow)
 
+# 警報レベル状態：alert_start を一度超えたら alert_end を下回るまで継続
+in_alert_now <- by_week %>%
+  left_join(alert %>% select(category, alert_start, alert_end), by = "category") %>%
+  filter(!is.na(alert_start) & alert_start > 0) %>%
+  arrange(pref, category, year_week) %>%
+  group_by(pref, category) %>%
+  mutate(in_alert = {
+    a_start <- first(alert_start)
+    a_end <- first(alert_end)
+    if (is.na(a_end) || !is.finite(a_end) || a_end <= 0) a_end <- a_start
+    flag <- FALSE
+    state <- logical(length(weekly_value))
+    for (i in seq_along(weekly_value)) {
+      v <- weekly_value[i]
+      if (is.finite(v)) {
+        if (!flag && v > a_start) flag <- TRUE
+        else if (flag && v < a_end) flag <- FALSE
+      }
+      state[i] <- flag
+    }
+    state
+  }) %>%
+  filter(year_week == latest_yr_wk) %>%
+  ungroup() %>%
+  select(pref, category, in_alert_level = in_alert)
+
 ranking <- ranking %>%
   left_join(ranking_wow, by = c("category", "pref")) %>%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+  left_join(in_alert_now, by = c("category", "pref")) %>%
+  mutate(in_alert_level = if_else(is.na(in_alert_level), FALSE, in_alert_level)) %>%
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow, in_alert_level)
 
 write_excel_csv(ranking, "docs/results/ranking.csv")
 message("ランキング出力: docs/results/ranking.csv")

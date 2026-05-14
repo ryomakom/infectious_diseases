@@ -98,6 +98,41 @@ function sortRankingRows(rows) {
   });
 }
 
+// ヒステリシス・ウォーク: alert_start を超えたら alert、alert_end を下回るまで alert を維持
+function computeAlertStates(values, alertStart, alertEnd) {
+  const n = values.length;
+  const states = new Array(n).fill(false);
+  if (!Number.isFinite(alertStart) || alertStart <= 0) return states;
+  const end = (Number.isFinite(alertEnd) && alertEnd > 0) ? alertEnd : alertStart;
+  let flag = false;
+  for (let i = 0; i < n; i++) {
+    const v = values[i];
+    if (Number.isFinite(v)) {
+      if (!flag && v > alertStart) flag = true;
+      else if (flag && v < end) flag = false;
+    }
+    states[i] = flag;
+  }
+  return states;
+}
+
+// ヒステリシス状態に基づいて normal / alert の 2 パスを生成
+function sparklineWithAlertStates(values, states, width, height) {
+  if (!values.length) return { normalPath: "", alertPath: "" };
+  const x = d3.scaleLinear().domain([0, values.length - 1]).range([0, width]);
+  const yMax = d3.max(values) || 1;
+  const y = d3.scaleLinear().domain([0, yMax]).range([height, 0]);
+  let normalPath = "", alertPath = "";
+  for (let i = 0; i < values.length - 1; i++) {
+    const v0 = values[i], v1 = values[i + 1];
+    if (!Number.isFinite(v0) || !Number.isFinite(v1)) continue;
+    const seg = `M${x(i)},${y(v0)}L${x(i + 1)},${y(v1)}`;
+    if (states[i] || states[i + 1]) alertPath += seg;
+    else normalPath += seg;
+  }
+  return { normalPath, alertPath };
+}
+
 function sparklinePath(values, width, height) {
   if (!values.length) return "";
   const x = d3.scaleLinear().domain([0, values.length - 1]).range([0, width]);
@@ -119,7 +154,16 @@ function buildMiniSparkline(category, pref, width, height, seriesValuesOverride)
   const x = d3.scaleLinear().domain([0, values.length - 1]).range([padX, width - padX]);
   const yMax = d3.max(values) || 0;
   const y = d3.scaleLinear().domain([0, yMax === 0 ? 1 : yMax]).range([height - padY, padY]);
-  const threshold = state.alertThresholdsMap[category];
+  const alertStart = state.alertThresholdsMap ? state.alertThresholdsMap[category] : null;
+  const alertEnd = state.alertEndMap ? state.alertEndMap[category] : null;
+
+  // ヒステリシス・ウォークで各点のアラート状態を計算。
+  // 52週より前に alert_start を超えていたケースも正確に反映するため、
+  // 全期間の系列（getSeriesFor）でウォークし、最後 values.length 件分のみ使用する。
+  const fullSeries = getSeriesFor(category, pref).filter(d => Number.isFinite(d.value)).map(d => d.value);
+  const walkSource = fullSeries.length >= values.length ? fullSeries : values;
+  const fullAlertStates = computeAlertStates(walkSource, alertStart, alertEnd);
+  const alertStates = fullAlertStates.slice(-values.length);
 
   const paths = { normal: "", alert: "" };
   for (let i = 0; i < values.length - 1; i += 1) {
@@ -131,45 +175,48 @@ function buildMiniSparkline(category, pref, width, height, seriesValuesOverride)
     const x1 = x(i + 1);
     const y1 = y(v1);
 
-    if (!Number.isFinite(threshold)) {
+    if (!Number.isFinite(alertStart)) {
       paths.normal += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
 
-    const above0 = v0 > threshold;
-    const above1 = v1 > threshold;
-    if (above0 === above1) {
-      const key = above0 ? "alert" : "normal";
-      paths[key] += `M${x0},${y0}L${x1},${y1}`;
+    const s0 = alertStates[i];
+    const s1 = alertStates[i + 1];
+    if (s0 === s1) {
+      paths[s0 ? "alert" : "normal"] += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
 
-    // Segment crosses threshold: split at the exact crossing point.
+    // 状態遷移: 正しい閾値（開始→alert_start / 終息→alert_end）でクロス点を計算
+    const crossTh = !s0 ? alertStart : (Number.isFinite(alertEnd) && alertEnd > 0 ? alertEnd : alertStart);
     const dv = v1 - v0;
     if (!Number.isFinite(dv) || dv === 0) {
-      paths.normal += `M${x0},${y0}L${x1},${y1}`;
+      paths[s0 ? "alert" : "normal"] += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
-    const tRaw = (threshold - v0) / dv;
-    const t = Math.max(0, Math.min(1, tRaw));
+    const t = Math.max(0, Math.min(1, (crossTh - v0) / dv));
     const xCross = x0 + (x1 - x0) * t;
-    const yCross = y(threshold);
+    const yCross = y(crossTh);
 
-    if (above0 && !above1) {
-      paths.alert += `M${x0},${y0}L${xCross},${yCross}`;
-      paths.normal += `M${xCross},${yCross}L${x1},${y1}`;
-    } else {
+    if (!s0) {
+      // normal → alert
       paths.normal += `M${x0},${y0}L${xCross},${yCross}`;
-      paths.alert += `M${xCross},${yCross}L${x1},${y1}`;
+      paths.alert  += `M${xCross},${yCross}L${x1},${y1}`;
+    } else {
+      // alert → normal
+      paths.alert  += `M${x0},${y0}L${xCross},${yCross}`;
+      paths.normal += `M${xCross},${yCross}L${x1},${y1}`;
     }
   }
 
   return {
     normalPath: paths.normal,
     alertPath: paths.alert,
+    alertStates,
     values,
     yMax: (yMax === 0 ? 1 : yMax),
-    threshold: Number.isFinite(threshold) ? threshold : null,
+    threshold: Number.isFinite(alertStart) ? alertStart : null,
+    alertEnd: Number.isFinite(alertEnd) && alertEnd > 0 ? alertEnd : null,
     padX,
     padY
   };
@@ -207,31 +254,21 @@ function formatWow(v) {
   return pct >= 0 ? `+${pct}%` : `${pct}%`;
 }
 
-function wowClass(v) {
-  if (!isFinite(v)) return "";
-  if (v >= 1.5) return "ratio-yoy--high";
-  return "";
+// 前週比・平年比は色分けなし（プレーン）
+function wowClass(_v) { return ""; }
+function yoyClass(_v) { return ""; }
+
+// 「警報レベル」セルの色: in_alert_level (R 側で時系列ウォーク済み) のみ赤く塗る
+function alertClass(row) {
+  return row && row.in_alert_level ? "ratio-alert--danger" : "";
 }
 
+// 3シグナルカードなどで使う「重症度」表示は ratio_alert に応じた既存ロジックを維持
 function alertSeverityClass(v) {
   if (!Number.isFinite(v)) return "alert-sev-normal";
   if (v > 1) return "alert-sev-danger";
   if (v > 0.3) return "alert-sev-caution";
   return "alert-sev-normal";
-}
-
-function alertClass(v) {
-  if (v == null || !isFinite(v)) return "ratio-alert--normal";
-  if (v > 1) return "ratio-alert--danger";
-  if (v > 0.3) return "ratio-alert--caution";
-  return "ratio-alert--normal";
-}
-
-function yoyClass(v) {
-  if (!isFinite(v)) return "ratio-yoy--normal";
-  if (v > 5) return "ratio-yoy--very-high";
-  if (v > 2) return "ratio-yoy--high";
-  return "ratio-yoy--normal";
 }
 
 function updateSortHeaders() {
@@ -258,7 +295,7 @@ function normalizeFactory(values) {
 function buildHighlightReason(item) {
   const reasons = [];
   if (Number.isFinite(item.ratio_alert) && item.ratio_alert > 1) {
-    reasons.push(`警報基準比 ${item.ratio_alert.toFixed(2)}倍`);
+    reasons.push(`警報開始基準比 ${item.ratio_alert.toFixed(2)}倍`);
   }
   if (Number.isFinite(item.ratio_yoy) && item.ratio_yoy >= 2) {
     reasons.push(`平年比 +${Math.round((item.ratio_yoy - 1) * 100)}%`);
@@ -430,7 +467,7 @@ function renderTopMetricCard(entry) {
       </div>
       <div class="ranking-top-card-spark">
         <span class="metric-value spark-wrap">
-          <svg class="top-metric-sparkline" aria-hidden="true" width="116" height="30" viewBox="0 0 116 30" data-values="${mini.values.join("|")}" data-y-max="${mini.yMax}" data-threshold="${Number.isFinite(mini.threshold) ? mini.threshold : ""}" data-pad-x="${mini.padX || 0}" data-pad-y="${mini.padY || 0}">
+          <svg class="top-metric-sparkline" aria-hidden="true" width="116" height="30" viewBox="0 0 116 30" data-values="${mini.values.join("|")}" data-y-max="${mini.yMax}" data-threshold="${Number.isFinite(mini.threshold) ? mini.threshold : ""}" data-alert-end="${Number.isFinite(mini.alertEnd) ? mini.alertEnd : ""}" data-alert-states="${mini.alertStates ? mini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${mini.padX || 0}" data-pad-y="${mini.padY || 0}">
               <path class="top-metric-sparkline-path" d="${mini.normalPath}"></path>
             <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${mini.alertPath}"></path>
             <circle class="top-metric-spark-dot" cx="0" cy="0" r="2.8"></circle>
@@ -466,8 +503,18 @@ function startMiniSparklineDotAnimations(rootEl) {
     const yMax = Number(svg.getAttribute("data-y-max"));
     const denom = Number.isFinite(yMax) && yMax > 0 ? yMax : 1;
     const thresholdVal = Number(svg.getAttribute("data-threshold"));
-    const hasThreshold = Number.isFinite(thresholdVal);
+    const hasThreshold = Number.isFinite(thresholdVal) && thresholdVal > 0;
     const lastIdx = values.length - 1;
+
+    // data-alert-states が埋め込まれていればそれを使う（全期間ウォーク済み）。
+    // なければ values だけでウォークするフォールバック。
+    const statesStr = String(svg.getAttribute("data-alert-states") || "");
+    const alertStates = (statesStr.length === values.length)
+      ? statesStr.split("").map(c => c === "1")
+      : (hasThreshold
+          ? computeAlertStates(values, thresholdVal,
+              (() => { const e = Number(svg.getAttribute("data-alert-end")); return Number.isFinite(e) && e > 0 ? e : null; })())
+          : new Array(values.length).fill(false));
 
     const easeInOutCubic = t => (t < 0.5)
       ? 4 * t * t * t
@@ -483,8 +530,9 @@ function startMiniSparklineDotAnimations(rootEl) {
       const y = (height - padY) - (v / denom) * (height - 2 * padY);
       dot.setAttribute("cx", String(x));
       dot.setAttribute("cy", String(y));
-      // Use inline style so threshold color wins over CSS default.
-      dot.style.fill = (hasThreshold && v > thresholdVal) ? "#dc2626" : "#0369a1";
+      // アラート状態（ヒステリシス）のときは赤、それ以外は青
+      const inAlert = alertStates[i0] || (i1 < alertStates.length && alertStates[i1] && frac > 0.5);
+      dot.style.fill = (hasThreshold && inAlert) ? "#dc2626" : "#0369a1";
     };
 
     if (reduceMotion || values.length < 2) {
@@ -524,7 +572,7 @@ function startMiniSparklineDotAnimations(rootEl) {
 }
 
 const SIGNAL_LABELS = {
-  alert:   { main: "警報基準比が直近で最も高い感染症", prefs: "警報基準比が高い3都道府県",   help: "患者数が警報基準の何倍かを示す指標",         helpAriaLabel: "警報基準比の説明を表示",         helpText: "警報基準比" },
+  alert:   { main: "警報開始基準比が直近で最も高い感染症", prefs: "警報開始基準比が高い3都道府県",   help: "患者数が警報基準の何倍かを示す指標",         helpAriaLabel: "警報開始基準比の説明を表示",         helpText: "警報開始基準比" },
   rising:  { main: "前週比増加率が最も高い感染症",     prefs: "増加率が高い3都道府県",         help: "今週の患者数が先週から何割増えたかを示す指標", helpAriaLabel: "前週比増加率の説明を表示",        helpText: "前週比増加率" },
   anomaly: { main: "季節外れの増加が最も大きい感染症", prefs: "季節外れの増加が目立つ3都道府県", help: "同時期の例年平均と比べた乖離の大きさを示す指標", helpAriaLabel: "季節性Zスコアの説明を表示",      helpText: "季節性Zスコア" },
 };
@@ -570,7 +618,7 @@ function renderTopHighlights(payload, signalKey) {
         </div>
         <div class="ranking-top-main-unified-spark">
           <span class="value spark-wrap">
-            <svg class="top-metric-sparkline top-metric-sparkline--nationwide" aria-hidden="true" width="116" height="52" viewBox="0 0 116 52" data-values="${nationwideMini.values.join("|")}" data-y-max="${nationwideMini.yMax}" data-threshold="${Number.isFinite(nationwideMini.threshold) ? nationwideMini.threshold : ""}" data-pad-x="${nationwideMini.padX || 0}" data-pad-y="${nationwideMini.padY || 0}">
+            <svg class="top-metric-sparkline top-metric-sparkline--nationwide" aria-hidden="true" width="116" height="52" viewBox="0 0 116 52" data-values="${nationwideMini.values.join("|")}" data-y-max="${nationwideMini.yMax}" data-threshold="${Number.isFinite(nationwideMini.threshold) ? nationwideMini.threshold : ""}" data-alert-end="${Number.isFinite(nationwideMini.alertEnd) ? nationwideMini.alertEnd : ""}" data-alert-states="${nationwideMini.alertStates ? nationwideMini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${nationwideMini.padX || 0}" data-pad-y="${nationwideMini.padY || 0}">
               <path class="top-metric-sparkline-path" d="${nationwideMini.normalPath}"></path>
               <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${nationwideMini.alertPath}"></path>
               <circle class="top-metric-spark-dot" cx="0" cy="0" r="2.8"></circle>
@@ -672,7 +720,10 @@ function renderRanking(result) {
   rows.forEach(row => {
     const series = getSeriesFor(row.category, row.pref);
     const values = series.slice(-52).map(d => d.value);
-    const sparkD = sparklinePath(values, 52, 22);
+    const alertStart = state.alertThresholdsMap ? state.alertThresholdsMap[row.category] : null;
+    const alertEnd = state.alertEndMap ? state.alertEndMap[row.category] : null;
+    const sparkStates = computeAlertStates(values, alertStart, alertEnd);
+    const { normalPath, alertPath } = sparklineWithAlertStates(values, sparkStates, 52, 22);
     const tr = document.createElement("tr");
     tr.className = "go-to-chart";
     tr.setAttribute("role", "button");
@@ -686,12 +737,13 @@ function renderRanking(result) {
       <td class="num ranking-cell-value">
         <span class="ranking-value-num">${isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) + "人" : "—"}</span>
         <svg class="ranking-sparkline" aria-hidden="true" width="52" height="22" viewBox="0 0 52 22">
-          <path class="ranking-sparkline-path" fill="none" stroke="currentColor" stroke-width="1.2" d="${sparkD || ""}"></path>
+          <path class="ranking-sparkline-path" fill="none" stroke="currentColor" stroke-width="1.2" d="${normalPath}"></path>
+          <path class="ranking-sparkline-path ranking-sparkline-path--alert" fill="none" stroke-width="1.8" d="${alertPath}"></path>
         </svg>
       </td>
-      <td class="num ${alertClass(row.ratio_alert)}">${formatRatioAlert(row.ratio_alert)}</td>
-      <td class="num ${wowClass(row._wow)}">${formatWow(row._wow)}</td>
-      <td class="num ${yoyClass(row.ratio_yoy)}">${formatRatioYoy(row.ratio_yoy)}</td>
+      <td class="num ${alertClass(row)}">${formatRatioAlert(row.ratio_alert)}</td>
+      <td class="num">${formatWow(row._wow)}</td>
+      <td class="num">${formatRatioYoy(row.ratio_yoy)}</td>
     `;
     const click = () => {
       tr.classList.remove("ranking-row-flash");
@@ -984,7 +1036,7 @@ function initializePrefControls() {
       }
       updateSortHeaders();
       if (els.rankingSortAnnounce) {
-        const label = state.sortKey === "ratio_alert" ? "警報基準比"
+        const label = state.sortKey === "ratio_alert" ? "警報開始基準比"
           : state.sortKey === "ratio_wow" ? "前週比"
           : state.sortKey === "ratio_yoy" ? "平年比"
           : "定点あたり患者数";
