@@ -1574,6 +1574,12 @@ weekly_lines <- c(
 writeLines(weekly_lines, "docs/results/weekly_report.md")
 message("週報Markdown出力: docs/results/weekly_report.md")
 
+# OGP画像（SNSシェア用サムネイル）を生成。失敗してもパイプライン全体は止めない
+tryCatch(
+  source("generate_ogp.R"),
+  error = function(e) message("OGP画像生成に失敗: ", conditionMessage(e))
+)
+
 ```
 
 

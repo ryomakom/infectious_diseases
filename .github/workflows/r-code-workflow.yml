@@ -54,6 +54,8 @@ jobs:
             any::tidyverse
             any::rvest
             any::lubridate
+            any::showtext
+            any::sysfonts
 
       # 5. 初回処理
 #      - name: Render initial processing (first run only)
@@ -75,7 +77,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/*-teiten.csv docs/results/data-*.csv docs/results/pref/*.csv merged_data/*.csv logs/*.csv docs/results/ranking.csv docs/results/news_digest.json docs/results/top_highlights.json docs/results/last_fetch.txt docs/results/weekly_report.md || echo "No CSV files to add"
+          git add data/*-teiten.csv docs/results/data-*.csv docs/results/pref/*.csv merged_data/*.csv logs/*.csv docs/results/ranking.csv docs/results/news_digest.json docs/results/top_highlights.json docs/results/last_fetch.txt docs/results/weekly_report.md docs/ogp.png || echo "No CSV files to add"
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else
