@@ -1,146 +1,138 @@
 {
-  "week": "2026-04-26",
+  "week": "2026-05-03",
   "lead": {
     "category": "A群溶血性レンサ球菌咽頭炎",
     "nationwide_ratio_alert": 0.4,
-    "nationwide_current_ma4": 3.23,
-    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=1.33）",
-    "importance_score": 1.7059
+    "nationwide_current_ma4": 3.21,
+    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=1.06）",
+    "importance_score": 1.5301
   },
   "top_prefectures": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "鳥取県",
-      "current_ma4": 7.32,
-      "current_value": 7.32,
-      "previous_value": 7.05,
-      "ratio_alert": 0.92,
-      "ratio_yoy": 1.94,
-      "growth1Rate": 0.0383,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 2.6019
-    },
-    {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "北海道",
-      "current_ma4": 6.62,
-      "current_value": 6.62,
-      "previous_value": 5.59,
-      "ratio_alert": 0.83,
-      "ratio_yoy": 1.66,
-      "growth1Rate": 0.1843,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 2.685
-    },
-    {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "愛媛県",
-      "current_ma4": 6.1,
-      "current_value": 6.1,
-      "previous_value": 6.4,
-      "ratio_alert": 0.76,
+      "current_ma4": 6.95,
+      "current_value": 6.95,
+      "previous_value": 7.32,
+      "ratio_alert": 0.87,
       "ratio_yoy": 1.73,
-      "growth1Rate": -0.0469,
+      "growth1Rate": -0.0505,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 3.9615
+      "importance_score": 2.2895
+    },
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "茨城県",
+      "current_ma4": 6.78,
+      "current_value": 6.78,
+      "previous_value": 5.03,
+      "ratio_alert": 0.85,
+      "ratio_yoy": 1.85,
+      "growth1Rate": 0.3479,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 4.6312
+    },
+    {
+      "category": "A群溶血性レンサ球菌咽頭炎",
+      "pref": "石川県",
+      "current_ma4": 6.14,
+      "current_value": 6.14,
+      "previous_value": 4.39,
+      "ratio_alert": 0.77,
+      "ratio_yoy": 3.38,
+      "growth1Rate": 0.3986,
+      "weeksOverAlert": 0,
+      "persistenceRate": 0,
+      "persistenceWindow": 4,
+      "importance_score": 4.4807
     }
   ],
   "rising": [
     {
       "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.26,
-      "current_value": 0.26,
-      "previous_value": 0.18,
-      "ratio_alert": 0.05,
-      "ratio_yoy": 1.28,
-      "growth1Rate": 0.4444,
+      "current_ma4": 0.38,
+      "current_value": 0.38,
+      "previous_value": 0.26,
+      "ratio_alert": 0.08,
+      "ratio_yoy": 1.55,
+      "growth1Rate": 0.4615,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 0.6991
+      "importance_score": 0.8451
     }
   ],
   "alerts": [
     {
       "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.26,
-      "current_value": 0.26,
-      "previous_value": 0.18,
-      "ratio_alert": 0.05,
-      "ratio_yoy": 1.28,
-      "growth1Rate": 0.4444,
+      "current_ma4": 0.38,
+      "current_value": 0.38,
+      "previous_value": 0.26,
+      "ratio_alert": 0.08,
+      "ratio_yoy": 1.55,
+      "growth1Rate": 0.4615,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 0.6991
+      "importance_score": 0.8451
     }
   ],
   "improving": [
     {
       "category": "インフルエンザ",
       "pref": "全国",
-      "current_ma4": 0.61,
-      "current_value": 0.61,
-      "previous_value": 0.92,
-      "ratio_alert": 0.02,
-      "ratio_yoy": 0.29,
-      "growth1Rate": -0.337,
+      "current_ma4": 0.41,
+      "current_value": 0.41,
+      "previous_value": 0.61,
+      "ratio_alert": 0.01,
+      "ratio_yoy": 0.26,
+      "growth1Rate": -0.3279,
       "weeksOverAlert": 0,
       "persistenceRate": 0,
       "persistenceWindow": 4,
-      "importance_score": 0.2065
+      "importance_score": 0.1454
     }
   ],
   "anomalies": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "全国",
-      "current_ma4": 3.23,
-      "current_value": 3.23,
-      "seasonal_mean": 1.8618,
-      "seasonal_zscore": 1.3256,
-      "importance_score": 1.7059
+      "current_ma4": 3.21,
+      "current_value": 3.21,
+      "seasonal_mean": 1.9998,
+      "seasonal_zscore": 1.0586,
+      "importance_score": 1.5301
     },
     {
-      "category": "感染性胃腸炎",
+      "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 5.35,
-      "current_value": 5.35,
-      "seasonal_mean": 5.2828,
-      "seasonal_zscore": 0.0324,
-      "importance_score": 0.9834
+      "current_ma4": 0.38,
+      "current_value": 0.38,
+      "seasonal_mean": 0.3346,
+      "seasonal_zscore": 0.1383,
+      "importance_score": 0.8451
     },
     {
       "category": "水痘",
       "pref": "全国",
       "current_ma4": 0.38,
       "current_value": 0.38,
-      "seasonal_mean": 0.384,
-      "seasonal_zscore": -0.012,
-      "importance_score": 0.309
+      "seasonal_mean": 0.3997,
+      "seasonal_zscore": -0.055,
+      "importance_score": 0.2808
     }
   ],
   "news_candidates": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "全国",
-      "importance_score": 1.7059,
-      "flags": [
-        "anomaly"
-      ]
-    },
-    {
-      "category": "感染性胃腸炎",
-      "pref": "全国",
-      "importance_score": 0.9834,
+      "importance_score": 1.5301,
       "flags": [
         "anomaly"
       ]
@@ -148,16 +140,17 @@
     {
       "category": "手足口病",
       "pref": "全国",
-      "importance_score": 0.6991,
+      "importance_score": 0.8451,
       "flags": [
         "alert",
+        "anomaly",
         "rising"
       ]
     },
     {
       "category": "水痘",
       "pref": "全国",
-      "importance_score": 0.309,
+      "importance_score": 0.2808,
       "flags": [
         "anomaly"
       ]
@@ -166,7 +159,7 @@
   "top_news": {
     "category": "A群溶血性レンサ球菌咽頭炎",
     "pref": "全国",
-    "importance_score": 1.7059,
+    "importance_score": 1.5301,
     "flags": [
       "anomaly"
     ]
@@ -174,14 +167,14 @@
   "spread_type": "地域拡散",
   "affected_blocks": [
     "中国",
-    "北海道",
-    "四国"
+    "中部",
+    "関東"
   ],
   "generated_text": {
     "headline": "手足口病、宮崎県で警報水準",
-    "summary": "手足口病は宮崎県で警報基準値を超えています（全国平均では基準値の0.05倍）。",
+    "summary": "手足口病は宮崎県で警報基準値を超えています（全国平均では基準値の0.08倍）。",
     "bullets": [
-      "手足口病：宮崎県で警報基準値を超える患者数。全国平均では基準値の0.05倍"
+      "手足口病：宮崎県で警報基準値を超える患者数。全国平均では基準値の0.08倍"
     ]
   }
 }
