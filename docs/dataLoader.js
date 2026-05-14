@@ -224,8 +224,16 @@ async function initialize() {
   initializeCategoryControls();
   initializePrefControls();
   setDefaultDropdownSelection();
+  const _fromUrl = applyUrlState(); // URL パラメータがあればデフォルト選択を上書き
   refreshRankingTable();
   drawAllCharts(getSelectedDropdownPrefectures());
+  // URL でシェアされたページを開いたときはグラフセクションへスクロール
+  if (_fromUrl) {
+    setTimeout(() => {
+      const el = document.querySelector(".controls-card");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+  }
   setupResizeRedraw();
 }
 

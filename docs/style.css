@@ -2211,6 +2211,7 @@ header::after{
   line-height: 1.45;
 }
 
+
 .controls-filters-row{
   display: flex;
   flex-direction: column;
@@ -2599,6 +2600,7 @@ header::after{
   flex: 1;
   min-width: 0;
 }
+
 
 .chart-download-btn{
   display: inline-flex;

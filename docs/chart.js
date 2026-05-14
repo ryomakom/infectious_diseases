@@ -396,6 +396,13 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
     .attr("role", "region")
     .attr("aria-labelledby", chartHeadingId);
 
+  // グラフパネルをクリックするとそのグラフのURLに自動更新
+  container.on("click", function(event) {
+    // ダウンロードボタン上のクリックは無視
+    if (event.target.closest(".chart-download-btn")) return;
+    if (typeof updateUrlForChart === "function") updateUrlForChart(category);
+  });
+
   const headerRow = container.append("div").attr("class", "chart-header");
   headerRow.append("h2").attr("id", chartHeadingId).text(category);
   const downloadBtn = headerRow.append("button")
@@ -587,6 +594,7 @@ function drawEndLabels(svg, groups, xScale, yScale, extent, w, h, category) {
     event.stopPropagation();
     togglePrefHighlightForCategory(category, pref);
     drawAllCharts(getSelectedDropdownPrefectures());
+    if (typeof updateUrlForChart === "function") updateUrlForChart(category);
   }
   groups.forEach(([pref, arr]) => {
     const visible = arr.filter(d => d.date >= extent[0] && d.date <= extent[1] && !Number.isNaN(d.value));
