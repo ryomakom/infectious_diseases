@@ -2679,6 +2679,13 @@ header::after{
   outline-offset: 2px;
   opacity: 1;
 }
+/* 三つの切り口カード内では2割小さく */
+.news-digest-spark-category .disease-info-link {
+  font-size: 0.52em;
+  padding: 1px 3px;
+  border-width: 1px;
+  border-radius: 3px;
+}
 
 @media (min-width: 700px){
   #chart-container{
