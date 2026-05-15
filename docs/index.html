@@ -281,8 +281,8 @@
       }, 2000);
     }
     window.addEventListener('scroll', function () { hide(); scheduleShow(); }, { passive: true });
-    window.addEventListener('touchstart', function () { hide(); scheduleShow(); }, { passive: true });
-    window.addEventListener('touchmove',  function () { hide(); scheduleShow(); }, { passive: true });
+    window.addEventListener('touchstart', function (e) { if (credit.contains(e.target)) return; hide(); scheduleShow(); }, { passive: true });
+    window.addEventListener('touchmove',  function (e) { if (credit.contains(e.target)) return; hide(); scheduleShow(); }, { passive: true });
   })();
   </script>
 </body>
