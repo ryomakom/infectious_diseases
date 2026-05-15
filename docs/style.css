@@ -2957,6 +2957,7 @@ header::after{
 
   header{
     padding: 14px 16px 10px;
+    margin-bottom: 12px;
   }
 
   h1{
