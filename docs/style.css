@@ -2648,27 +2648,35 @@ header::after{
   outline-offset: 2px;
 }
 
-/* 感染症解説リンク（↗マーク） */
+/* 感染症解説リンク（↗マーク・角丸ボックス） */
 .disease-info-link {
-  display: inline-block;
-  margin-left: 3px;
-  font-size: 0.7em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+  padding: 1px 4px;
+  font-size: 0.65em;
+  font-weight: 700;
   color: var(--color-primary);
   text-decoration: none;
-  vertical-align: super;
-  line-height: 1;
-  opacity: 0.55;
-  transition: opacity 0.15s;
+  vertical-align: middle;
+  line-height: 1.4;
+  border: 1.5px solid var(--color-primary);
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
   cursor: pointer;
+  white-space: nowrap;
 }
 .disease-info-link:hover {
   opacity: 1;
+  background: var(--color-primary);
+  color: #fff;
   text-decoration: none;
 }
 .disease-info-link:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-  border-radius: 2px;
   opacity: 1;
 }
 
