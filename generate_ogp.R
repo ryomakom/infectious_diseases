@@ -326,13 +326,14 @@ p <- ggplot() +
   annotate("rect", xmin = 0, xmax = W, ymin = H - 0.08, ymax = H,
            fill = "#0369a1", color = NA) +
   # タイトル（大見出し + 右横サブテキスト、下部揃え）
-  annotate("text", x = 0.5, y = H - 0.35,
+  # vjust=0 はテキスト下端を y に置く → 上方向に伸びるので y を低めに設定
+  annotate("text", x = 0.5, y = H - 0.85,
            label = "主な感染症の流行状況",
            hjust = 0, vjust = 0,
            family = ff, fontface = "bold", size = SZ_TITLE, color = "#0c0c0c") +
   annotate("text",
            x = 0.5 + approx_text_width("主な感染症の流行状況", SZ_TITLE) + 0.18,
-           y = H - 0.35,
+           y = H - 0.85,
            label = "都道府県別にみた定点あたり患者数の推移",
            hjust = 0, vjust = 0,
            family = ff, size = SZ_TITLE_SUB, color = "#555555") +
