@@ -1289,23 +1289,69 @@ buildGeneratedSummary <- function(alert_df, rising_df) {
   paste(parts, collapse = " ")
 }
 
-buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df) {
-  alert_cats <- if (nrow(alert_df) > 0) as.character(alert_df$category) else character(0)
+buildAlertBullets <- function(rows) {
+  alert_prefs <- rows %>%
+    filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
+           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+    arrange(category, desc(current_ma4))
+  if (nrow(alert_prefs) == 0) return(list())
+  alert_diseases <- unique(as.character(alert_prefs$category))
+  lapply(alert_diseases, function(cat) {
+    prefs_in_alert <- alert_prefs %>% filter(category == cat)
+    n_total <- nrow(prefs_in_alert)
+    top3 <- head(as.character(prefs_in_alert$pref), 3)
+    if (n_total <= 3) {
+      sprintf("%s：%sで患者数が警報基準に", cat, paste(top3, collapse = "、"))
+    } else {
+      sprintf("%s：%sなど%d都道府県で患者数が警報基準に", cat, paste(top3, collapse = "、"), n_total)
+    }
+  })
+}
+
+buildAnomalyBullets <- function(rows, alert_diseases) {
+  nationwide_anomalies <- rows %>%
+    filter(pref == "全国", is.finite(anomaly_z), anomaly_z >= 3,
+           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4,
+           is.finite(anomaly_ratio), anomaly_ratio > 1,
+           !category %in% alert_diseases) %>%
+    arrange(desc(anomaly_z))
+  if (nrow(nationwide_anomalies) == 0) return(list())
+  lapply(seq_len(nrow(nationwide_anomalies)), function(i) {
+    row <- nationwide_anomalies[i, ]
+    cat <- as.character(row$category[[1]])
+    pct <- round((as.numeric(row$anomaly_ratio[[1]]) - 1) * 100)
+    top_prefs <- rows %>%
+      filter(category == cat, pref != "全国",
+             is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+      arrange(desc(current_ma4)) %>%
+      slice_head(n = 3) %>%
+      pull(pref) %>%
+      as.character()
+    if (length(top_prefs) >= 1) {
+      sprintf("%s：全国の患者数が平年比+%d%%で、とくに%sで多い", cat, pct, paste(top_prefs, collapse = "、"))
+    } else {
+      sprintf("%s：全国の患者数が平年比+%d%%", cat, pct)
+    }
+  })
+}
+
+buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df, rows) {
+  alert_cats     <- if (nrow(alert_df) > 0) as.character(alert_df$category) else character(0)
   rising_df_text <- rising_df %>% filter(!category %in% alert_cats)
-  headline_text <- buildGeneratedHeadline(alert_df, rising_df_text)
-  summary_text  <- buildGeneratedSummary(alert_df, rising_df_text)
-  alert_bullets <- if (nrow(alert_df) > 0) {
-    vapply(seq_len(nrow(alert_df)), function(i) buildAlertBullet(alert_df[i, ]), character(1))
-  } else character(0)
-  rising_bullets <- if (nrow(rising_df_text) > 0) {
-    vapply(seq_len(nrow(rising_df_text)), function(i) buildRisingBullet(rising_df_text[i, ]), character(1))
-  } else character(0)
-  bullets <- c(alert_bullets, rising_bullets)
-  if (length(bullets) == 0) bullets <- "今週は警報水準・急増ともに該当なし"
+  headline_text  <- buildGeneratedHeadline(alert_df, rising_df_text)
+  summary_text   <- buildGeneratedSummary(alert_df, rising_df_text)
+  alert_diseases  <- unique(as.character(
+    rows %>% filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
+                    is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+      pull(category)
+  ))
+  alert_bullets   <- buildAlertBullets(rows)
+  anomaly_bullets <- buildAnomalyBullets(rows, alert_diseases)
+  bullets <- c(alert_bullets, anomaly_bullets)
   list(
     headline = headline_text,
-    summary = summary_text,
-    bullets = unname(as.list(bullets))
+    summary  = summary_text,
+    bullets  = bullets
   )
 }
 
@@ -1478,7 +1524,7 @@ generated_text <- buildGeneratedText(list(
   anomalies_df = anomalies_df,
   top_news = top_news_df,
   geo_context = geo_context
-), top_pref_df, rising_df, alert_df)
+), top_pref_df, rising_df, alert_df, rows = news_base)
 
 lead_reason <- if (!is.null(lead_bundle$lead$reason)) {
   lead_bundle$lead$reason
