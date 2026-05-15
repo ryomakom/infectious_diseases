@@ -486,7 +486,9 @@ function drawAxes(svgFocus, xFocus, yFocus, focusHeight, focusWidth, category, y
     .text("人/定点");
   hideYAxisTicksOverlappingUnit(svgFocus);
 
-  const alertStart = state.alertThresholdsMap[category];
+  const alertStart  = state.alertThresholdsMap[category];
+  const attentionTh = state.attentionMap ? state.attentionMap[category] : null;
+
   if (alertStart != null && alertStart > 0 && alertStart < yMaxAll) {
     const bandTop = yFocus(alertStart);
     svgFocus.insert("rect", ":first-child")
@@ -495,6 +497,17 @@ function drawAxes(svgFocus, xFocus, yFocus, focusHeight, focusWidth, category, y
       .attr("y", 0)
       .attr("width", focusWidth)
       .attr("height", bandTop);
+  }
+
+  if (attentionTh != null && attentionTh > 0 && attentionTh < yMaxAll) {
+    const attTop    = yFocus(attentionTh);
+    const alertLine = (alertStart != null && alertStart > attentionTh) ? yFocus(alertStart) : attTop;
+    svgFocus.insert("rect", ":first-child")
+      .attr("class", "attention-band")
+      .attr("x", 0)
+      .attr("y", alertLine)
+      .attr("width", focusWidth)
+      .attr("height", Math.max(0, attTop - alertLine));
   }
 }
 
@@ -951,9 +964,17 @@ function drawBrush(ctx) {
     svgFocus.select(".y-axis").call(d3.axisLeft(yFocus).tickValues(newYTicks));
     hideYAxisTicksOverlappingUnit(svgFocus);
 
-    const zoomAlertStart = state.alertThresholdsMap[category];
+    const zoomAlertStart  = state.alertThresholdsMap[category];
+    const zoomAttentionTh = state.attentionMap ? state.attentionMap[category] : null;
     if (zoomAlertStart != null && zoomAlertStart > 0) {
       svgFocus.selectAll(".alert-band").attr("y", 0).attr("height", Math.max(0, yFocus(zoomAlertStart)));
+    }
+    if (zoomAttentionTh != null && zoomAttentionTh > 0) {
+      const attTop    = yFocus(zoomAttentionTh);
+      const alertLine = (zoomAlertStart != null && zoomAlertStart > zoomAttentionTh) ? yFocus(zoomAlertStart) : attTop;
+      svgFocus.selectAll(".attention-band")
+        .attr("y", alertLine)
+        .attr("height", Math.max(0, attTop - alertLine));
     }
 
     // Update line paths first, then rebuild points/labels for correctness.

@@ -22,15 +22,19 @@ function loadAlertThresholds() {
     .then(rows => {
       const map = {};
       const endMap = {};
+      const attentionMap = {};
       rows.forEach(d => {
         const cat = categoryToDisplay(d.category);
         const v = parseFloat(d.alert_start);
         if (!Number.isNaN(v) && v > 0) map[cat] = v;
         const e = parseFloat(d.alert_end);
         if (!Number.isNaN(e) && e > 0) endMap[cat] = e;
+        const a = parseFloat(d.attention);
+        if (!Number.isNaN(a) && a > 0) attentionMap[cat] = a;
       });
       state.alertThresholdsMap = map;
       state.alertEndMap = endMap;
+      state.attentionMap = attentionMap;
       return map;
     })
     .catch(() => ({}));

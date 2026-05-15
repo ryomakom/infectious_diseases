@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>都道府県別にみた主な感染症の流行状況 | 定点当たり患者数の推移</title>
+  <title>都道府県別にみた主な感染症の流行状況 | 定点あたり患者数の推移</title>
 
-  <meta name="description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点当たり患者数の週次推移をインタラクティブに可視化したページです。新型コロナウイルス、インフルエンザ、RSウイルス、感染性胃腸炎、手足口病などを比較できます。">
-  <meta name="keywords" content="感染症,都道府県別,定点当たり患者数,新型コロナウイルス,COVID-19,インフルエンザ,RSウイルス,感染性胃腸炎,手足口病,水痘,突発性発しん,伝染性紅斑,ヘルパンギーナ,流行性耳下腺炎,流行性角結膜炎,急性出血性結膜炎,マイコプラズマ肺炎,クラミジア肺炎,細菌性髄膜炎,無菌性髄膜炎,咽頭結膜熱,A群溶血性レンサ球菌咽頭炎,感染性胃腸炎（ロタウイルス）">
+  <meta name="description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点あたり患者数の週次推移をインタラクティブに可視化したダッシュボードです。新型コロナウイルス、インフルエンザ、RSウイルス、感染性胃腸炎、手足口病などを比較できます。">
+  <meta name="keywords" content="感染症,都道府県別,定点あたり患者数,新型コロナウイルス,COVID-19,インフルエンザ,RSウイルス,感染性胃腸炎,手足口病,水痘,突発性発しん,伝染性紅斑,ヘルパンギーナ,流行性耳下腺炎,流行性角結膜炎,急性出血性結膜炎,マイコプラズマ肺炎,クラミジア肺炎,細菌性髄膜炎,無菌性髄膜炎,咽頭結膜熱,A群溶血性レンサ球菌咽頭炎,感染性胃腸炎（ロタウイルス）">
   <meta name="robots" content="index, follow">
   <meta name="author" content="小宮山亮磨">
   <meta name="theme-color" content="#ffffff">
@@ -18,7 +18,7 @@
   <meta property="og:locale" content="ja_JP">
   <meta property="og:site_name" content="Ryoma Komiyama">
   <meta property="og:title" content="都道府県別にみた主な感染症の流行状況">
-  <meta property="og:description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症の定点当たり患者数の週次推移を可視化しています。">
+  <meta property="og:description" content="国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症の定点あたり患者数の週次推移を可視化しています。">
   <meta property="og:url" content="https://ryomakom.github.io/infectious_diseases/">
   <meta property="og:image" content="https://ryomakom.github.io/infectious_diseases/ogp.png">
   <meta property="og:image:width" content="1200">
@@ -26,7 +26,7 @@
 
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="都道府県別にみた主な感染症の流行状況">
-  <meta name="twitter:description" content="都道府県別の主な感染症の定点当たり患者数の週次推移をインタラクティブに表示。">
+  <meta name="twitter:description" content="都道府県別の主な感染症の定点あたり患者数の週次推移をインタラクティブに表示。">
   <meta name="twitter:image" content="https://ryomakom.github.io/infectious_diseases/ogp.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -43,7 +43,7 @@
     "@context": "https://schema.org",
     "@type": "Dataset",
     "name": "都道府県別にみた主な感染症の流行状況",
-    "description": "国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点当たり患者数の週次推移を可視化したデータページ。",
+    "description": "国立健康危機管理研究機構の公開データをもとに、都道府県別の主な感染症について定点あたり患者数の週次推移を可視化したデータページ。",
     "url": "https://ryomakom.github.io/infectious_diseases/",
     "inLanguage": "ja",
     "mainEntityOfPage": {
@@ -61,7 +61,7 @@
     "keywords": [
       "感染症",
       "都道府県別",
-      "定点当たり患者数",
+      "定点あたり患者数",
       "新型コロナウイルス",
       "インフルエンザ",
       "RSウイルス",
@@ -103,7 +103,7 @@
   </header>
 
   <div class="share-buttons" aria-label="SNSでシェア">
-    <a href="https://twitter.com/intent/tweet?text=%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E5%AE%9A%E7%82%B9%E5%BD%93%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB&amp;url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-x" title="X（Twitter）でシェア">
+    <a href="https://twitter.com/intent/tweet?text=%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E5%AE%9A%E7%82%B9%E3%81%82%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB&amp;url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-x" title="X（Twitter）でシェア">
       <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
     </a>
     <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-fb" title="Facebookでシェア">
@@ -112,7 +112,7 @@
     <a href="https://social-plugins.line.me/lineit/share?url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-line" title="LINEで送る">
       <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.63.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.039 1.085l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"></path></svg>
     </a>
-    <a href="https://bsky.app/intent/compose?text=%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E5%AE%9A%E7%82%B9%E5%BD%93%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB%0Ahttps%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-bsky" title="Blueskyでシェア">
+    <a href="https://bsky.app/intent/compose?text=%E4%B8%BB%E3%81%AA%E6%84%9F%E6%9F%93%E7%97%87%E3%81%AE%E6%B5%81%E8%A1%8C%E7%8A%B6%E6%B3%81%20%7C%20%E9%83%BD%E9%81%93%E5%BA%9C%E7%9C%8C%E5%88%A5%E3%81%AB%E3%81%BF%E3%81%9F%E5%AE%9A%E7%82%B9%E3%81%82%E3%81%9F%E3%82%8A%E6%82%A3%E8%80%85%E6%95%B0%E3%81%AE%E6%8E%A8%E7%A7%BB%0Ahttps%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-bsky" title="Blueskyでシェア">
       <svg class="share-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 10.8c-1.087-2.114-4.046-6.053-6.798-7.995C2.566.944 1.561 1.266.902 1.565.139 1.908 0 3.08 0 4.279c0 1.198.378 2.903 1.082 4.546 1.235 2.742 3.064 6.033 5.642 8.126 2.578 2.093 5.313 2.909 6.276 2.909.963 0 3.698-.816 6.276-2.909 2.578-2.093 4.407-5.384 5.642-8.126C23.622 7.182 24 5.477 24 4.28c0-1.198-.139-2.37-.902-2.714-.659-.299-1.664-.621-4.3 1.24C16.046 4.747 13.087 8.686 12 10.8z"></path></svg>
     </a>
     <a href="https://note.com/intent/post?url=https%3A%2F%2Fryomakom.github.io%2Finfectious_diseases%2F" target="_blank" rel="noopener noreferrer" class="share-btn share-btn-note" title="noteで書く">

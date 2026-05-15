@@ -59,13 +59,15 @@ alert_thresholds_df <- if (file.exists(alert_th_path)) {
 } else NULL
 get_alert_thresholds <- function(category) {
   if (is.null(alert_thresholds_df) || is.na(category)) {
-    return(list(start = NA_real_, end = NA_real_))
+    return(list(start = NA_real_, end = NA_real_, attention = NA_real_))
   }
   r <- alert_thresholds_df %>% dplyr::filter(category == !!category)
-  if (nrow(r) == 0) return(list(start = NA_real_, end = NA_real_))
+  if (nrow(r) == 0) return(list(start = NA_real_, end = NA_real_, attention = NA_real_))
+  att <- if ("attention" %in% names(r)) suppressWarnings(as.numeric(r$attention[[1]])) else NA_real_
   list(
     start = suppressWarnings(as.numeric(r$alert_start[[1]])),
-    end   = suppressWarnings(as.numeric(r$alert_end[[1]]))
+    end   = suppressWarnings(as.numeric(r$alert_end[[1]])),
+    attention = att
   )
 }
 
@@ -134,13 +136,18 @@ get_all_values <- function(category) {
 # 直近 N 週分の値と警報状態を返す（警報状態は全期間からウォークして算出）
 get_recent_with_states <- function(category, n_weeks = 52) {
   vals <- get_all_values(category)
-  if (length(vals) == 0) return(list(values = numeric(0), states = logical(0)))
+  if (length(vals) == 0) return(list(values = numeric(0), states = logical(0),
+                                      attention_states = logical(0)))
   th <- get_alert_thresholds(category)
   states <- compute_warning_states(vals, th$start, th$end)
+  att_states <- compute_attention_states(vals, th$attention, states)
   total <- length(vals)
   start <- max(1, total - n_weeks + 1)
-  list(values = vals[start:total], states = states[start:total],
-       alert_start = th$start, alert_end = th$end)
+  list(values = vals[start:total],
+       states = states[start:total],
+       attention_states = att_states[start:total],
+       alert_start = th$start, alert_end = th$end,
+       attention = th$attention)
 }
 
 # 現在（最新週）に警報レベルにあるか
@@ -150,6 +157,20 @@ is_in_alert <- function(category) {
   th <- get_alert_thresholds(category)
   states <- compute_warning_states(vals, th$start, th$end)
   isTRUE(tail(states, 1))
+}
+
+# 注意報レベル: 値 >= attention かつ警報レベルでない
+compute_attention_states <- function(values, attention, alert_states) {
+  n <- length(values)
+  if (n == 0) return(logical(0))
+  has_th <- !is.na(attention) && is.finite(attention) && attention > 0
+  if (!has_th) return(rep(FALSE, n))
+  out <- logical(n)
+  for (i in seq_len(n)) {
+    v <- values[i]
+    out[i] <- is.finite(v) && v >= attention && !isTRUE(alert_states[i])
+  }
+  out
 }
 
 # 警報レベルの時系列ウォーク: alert_start を一度超えたら alert_end を下回るまで継続
@@ -166,7 +187,7 @@ compute_warning_states <- function(values, alert_start, alert_end) {
   for (i in seq_len(n)) {
     v <- values[i]
     if (is.finite(v)) {
-      if (!flag && v > alert_start) flag <- TRUE
+      if (!flag && v >= alert_start) flag <- TRUE
       else if (flag && v < alert_end) flag <- FALSE
     }
     states[i] <- flag
@@ -286,29 +307,37 @@ W <- 12; H <- 6.3
 
 SZ_TITLE   <- 12
 SZ_SUBTTL  <- 6
+SZ_TITLE_SUB <- 7      # タイトル行の右横サブテキスト
 SZ_LABEL   <- 6.5
 SZ_DISEASE <- 10
 SZ_METRIC  <- 6.5
 SZ_NUMBER  <- 10
 SZ_FOOTER  <- 5.5
 
-METRIC_GRAY <- "#6b7280"
-METRIC_RED  <- "#dc2626"
-SPARK_GRAY  <- "#9ca3af"
-SPARK_RED   <- "#b91c1c"
+METRIC_GRAY      <- "#6b7280"
+METRIC_RED       <- "#dc2626"
+SPARK_GRAY       <- "#9ca3af"
+SPARK_RED        <- "#b91c1c"
+SPARK_ATTENTION  <- "#fca5a5"
 
 p <- ggplot() +
   annotate("rect", xmin = 0, xmax = W, ymin = 0, ymax = H,
            fill = "#f9fafb", color = NA) +
   annotate("rect", xmin = 0, xmax = W, ymin = H - 0.08, ymax = H,
            fill = "#0369a1", color = NA) +
-  # タイトル
-  annotate("text", x = 0.5, y = H - 0.55,
-           label = "都道府県別にみた主な感染症の流行状況",
-           hjust = 0, vjust = 0.5,
+  # タイトル（大見出し + 右横サブテキスト、下部揃え）
+  annotate("text", x = 0.5, y = H - 0.35,
+           label = "主な感染症の流行状況",
+           hjust = 0, vjust = 0,
            family = ff, fontface = "bold", size = SZ_TITLE, color = "#0c0c0c") +
+  annotate("text",
+           x = 0.5 + approx_text_width("主な感染症の流行状況", SZ_TITLE) + 0.18,
+           y = H - 0.35,
+           label = "都道府県別にみた定点あたり患者数の推移",
+           hjust = 0, vjust = 0,
+           family = ff, size = SZ_TITLE_SUB, color = "#555555") +
   # 最新データ ＋ 最終更新（同じ行）
-  annotate("text", x = 0.5, y = H - 1.2,
+  annotate("text", x = 0.5, y = H - 1.45,
            label = sprintf(
              "最新データ：%s    最終更新：%s",
              if (inherits(latest_data_date, "Date") && !is.na(latest_data_date))
@@ -394,8 +423,10 @@ for (i in seq_along(cards)) {
   recent <- get_recent_with_states(c$category, n_weeks = 52)
   values <- recent$values
   states <- recent$states
+  att_states <- recent$attention_states
   alert_start <- recent$alert_start
   alert_end <- recent$alert_end
+  attention_th <- recent$attention
   if (length(values) >= 2) {
     spark_y0 <- body_y_bot + 0.15
     spark_y1 <- body_y_top - 0.05
@@ -420,51 +451,85 @@ for (i in seq_along(cards)) {
                  color = "#cbd5e1", linewidth = 0.3, linetype = "dashed")
     }
 
-    # 警報レベル区間で分割して描画
-    # states は外部ウォーク済みなので、ここでは直接 split する
-    pi <- numeric(0); pv <- numeric(0); pa <- logical(0)
-    pi <- c(pi, 1); pv <- c(pv, values[1]); pa <- c(pa, states[1])
+    # 3状態（0=通常, 1=注意報, 2=警報）で各点を分類
+    point_states <- integer(n)
+    for (i in seq_len(n)) {
+      if (isTRUE(states[i])) {
+        point_states[i] <- 2L
+      } else if (isTRUE(att_states[i])) {
+        point_states[i] <- 1L
+      } else {
+        point_states[i] <- 0L
+      }
+    }
+
+    # 区間分割（警報の境界はクロス位置で補間、注意報は端点で切り替え）
+    pi <- c(1); pv <- c(values[1]); pst <- c(point_states[1])
     for (i in seq_len(n - 1)) {
       v1 <- values[i]; v2 <- values[i + 1]
-      s1 <- states[i]; s2 <- states[i + 1]
-      if (s1 != s2 && v2 != v1) {
-        threshold_x <- if (s2) alert_start else alert_end
+      s1 <- point_states[i]; s2 <- point_states[i + 1]
+      # 警報レベルへの出入りはクロス位置を補間挿入
+      a1 <- (s1 == 2L); a2 <- (s2 == 2L)
+      if (a1 != a2 && v2 != v1) {
+        threshold_x <- if (a2) alert_start else alert_end
         if (!is.na(threshold_x) && is.finite(threshold_x)) {
           t <- (threshold_x - v1) / (v2 - v1)
-          cross <- i + t
-          pi <- c(pi, cross, cross)
-          pv <- c(pv, threshold_x, threshold_x)
-          pa <- c(pa, s1, s2)
+          if (is.finite(t) && t > 0 && t < 1) {
+            cross <- i + t
+            pi <- c(pi, cross, cross)
+            pv <- c(pv, threshold_x, threshold_x)
+            pst <- c(pst, s1, s2)
+          }
         }
       }
-      pi <- c(pi, i + 1); pv <- c(pv, v2); pa <- c(pa, s2)
+      pi <- c(pi, i + 1); pv <- c(pv, v2); pst <- c(pst, s2)
     }
     runs <- list()
-    cur <- list(idx = pi[1], val = pv[1], alert = pa[1])
+    cur <- list(idx = pi[1], val = pv[1], st = pst[1])
     for (k in 2:length(pi)) {
-      if (pa[k] == cur$alert) {
+      if (pst[k] == cur$st) {
         cur$idx <- c(cur$idx, pi[k]); cur$val <- c(cur$val, pv[k])
       } else {
         runs[[length(runs) + 1]] <- cur
-        cur <- list(idx = pi[k], val = pv[k], alert = pa[k])
+        cur <- list(idx = pi[k], val = pv[k], st = pst[k])
       }
     }
     runs[[length(runs) + 1]] <- cur
 
+    # 連結を保つため、隣接runの境界点で同じ点を共有
+    if (length(runs) >= 2) {
+      for (k in 2:length(runs)) {
+        prev <- runs[[k - 1]]
+        cur2 <- runs[[k]]
+        runs[[k]]$idx <- c(prev$idx[length(prev$idx)], cur2$idx)
+        runs[[k]]$val <- c(prev$val[length(prev$val)], cur2$val)
+      }
+    }
+
+    state_color <- function(st) {
+      if (st == 2L) SPARK_RED
+      else if (st == 1L) SPARK_ATTENTION
+      else SPARK_GRAY
+    }
+    state_width <- function(st) {
+      if (st == 2L) 1.2
+      else if (st == 1L) 1.0
+      else 0.7
+    }
+
     for (run in runs) {
       if (length(run$idx) < 2) next
       df <- data.frame(x = to_vis_x(run$idx), y = to_vis_y(run$val))
-      seg_color <- if (isTRUE(run$alert)) SPARK_RED else SPARK_GRAY
-      seg_width <- if (isTRUE(run$alert)) 1.2 else 0.7
       p <- p + geom_path(data = df, aes(x = x, y = y),
-                         color = seg_color, linewidth = seg_width,
+                         color = state_color(run$st),
+                         linewidth = state_width(run$st),
                          inherit.aes = FALSE)
     }
 
-    end_alert <- isTRUE(tail(states, 1))
+    end_st <- point_states[n]
     p <- p + annotate("point",
                        x = to_vis_x(n), y = to_vis_y(values[n]),
-                       color = if (end_alert) SPARK_RED else SPARK_GRAY, size = 1.5)
+                       color = state_color(end_st), size = 1.5)
   }
 }
 

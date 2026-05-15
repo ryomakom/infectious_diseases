@@ -1725,6 +1725,11 @@ header::after{
   stroke-width: 1.9;
 }
 
+.top-metric-sparkline-path-attention{
+  stroke: #fca5a5;
+  stroke-width: 1.5;
+}
+
 
 .top-metric-spark-dot{
   fill: #0369a1;
@@ -1927,9 +1932,18 @@ header::after{
   color: #b91c1c;
 }
 
-/* ランキング表スパークライン: 警報レベル区間を赤で描画 */
+/* 注意報レベル（注意報基準値以上かつ警報レベルでない）のセルを薄赤で塗る */
+.ranking-table td.ratio-alert--caution{
+  background: rgba(239, 68, 68, 0.06);
+  color: #dc2626;
+}
+
+/* ランキング表スパークライン: 警報・注意報区間の色 */
 .ranking-sparkline-path--alert {
   stroke: #ef4444;
+}
+.ranking-sparkline-path--attention {
+  stroke: #fca5a5;
 }
 
 .ranking-table th{
@@ -2772,6 +2786,12 @@ header::after{
 /* 警報基準以上の帯（赤っぽい網掛け） */
 .chart-svg .alert-band{
   fill: rgba(185, 28, 28, 0.12);
+  pointer-events: none;
+}
+
+/* 注意報基準〜警報基準の帯（薄赤の網掛け） */
+.chart-svg .attention-band{
+  fill: rgba(185, 28, 28, 0.05);
   pointer-events: none;
 }
 

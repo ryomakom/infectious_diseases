@@ -400,8 +400,9 @@ function buildSignalSparkCard(item) {
         ${alertThresholdHtml}
       </div>
       <div class="news-digest-spark-chart-col">
-        <svg class="top-metric-sparkline" aria-hidden="true" width="100" height="52" viewBox="0 0 100 52" data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}" data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}" data-alert-states="${spark.alertStates ? spark.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
+        <svg class="top-metric-sparkline" aria-hidden="true" width="100" height="52" viewBox="0 0 100 52" data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}" data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}" data-alert-states="${spark.alertStates ? spark.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-attention-states="${spark.attentionStates ? spark.attentionStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
           <path class="top-metric-sparkline-path" d="${spark.normalPath}"></path>
+          <path class="top-metric-sparkline-path top-metric-sparkline-path-attention" d="${spark.attentionPath || ""}"></path>
           <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${spark.alertPath}"></path>
           <circle class="top-metric-spark-dot" cx="0" cy="0" r="3"></circle>
         </svg>
@@ -508,8 +509,10 @@ function buildTopPrefsSection(category, signalKey) {
             data-values="${spark.values.join("|")}" data-y-max="${spark.yMax}"
             data-threshold="${Number.isFinite(spark.threshold) ? spark.threshold : ""}"
             data-alert-states="${spark.alertStates ? spark.alertStates.map(b => b ? '1' : '0').join('') : ''}"
+            data-attention-states="${spark.attentionStates ? spark.attentionStates.map(b => b ? '1' : '0').join('') : ''}"
             data-pad-x="${spark.padX || 0}" data-pad-y="${spark.padY || 0}">
             <path class="top-metric-sparkline-path" d="${spark.normalPath}"></path>
+            <path class="top-metric-sparkline-path top-metric-sparkline-path-attention" d="${spark.attentionPath || ''}"></path>
             <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${spark.alertPath}"></path>
             <circle class="top-metric-spark-dot" cx="0" cy="0" r="3"></circle>
           </svg>

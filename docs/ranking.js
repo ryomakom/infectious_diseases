@@ -98,7 +98,7 @@ function sortRankingRows(rows) {
   });
 }
 
-// ヒステリシス・ウォーク: alert_start を超えたら alert、alert_end を下回るまで alert を維持
+// ヒステリシス・ウォーク: alert_start 以上になったら alert、alert_end 未満になるまで alert を維持
 function computeAlertStates(values, alertStart, alertEnd) {
   const n = values.length;
   const states = new Array(n).fill(false);
@@ -108,7 +108,7 @@ function computeAlertStates(values, alertStart, alertEnd) {
   for (let i = 0; i < n; i++) {
     const v = values[i];
     if (Number.isFinite(v)) {
-      if (!flag && v > alertStart) flag = true;
+      if (!flag && v >= alertStart) flag = true;
       else if (flag && v < end) flag = false;
     }
     states[i] = flag;
@@ -116,21 +116,36 @@ function computeAlertStates(values, alertStart, alertEnd) {
   return states;
 }
 
-// ヒステリシス状態に基づいて normal / alert の 2 パスを生成
-function sparklineWithAlertStates(values, states, width, height) {
-  if (!values.length) return { normalPath: "", alertPath: "" };
+// 注意報状態: attention 閾値以上 かつ アラート状態でない
+function computeAttentionStates(values, attentionThreshold, alertStates) {
+  const n = values.length;
+  const states = new Array(n).fill(false);
+  if (!Number.isFinite(attentionThreshold) || attentionThreshold <= 0) return states;
+  for (let i = 0; i < n; i++) {
+    const v = values[i];
+    if (Number.isFinite(v) && v >= attentionThreshold && !alertStates[i]) {
+      states[i] = true;
+    }
+  }
+  return states;
+}
+
+// 警報・注意報・通常の 3 パスを生成（警報が最優先）
+function sparklineWithAlertStates(values, alertStates, attentionStates, width, height) {
+  if (!values.length) return { normalPath: "", alertPath: "", attentionPath: "" };
   const x = d3.scaleLinear().domain([0, values.length - 1]).range([0, width]);
   const yMax = d3.max(values) || 1;
   const y = d3.scaleLinear().domain([0, yMax]).range([height, 0]);
-  let normalPath = "", alertPath = "";
+  let normalPath = "", alertPath = "", attentionPath = "";
   for (let i = 0; i < values.length - 1; i++) {
     const v0 = values[i], v1 = values[i + 1];
     if (!Number.isFinite(v0) || !Number.isFinite(v1)) continue;
     const seg = `M${x(i)},${y(v0)}L${x(i + 1)},${y(v1)}`;
-    if (states[i] || states[i + 1]) alertPath += seg;
-    else normalPath += seg;
+    if (alertStates[i] || alertStates[i + 1])         alertPath     += seg;
+    else if (attentionStates[i] || attentionStates[i + 1]) attentionPath += seg;
+    else                                               normalPath    += seg;
   }
-  return { normalPath, alertPath };
+  return { normalPath, alertPath, attentionPath };
 }
 
 function sparklinePath(values, width, height) {
@@ -154,69 +169,88 @@ function buildMiniSparkline(category, pref, width, height, seriesValuesOverride)
   const x = d3.scaleLinear().domain([0, values.length - 1]).range([padX, width - padX]);
   const yMax = d3.max(values) || 0;
   const y = d3.scaleLinear().domain([0, yMax === 0 ? 1 : yMax]).range([height - padY, padY]);
-  const alertStart = state.alertThresholdsMap ? state.alertThresholdsMap[category] : null;
-  const alertEnd = state.alertEndMap ? state.alertEndMap[category] : null;
+  const alertStart  = state.alertThresholdsMap ? state.alertThresholdsMap[category] : null;
+  const alertEnd    = state.alertEndMap        ? state.alertEndMap[category]        : null;
+  const attentionTh = state.attentionMap       ? state.attentionMap[category]       : null;
 
-  // ヒステリシス・ウォークで各点のアラート状態を計算。
-  // 52週より前に alert_start を超えていたケースも正確に反映するため、
-  // 全期間の系列（getSeriesFor）でウォークし、最後 values.length 件分のみ使用する。
+  // 全期間データでヒステリシス・ウォークし、最後 values.length 件分を取り出す
   const fullSeries = getSeriesFor(category, pref).filter(d => Number.isFinite(d.value)).map(d => d.value);
   const walkSource = fullSeries.length >= values.length ? fullSeries : values;
   const fullAlertStates = computeAlertStates(walkSource, alertStart, alertEnd);
-  const alertStates = fullAlertStates.slice(-values.length);
+  const alertStates     = fullAlertStates.slice(-values.length);
+  const attentionStates = computeAttentionStates(values, attentionTh, alertStates);
 
-  const paths = { normal: "", alert: "" };
+  const paths = { normal: "", alert: "", attention: "" };
   for (let i = 0; i < values.length - 1; i += 1) {
     const v0 = values[i];
     const v1 = values[i + 1];
     if (!Number.isFinite(v0) || !Number.isFinite(v1)) continue;
-    const x0 = x(i);
-    const y0 = y(v0);
-    const x1 = x(i + 1);
-    const y1 = y(v1);
+    const x0 = x(i), y0 = y(v0), x1 = x(i + 1), y1 = y(v1);
 
     if (!Number.isFinite(alertStart)) {
       paths.normal += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
 
-    const s0 = alertStates[i];
-    const s1 = alertStates[i + 1];
-    if (s0 === s1) {
-      paths[s0 ? "alert" : "normal"] += `M${x0},${y0}L${x1},${y1}`;
+    const s0 = alertStates[i],     s1 = alertStates[i + 1];
+    const a0 = attentionStates[i], a1 = attentionStates[i + 1];
+
+    // 警報が最優先
+    if (s0 === s1 && a0 === a1) {
+      const key = s0 ? "alert" : (a0 ? "attention" : "normal");
+      paths[key] += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
 
-    // 状態遷移: 正しい閾値（開始→alert_start / 終息→alert_end）でクロス点を計算
-    const crossTh = !s0 ? alertStart : (Number.isFinite(alertEnd) && alertEnd > 0 ? alertEnd : alertStart);
+    // 警報の状態遷移：正しい閾値でクロス点を計算
+    if (s0 !== s1) {
+      const crossTh = !s0 ? alertStart : (Number.isFinite(alertEnd) && alertEnd > 0 ? alertEnd : alertStart);
+      const dv = v1 - v0;
+      if (!Number.isFinite(dv) || dv === 0) {
+        paths[s0 ? "alert" : (a0 ? "attention" : "normal")] += `M${x0},${y0}L${x1},${y1}`;
+        continue;
+      }
+      const t = Math.max(0, Math.min(1, (crossTh - v0) / dv));
+      const xC = x0 + (x1 - x0) * t, yC = y(crossTh);
+      if (!s0) {
+        paths[a0 ? "attention" : "normal"] += `M${x0},${y0}L${xC},${yC}`;
+        paths.alert += `M${xC},${yC}L${x1},${y1}`;
+      } else {
+        paths.alert += `M${x0},${y0}L${xC},${yC}`;
+        paths[a1 ? "attention" : "normal"] += `M${xC},${yC}L${x1},${y1}`;
+      }
+      continue;
+    }
+
+    // 注意報の状態遷移（警報なし区間内）
+    const crossTh = attentionTh;
     const dv = v1 - v0;
-    if (!Number.isFinite(dv) || dv === 0) {
-      paths[s0 ? "alert" : "normal"] += `M${x0},${y0}L${x1},${y1}`;
+    if (!Number.isFinite(dv) || dv === 0 || !Number.isFinite(crossTh)) {
+      paths[a0 ? "attention" : "normal"] += `M${x0},${y0}L${x1},${y1}`;
       continue;
     }
     const t = Math.max(0, Math.min(1, (crossTh - v0) / dv));
-    const xCross = x0 + (x1 - x0) * t;
-    const yCross = y(crossTh);
-
-    if (!s0) {
-      // normal → alert
-      paths.normal += `M${x0},${y0}L${xCross},${yCross}`;
-      paths.alert  += `M${xCross},${yCross}L${x1},${y1}`;
+    const xC = x0 + (x1 - x0) * t, yC = y(crossTh);
+    if (!a0) {
+      paths.normal    += `M${x0},${y0}L${xC},${yC}`;
+      paths.attention += `M${xC},${yC}L${x1},${y1}`;
     } else {
-      // alert → normal
-      paths.alert  += `M${x0},${y0}L${xCross},${yCross}`;
-      paths.normal += `M${xCross},${yCross}L${x1},${y1}`;
+      paths.attention += `M${x0},${y0}L${xC},${yC}`;
+      paths.normal    += `M${xC},${yC}L${x1},${y1}`;
     }
   }
 
   return {
-    normalPath: paths.normal,
-    alertPath: paths.alert,
+    normalPath:    paths.normal,
+    alertPath:     paths.alert,
+    attentionPath: paths.attention,
     alertStates,
+    attentionStates,
     values,
     yMax: (yMax === 0 ? 1 : yMax),
-    threshold: Number.isFinite(alertStart) ? alertStart : null,
-    alertEnd: Number.isFinite(alertEnd) && alertEnd > 0 ? alertEnd : null,
+    threshold:  Number.isFinite(alertStart)  ? alertStart  : null,
+    alertEnd:   Number.isFinite(alertEnd)  && alertEnd  > 0 ? alertEnd  : null,
+    attentionTh: Number.isFinite(attentionTh) && attentionTh > 0 ? attentionTh : null,
     padX,
     padY
   };
@@ -260,7 +294,10 @@ function yoyClass(_v) { return ""; }
 
 // 「警報レベル」セルの色: in_alert_level (R 側で時系列ウォーク済み) のみ赤く塗る
 function alertClass(row) {
-  return row && row.in_alert_level ? "ratio-alert--danger" : "";
+  if (row && row.in_alert_level) return "ratio-alert--danger";
+  const attention = state.attentionMap ? state.attentionMap[row.category] : null;
+  if (attention && Number.isFinite(row.current_ma4) && row.current_ma4 >= attention) return "ratio-alert--caution";
+  return "";
 }
 
 // 3シグナルカードなどで使う「重症度」表示は ratio_alert に応じた既存ロジックを維持
@@ -467,8 +504,9 @@ function renderTopMetricCard(entry) {
       </div>
       <div class="ranking-top-card-spark">
         <span class="metric-value spark-wrap">
-          <svg class="top-metric-sparkline" aria-hidden="true" width="116" height="30" viewBox="0 0 116 30" data-values="${mini.values.join("|")}" data-y-max="${mini.yMax}" data-threshold="${Number.isFinite(mini.threshold) ? mini.threshold : ""}" data-alert-end="${Number.isFinite(mini.alertEnd) ? mini.alertEnd : ""}" data-alert-states="${mini.alertStates ? mini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${mini.padX || 0}" data-pad-y="${mini.padY || 0}">
+          <svg class="top-metric-sparkline" aria-hidden="true" width="116" height="30" viewBox="0 0 116 30" data-values="${mini.values.join("|")}" data-y-max="${mini.yMax}" data-threshold="${Number.isFinite(mini.threshold) ? mini.threshold : ""}" data-alert-end="${Number.isFinite(mini.alertEnd) ? mini.alertEnd : ""}" data-alert-states="${mini.alertStates ? mini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-attention-states="${mini.attentionStates ? mini.attentionStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${mini.padX || 0}" data-pad-y="${mini.padY || 0}">
               <path class="top-metric-sparkline-path" d="${mini.normalPath}"></path>
+            <path class="top-metric-sparkline-path top-metric-sparkline-path-attention" d="${mini.attentionPath || ""}"></path>
             <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${mini.alertPath}"></path>
             <circle class="top-metric-spark-dot" cx="0" cy="0" r="2.8"></circle>
           </svg>
@@ -516,6 +554,12 @@ function startMiniSparklineDotAnimations(rootEl) {
               (() => { const e = Number(svg.getAttribute("data-alert-end")); return Number.isFinite(e) && e > 0 ? e : null; })())
           : new Array(values.length).fill(false));
 
+    // 注意報状態
+    const attnStr = String(svg.getAttribute("data-attention-states") || "");
+    const attentionStates = (attnStr.length === values.length)
+      ? attnStr.split("").map(c => c === "1")
+      : computeAttentionStates(values, (() => { const a = state.attentionMap ? state.attentionMap[svg.closest("[data-category]")?.dataset?.category] : null; return a || null; })(), alertStates);
+
     const easeInOutCubic = t => (t < 0.5)
       ? 4 * t * t * t
       : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -530,9 +574,10 @@ function startMiniSparklineDotAnimations(rootEl) {
       const y = (height - padY) - (v / denom) * (height - 2 * padY);
       dot.setAttribute("cx", String(x));
       dot.setAttribute("cy", String(y));
-      // アラート状態（ヒステリシス）のときは赤、それ以外は青
-      const inAlert = alertStates[i0] || (i1 < alertStates.length && alertStates[i1] && frac > 0.5);
-      dot.style.fill = (hasThreshold && inAlert) ? "#dc2626" : "#0369a1";
+      // 警報→赤、注意報→薄赤、通常→青
+      const inAlert    = alertStates[i0]    || (i1 < alertStates.length    && alertStates[i1]    && frac > 0.5);
+      const inAttention = attentionStates[i0] || (i1 < attentionStates.length && attentionStates[i1] && frac > 0.5);
+      dot.style.fill = inAlert ? "#dc2626" : inAttention ? "#fca5a5" : "#0369a1";
     };
 
     if (reduceMotion || values.length < 2) {
@@ -618,8 +663,9 @@ function renderTopHighlights(payload, signalKey) {
         </div>
         <div class="ranking-top-main-unified-spark">
           <span class="value spark-wrap">
-            <svg class="top-metric-sparkline top-metric-sparkline--nationwide" aria-hidden="true" width="116" height="52" viewBox="0 0 116 52" data-values="${nationwideMini.values.join("|")}" data-y-max="${nationwideMini.yMax}" data-threshold="${Number.isFinite(nationwideMini.threshold) ? nationwideMini.threshold : ""}" data-alert-end="${Number.isFinite(nationwideMini.alertEnd) ? nationwideMini.alertEnd : ""}" data-alert-states="${nationwideMini.alertStates ? nationwideMini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${nationwideMini.padX || 0}" data-pad-y="${nationwideMini.padY || 0}">
+            <svg class="top-metric-sparkline top-metric-sparkline--nationwide" aria-hidden="true" width="116" height="52" viewBox="0 0 116 52" data-values="${nationwideMini.values.join("|")}" data-y-max="${nationwideMini.yMax}" data-threshold="${Number.isFinite(nationwideMini.threshold) ? nationwideMini.threshold : ""}" data-alert-end="${Number.isFinite(nationwideMini.alertEnd) ? nationwideMini.alertEnd : ""}" data-alert-states="${nationwideMini.alertStates ? nationwideMini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-attention-states="${nationwideMini.attentionStates ? nationwideMini.attentionStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${nationwideMini.padX || 0}" data-pad-y="${nationwideMini.padY || 0}">
               <path class="top-metric-sparkline-path" d="${nationwideMini.normalPath}"></path>
+              <path class="top-metric-sparkline-path top-metric-sparkline-path-attention" d="${nationwideMini.attentionPath || ""}"></path>
               <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${nationwideMini.alertPath}"></path>
               <circle class="top-metric-spark-dot" cx="0" cy="0" r="2.8"></circle>
             </svg>
@@ -720,10 +766,15 @@ function renderRanking(result) {
   rows.forEach(row => {
     const series = getSeriesFor(row.category, row.pref);
     const values = series.slice(-52).map(d => d.value);
-    const alertStart = state.alertThresholdsMap ? state.alertThresholdsMap[row.category] : null;
-    const alertEnd = state.alertEndMap ? state.alertEndMap[row.category] : null;
-    const sparkStates = computeAlertStates(values, alertStart, alertEnd);
-    const { normalPath, alertPath } = sparklineWithAlertStates(values, sparkStates, 52, 22);
+    const alertStart  = state.alertThresholdsMap ? state.alertThresholdsMap[row.category] : null;
+    const alertEnd    = state.alertEndMap        ? state.alertEndMap[row.category]        : null;
+    const attentionTh = state.attentionMap       ? state.attentionMap[row.category]       : null;
+    const fullSeries  = getSeriesFor(row.category, row.pref).filter(d => Number.isFinite(d.value)).map(d => d.value);
+    const walkSrc     = fullSeries.length >= values.length ? fullSeries : values;
+    const fullAlert   = computeAlertStates(walkSrc, alertStart, alertEnd);
+    const sparkAlert  = fullAlert.slice(-values.length);
+    const sparkAttn   = computeAttentionStates(values, attentionTh, sparkAlert);
+    const { normalPath, alertPath, attentionPath } = sparklineWithAlertStates(values, sparkAlert, sparkAttn, 52, 22);
     const tr = document.createElement("tr");
     tr.className = "go-to-chart";
     tr.setAttribute("role", "button");
@@ -738,6 +789,7 @@ function renderRanking(result) {
         <span class="ranking-value-num">${isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) + "人" : "—"}</span>
         <svg class="ranking-sparkline" aria-hidden="true" width="52" height="22" viewBox="0 0 52 22">
           <path class="ranking-sparkline-path" fill="none" stroke="currentColor" stroke-width="1.2" d="${normalPath}"></path>
+          <path class="ranking-sparkline-path ranking-sparkline-path--attention" fill="none" stroke-width="1.5" d="${attentionPath}"></path>
           <path class="ranking-sparkline-path ranking-sparkline-path--alert" fill="none" stroke-width="1.8" d="${alertPath}"></path>
         </svg>
       </td>

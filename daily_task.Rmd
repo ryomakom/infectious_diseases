@@ -1421,7 +1421,7 @@ in_alert_now <- by_week %>%
     for (i in seq_along(weekly_value)) {
       v <- weekly_value[i]
       if (is.finite(v)) {
-        if (!flag && v > a_start) flag <- TRUE
+        if (!flag && v >= a_start) flag <- TRUE
         else if (flag && v < a_end) flag <- FALSE
       }
       state[i] <- flag
