@@ -450,16 +450,64 @@ buildHeadline <- function(digest) {
   sprintf("%sの動向に注目",lc)
 }
 
-buildGeneratedText <- function(digest,top_pref_df,rising_df,persistent_df) {
+buildAlertBullets <- function(rows) {
+  alert_prefs <- rows %>%
+    filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
+           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+    arrange(category, desc(current_ma4))
+  if (nrow(alert_prefs) == 0) return(list())
+  alert_diseases <- unique(as.character(alert_prefs$category))
+  lapply(alert_diseases, function(cat) {
+    prefs_in_alert <- alert_prefs %>% filter(category == cat)
+    n_total <- nrow(prefs_in_alert)
+    top3 <- head(as.character(prefs_in_alert$pref), 3)
+    if (n_total <= 3) {
+      sprintf("%s：%sで患者数が警報基準に", cat, paste(top3, collapse = "、"))
+    } else {
+      sprintf("%s：%sなど%d都道府県で患者数が警報基準に", cat, paste(top3, collapse = "、"), n_total)
+    }
+  })
+}
+
+buildAnomalyBullets <- function(rows, alert_diseases) {
+  nationwide_anomalies <- rows %>%
+    filter(pref == "全国", is.finite(anomaly_z), anomaly_z >= 3,
+           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4,
+           is.finite(anomaly_ratio), anomaly_ratio > 1,
+           !category %in% alert_diseases) %>%
+    arrange(desc(anomaly_z))
+  if (nrow(nationwide_anomalies) == 0) return(list())
+  lapply(seq_len(nrow(nationwide_anomalies)), function(i) {
+    row <- nationwide_anomalies[i, ]
+    cat <- as.character(row$category[[1]])
+    pct <- round((as.numeric(row$anomaly_ratio[[1]]) - 1) * 100)
+    top_prefs <- rows %>%
+      filter(category == cat, pref != "全国",
+             is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+      arrange(desc(current_ma4)) %>%
+      slice_head(n = 3) %>%
+      pull(pref) %>%
+      as.character()
+    if (length(top_prefs) >= 1) {
+      sprintf("%s：全国の患者数が平年比+%d%%で、とくに%sで多い", cat, pct, paste(top_prefs, collapse = "、"))
+    } else {
+      sprintf("%s：全国の患者数が平年比+%d%%", cat, pct)
+    }
+  })
+}
+
+buildGeneratedText <- function(digest, top_pref_df, rising_df, persistent_df, rows) {
   summary_text  <- buildSummary(list(lead=digest$lead,top_news=digest$top_news,geo_context=digest$geo_context,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,rising_df=rising_df,persistent_df=persistent_df))
   headline_text <- buildHeadline(list(lead=digest$lead,top_news=digest$top_news,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,persistent_df=persistent_df))
-  top_phrase<-if(nrow(top_pref_df)==0) "該当なし" else paste(sprintf("%sの%s",top_pref_df$pref,top_pref_df$category),collapse="、")
-  bullets<-c(
-    sprintf("主な発生地域は%s",top_phrase),
-    sprintf("警報超え継続は%s",ifelse(nrow(persistent_df)>0,paste(sprintf("%sの%s",persistent_df$pref,persistent_df$category),collapse="、"),"該当なし")),
-    if(nrow(rising_df)>0) sprintf("%sは%sで増加が目立つ",as.character(rising_df$category[[1]]),paste(unique(head(rising_df$pref,3)),collapse="、")) else "増加が目立つ感染症は該当なし"
-  )
-  list(headline=headline_text,summary=summary_text,bullets=unname(as.list(bullets)))
+  alert_diseases  <- unique(as.character(
+    rows %>% filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
+                    is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+      pull(category)
+  ))
+  alert_bullets   <- buildAlertBullets(rows)
+  anomaly_bullets <- buildAnomalyBullets(rows, alert_diseases)
+  bullets <- c(alert_bullets, anomaly_bullets)
+  list(headline=headline_text, summary=summary_text, bullets=bullets)
 }
 
 as_item_list <- function(df,n=3) {
@@ -607,7 +655,7 @@ lead_importance_score <- if(nrow(lead_anomaly_df)>0) {
   NA_real_
 }
 
-generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df)
+generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df,rows=news_base)
 
 lead_reason <- if(!is.null(lead_bundle$lead$reason)) {
   lead_bundle$lead$reason
