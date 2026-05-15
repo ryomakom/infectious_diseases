@@ -404,7 +404,9 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
   });
 
   const headerRow = container.append("div").attr("class", "chart-header");
-  headerRow.append("h2").attr("id", chartHeadingId).text(category);
+  const h2Node = headerRow.append("h2").attr("id", chartHeadingId).text(category).node();
+  const diseaseInfoLink = makeDiseaseInfoLink(category);
+  if (diseaseInfoLink) h2Node.appendChild(diseaseInfoLink);
   const downloadBtn = headerRow.append("button")
     .attr("type", "button")
     .attr("class", "chart-download-btn")

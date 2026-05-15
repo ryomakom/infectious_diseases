@@ -412,6 +412,15 @@ function buildSignalSparkCard(item) {
     <p class="news-digest-spark-kicker">${item.label}${infoHtml}</p>
     <p class="news-digest-spark-no-data">${noDataMessage}</p>
   `;
+  // 感染症解説リンク（↗）をカテゴリ名の右に追加
+  if (hasCategory) {
+    const catP = card.querySelector(".news-digest-spark-category");
+    if (catP) {
+      const infoLink = makeDiseaseInfoLink(item.category);
+      if (infoLink) catP.appendChild(infoLink);
+    }
+  }
+
   // 「?」ボタンにホバー/タップ挙動を付与（ranking.js の共通ユーティリティを使用）
   const infoBtn = card.querySelector(".signal-info-btn");
   const infoDef = card.querySelector(".signal-definition");
@@ -704,9 +713,12 @@ function renderNewsDigestSection(rawDigest) {
       const li = document.createElement("li");
       const colonIdx = b.indexOf("：");
       if (colonIdx !== -1) {
+        const diseaseName = b.slice(0, colonIdx);
         const strong = document.createElement("strong");
-        strong.textContent = b.slice(0, colonIdx);
+        strong.textContent = diseaseName;
         li.appendChild(strong);
+        const infoLink = makeDiseaseInfoLink(diseaseName);
+        if (infoLink) li.appendChild(infoLink);
         li.appendChild(document.createTextNode("：" + b.slice(colonIdx + 1)));
       } else {
         li.textContent = b;

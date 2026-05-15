@@ -114,6 +114,64 @@ function categoryToDisplay(cat) {
   return map[cat] !== undefined ? map[cat] : cat;
 }
 
+// ===================================================
+// 感染症解説ページ リンクユーティリティ
+// ===================================================
+
+const DISEASE_ANCHOR_MAP = {
+  "新型コロナウイルス": "covid19",
+  "インフルエンザ": "influenza",
+  "RSウイルス": "rsv",
+  "感染性胃腸炎": "gastroenteritis",
+  "手足口病": "hfmd",
+  "水痘": "varicella",
+  "突発性発しん": "roseola",
+  "伝染性紅斑": "erythema",
+  "ヘルパンギーナ": "herpangina",
+  "流行性耳下腺炎": "mumps",
+  "流行性角結膜炎": "ekc",
+  "急性出血性結膜炎": "ahc",
+  "マイコプラズマ肺炎": "mycoplasma",
+  "クラミジア肺炎": "chlamydia",
+  "細菌性髄膜炎": "bacterial-meningitis",
+  "無菌性髄膜炎": "viral-meningitis",
+  "咽頭結膜熱": "pharyngoconjunctival",
+  "A群溶血性レンサ球菌咽頭炎": "strep",
+  "感染性胃腸炎（ロタウイルス）": "rotavirus"
+};
+
+function getDiseaseAnchor(category) {
+  return DISEASE_ANCHOR_MAP[category] || null;
+}
+
+function openDiseaseInfo(category, event) {
+  if (event) { event.stopPropagation(); event.preventDefault(); }
+  const anchor = getDiseaseAnchor(category);
+  if (!anchor) return;
+  const url = "diseases.html#" + anchor;
+  const isMobile = window.matchMedia("(pointer: coarse)").matches;
+  if (isMobile) {
+    window.open(url, "_blank");
+  } else {
+    window.open(url, "diseaseInfo", "width=520,height=680,scrollbars=yes,resizable=yes");
+  }
+}
+
+function makeDiseaseInfoLink(category) {
+  const anchor = getDiseaseAnchor(category);
+  if (!anchor) return null;
+  const a = document.createElement("a");
+  a.className = "disease-info-link";
+  a.href = "diseases.html#" + anchor;
+  a.textContent = "↗";
+  a.setAttribute("aria-label", category + "の解説");
+  a.setAttribute("title", "解説ページを開く");
+  a.addEventListener("click", function(e) {
+    openDiseaseInfo(category, e);
+  });
+  return a;
+}
+
 function prefToDisplay(pref) {
   if (!pref) return pref;
   if (pref === "Tokyo" || pref === "東京都") return "東京都";
