@@ -2685,6 +2685,7 @@ header::after{
   padding: 1px 3px;
   border-width: 1px;
   border-radius: 3px;
+  vertical-align: 0.25em;
 }
 
 @media (min-width: 700px){
