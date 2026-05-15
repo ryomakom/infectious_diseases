@@ -11,6 +11,10 @@ on:
 
   workflow_dispatch:      # 手動トリガー
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 # GITHUB_TOKEN にリポジトリ書き込み権限を付与
 permissions:
   contents: write
