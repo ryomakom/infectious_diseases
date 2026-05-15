@@ -450,10 +450,11 @@ buildHeadline <- function(digest) {
   sprintf("%sの動向に注目",lc)
 }
 
-buildAlertBullets <- function(rows) {
-  alert_prefs <- rows %>%
-    filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
-           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+buildAlertBullets <- function(rows, in_alert_now) {
+  alert_prefs <- in_alert_now %>%
+    filter(in_alert_level == TRUE, pref != "全国") %>%
+    left_join(rows %>% select(category, pref, current_ma4), by = c("category", "pref")) %>%
+    filter(is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
     arrange(category, desc(current_ma4))
   if (nrow(alert_prefs) == 0) return(list())
   alert_diseases <- unique(as.character(alert_prefs$category))
@@ -496,15 +497,13 @@ buildAnomalyBullets <- function(rows, alert_diseases) {
   })
 }
 
-buildGeneratedText <- function(digest, top_pref_df, rising_df, persistent_df, rows) {
+buildGeneratedText <- function(digest, top_pref_df, rising_df, persistent_df, rows, in_alert_now) {
   summary_text  <- buildSummary(list(lead=digest$lead,top_news=digest$top_news,geo_context=digest$geo_context,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,rising_df=rising_df,persistent_df=persistent_df))
   headline_text <- buildHeadline(list(lead=digest$lead,top_news=digest$top_news,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,persistent_df=persistent_df))
   alert_diseases  <- unique(as.character(
-    rows %>% filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
-                    is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
-      pull(category)
+    in_alert_now %>% filter(in_alert_level == TRUE, pref != "全国") %>% pull(category)
   ))
-  alert_bullets   <- buildAlertBullets(rows)
+  alert_bullets   <- buildAlertBullets(rows, in_alert_now)
   anomaly_bullets <- buildAnomalyBullets(rows, alert_diseases)
   bullets <- c(alert_bullets, anomaly_bullets)
   list(headline=headline_text, summary=summary_text, bullets=bullets)
@@ -655,7 +654,34 @@ lead_importance_score <- if(nrow(lead_anomaly_df)>0) {
   NA_real_
 }
 
-generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df,rows=news_base)
+# ---- ヒステリシス警報状態（alert_start超え→alert_end未満になるまで継続） ----
+in_alert_now <- cleaned_diseases %>%
+  mutate(date = as.Date(date), value = as.numeric(value)) %>%
+  left_join(alert %>% select(category, alert_start, alert_end), by = "category") %>%
+  filter(!is.na(alert_start), alert_start > 0) %>%
+  arrange(pref, category, date) %>%
+  group_by(pref, category) %>%
+  mutate(in_alert = {
+    a_start <- first(alert_start)
+    a_end   <- first(alert_end)
+    if (is.na(a_end) || !is.finite(a_end) || a_end <= 0) a_end <- a_start
+    flag  <- FALSE
+    state <- logical(n())
+    for (i in seq_along(value)) {
+      v <- value[i]
+      if (is.finite(v)) {
+        if (!flag && v >= a_start)  flag <- TRUE
+        else if (flag && v < a_end) flag <- FALSE
+      }
+      state[i] <- flag
+    }
+    state
+  }) %>%
+  filter(date == max(date)) %>%
+  ungroup() %>%
+  select(pref, category, in_alert_level = in_alert)
+
+generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df,rows=news_base,in_alert_now=in_alert_now)
 
 lead_reason <- if(!is.null(lead_bundle$lead$reason)) {
   lead_bundle$lead$reason

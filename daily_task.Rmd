@@ -1289,10 +1289,11 @@ buildGeneratedSummary <- function(alert_df, rising_df) {
   paste(parts, collapse = " ")
 }
 
-buildAlertBullets <- function(rows) {
-  alert_prefs <- rows %>%
-    filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
-           is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
+buildAlertBullets <- function(rows, in_alert_now) {
+  alert_prefs <- in_alert_now %>%
+    filter(in_alert_level == TRUE, pref != "全国") %>%
+    left_join(rows %>% select(category, pref, current_ma4), by = c("category", "pref")) %>%
+    filter(is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
     arrange(category, desc(current_ma4))
   if (nrow(alert_prefs) == 0) return(list())
   alert_diseases <- unique(as.character(alert_prefs$category))
@@ -1335,17 +1336,15 @@ buildAnomalyBullets <- function(rows, alert_diseases) {
   })
 }
 
-buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df, rows) {
+buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df, rows, in_alert_now) {
   alert_cats     <- if (nrow(alert_df) > 0) as.character(alert_df$category) else character(0)
   rising_df_text <- rising_df %>% filter(!category %in% alert_cats)
   headline_text  <- buildGeneratedHeadline(alert_df, rising_df_text)
   summary_text   <- buildGeneratedSummary(alert_df, rising_df_text)
   alert_diseases  <- unique(as.character(
-    rows %>% filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1,
-                    is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
-      pull(category)
+    in_alert_now %>% filter(in_alert_level == TRUE, pref != "全国") %>% pull(category)
   ))
-  alert_bullets   <- buildAlertBullets(rows)
+  alert_bullets   <- buildAlertBullets(rows, in_alert_now)
   anomaly_bullets <- buildAnomalyBullets(rows, alert_diseases)
   bullets <- c(alert_bullets, anomaly_bullets)
   list(
@@ -1552,7 +1551,7 @@ generated_text <- buildGeneratedText(list(
   anomalies_df = anomalies_df,
   top_news = top_news_df,
   geo_context = geo_context
-), top_pref_df, rising_df, alert_df, rows = news_base)
+), top_pref_df, rising_df, alert_df, rows = news_base, in_alert_now = in_alert_now)
 
 lead_reason <- if (!is.null(lead_bundle$lead$reason)) {
   lead_bundle$lead$reason
