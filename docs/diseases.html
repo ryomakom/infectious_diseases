@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>感染症の解説 | 主な感染症の流行状況</title>
+  <meta name="description" content="このサイトで扱っている主な感染症について、症状・感染経路・予防法などをわかりやすく解説します。">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="小宮山亮磨">
+  <meta name="theme-color" content="#ffffff">
+
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+
+  <style>
+    .diseases-intro {
+      max-width: 720px;
+      margin: 0 auto 36px;
+      color: var(--color-text-sub, #555);
+      font-size: 0.95rem;
+      line-height: 1.8;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--color-primary, #0369a1);
+      font-size: 0.9rem;
+      text-decoration: none;
+      margin-bottom: 24px;
+    }
+    .back-link:hover { text-decoration: underline; }
+
+    .disease-list {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .disease-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px 24px;
+      border-left: 4px solid var(--color-primary, #0369a1);
+    }
+
+    .disease-card h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--color-primary, #0369a1);
+      margin: 0 0 8px;
+    }
+
+    .disease-card p {
+      font-size: 0.93rem;
+      line-height: 1.8;
+      color: #374151;
+      margin: 0 0 12px;
+    }
+
+    .disease-source {
+      font-size: 0.82rem;
+      color: #6b7280;
+    }
+    .disease-source a {
+      color: var(--color-primary, #0369a1);
+      text-decoration: none;
+    }
+    .disease-source a:hover { text-decoration: underline; }
+
+    .diseases-note {
+      max-width: 720px;
+      margin: 32px auto 0;
+      font-size: 0.82rem;
+      color: #9ca3af;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 640px) {
+      .disease-card {
+        padding: 16px 18px;
+        border-radius: 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>主な感染症の流行状況</h1>
+    <p class="header-intro">このサイトで扱っている感染症の解説ページです。</p>
+  </header>
+
+  <main id="main" role="main" style="padding: 24px 20px 64px;">
+
+    <a class="back-link" href="index.html">← グラフに戻る</a>
+
+    <div class="disease-list">
+
+      <div class="disease-card" id="covid19">
+        <h2>新型コロナウイルス感染症</h2>
+        <p>2019年12月に中国で初めて見つかり、その後、世界的に大流行して多くの死者を出した。発熱やせき、体のだるさなど、さまざまな症状がみられる。感染しても症状が出ない人も多いが、基礎疾患のある人や高齢者は重症化しやすい。予防にはワクチンのほか、部屋の空気を入れ替えることや手洗いなどが有効。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/covid-19/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="influenza">
+        <h2>インフルエンザ</h2>
+        <p>主な症状は発熱やせき、体のだるさ、頭痛など。一般的な風邪よりも全身の症状が強い。基礎疾患がある人や高齢者、小さい子どもでは重症化し、死ぬことがある。予防にはワクチンと手洗い、マスクが有効。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/influenza/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="rsv">
+        <h2>RSウイルス感染症</h2>
+        <p>主な症状は発熱や鼻水、せきなど。6カ月以下の乳児では重症化しやすく、とくに1カ月未満だと突然死にもつながる。基礎疾患がある高齢者も重症の肺炎になることがある。予防には手洗いやマスクが有効で、妊婦や高齢者向けのワクチンもある。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/respiratory-syncytial-virus-infection/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="gastroenteritis">
+        <h2>感染性胃腸炎</h2>
+        <p>吐き気や腹痛、発熱などが主な症状で、乳幼児や高齢者では下痢による脱水で重症化することがある。夏は細菌、冬はウイルスによる感染が増えやすい。多くの場合は手洗いや、排泄物の処理に注意することで感染を防げる。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/infectious-diarrhea/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="hfmd">
+        <h2>手足口病</h2>
+        <p>2歳以下の子どもで夏に流行することが多い。口の中や手のひら、足の裏に水ぶくれができる。髄膜炎や脳炎などになり、死ぬこともまれにある。予防には手洗いやマスクが有効。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/hand-foot-mouth-disease/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="varicella">
+        <h2>水痘</h2>
+        <p>「みずぼうそう」とも呼ばれる。子どもではかゆみを伴う赤いブツブツが頭皮や体にでき、水ぶくれやかさぶたへと変わっていく。大人がかかると、発熱や体のだるさに見舞われてから水ぶくれができて、肺炎や脳炎で死ぬこともある。予防には手洗いやマスクが有効。子どもにはワクチンもある。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/varicella/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="roseola">
+        <h2>突発性発しん</h2>
+        <p>2歳未満の子がかかることが多く、高熱が3日ほど続いた後に赤いブツブツが顔や体にできる。まれに脳炎や脳症などの重い症状につながることもある。手洗いやマスクが予防に有効。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/roseola/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="erythema">
+        <h2>伝染性紅斑</h2>
+        <p>子どもに多い病気で、ほっぺたがリンゴのように赤くなることから「リンゴ病」とも呼ばれる。ほっぺたの後、腕や足にも編み目状の赤い発疹が出る。妊婦が感染すると流産や死産にもつながる。予防には手洗いやマスクが有効。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/erythema-infectiosum/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="herpangina">
+        <h2>ヘルパンギーナ</h2>
+        <p>5歳以下の子どもに多く、発熱後にのどが痛くなり、口の中に水ぶくれができる。髄膜炎や心筋炎につながることもある。流行のピークは夏。予防には手洗いやマスクが有効で、国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/herpangina/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="mumps">
+        <h2>流行性耳下腺炎</h2>
+        <p>3〜7歳の子どもで多い。「おたふくかぜ」とも呼ばれる。耳の下がはれて痛むほか、発熱もある。ふつうは1〜2週間でよくなるが、髄膜炎や精巣炎、難聴などにつながることもある。予防には手洗いとマスク、患者との接触をさけることが有効で、ワクチンもある。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/mumps/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="ekc">
+        <h2>流行性角結膜炎</h2>
+        <p>まぶたがはれたり、目が充血して涙が多く出たりする。5歳以下の子どもに多いが、大人がかかることもある。夏に流行することが多い。患者の体液で汚れたものを消毒したり、よく手洗いをすることで防げる。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/epidemic-keratoconjunctivitis/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="ahc">
+        <h2>急性出血性結膜炎</h2>
+        <p>1〜4歳の子どもで多い。目に突然、強い痛みを感じて、光をまぶしく感じるようになる。目が充血したり、まぶたがはれたりする。患者の体液で汚れたものを消毒したり、よく手洗いをすることで防げる。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/acute-haemorrhagic-conjunctivitis/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="mycoplasma">
+        <h2>マイコプラズマ肺炎</h2>
+        <p>幼児から若者までの世代で多い。発熱と体のだるさ、頭痛、せきなどの症状が出る。のどがゼーゼーしたり、胸が痛くなったりすることもある。予防には手洗いとマスク、患者との接触をさけることが有効。ワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/mycoplasma-pneumoniae-infection/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="chlamydia">
+        <h2>クラミジア肺炎</h2>
+        <p>激しい咳で、重症化することもある。子どもや高齢者に多いタイプと、赤ちゃんや幼児に多いタイプのふたつがあり、それぞれ病原体の細菌が異なる。前者の予防は手洗いやマスクが有効。後者は出産時に感染するため、母親の感染を早めに見つけて治療することが重要。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/chlamydia-pneumonia/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="bacterial-meningitis">
+        <h2>細菌性髄膜炎</h2>
+        <p>5歳未満と70歳以上で多い。脳や脊髄をおおっている膜に細菌が感染することで起きる病気で、発熱や頭痛、吐き気などの症状が出る。重症化して意識障害やけいれんが起きることもある。予防には手洗いやマスクのほか、患者との接触をさけることが重要。国内で使えるワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/bacterial-meningitis/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="viral-meningitis">
+        <h2>無菌性髄膜炎</h2>
+        <p>子どもに多い。脳や脊髄をおおっている膜にさまざまなウイルスなどが感染することで起きる。発熱と頭痛、吐き気のほか、腹痛や下痢などの症状が出る。手洗いやマスクが予防に有効。一部の原因ウイルスにはワクチンが使える。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/viral-meningitis/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="pharyngoconjunctival">
+        <h2>咽頭結膜熱</h2>
+        <p>夏に5歳以下の子どもで流行することが多い。「プール熱」とも呼ばれる。発熱や頭痛、体のだるさ、のどの痛み、目の充血などの症状がある。新生児では重症化することもある。予防には患者との接触をさけ、流行しているときにはうがいや手洗いをするのが重要。アルコールの消毒は効きにくい。ワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/adenovirus/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="strep">
+        <h2>A群溶血性レンサ球菌咽頭炎</h2>
+        <p>子どもに多い病気で、家庭内や学校で集団感染がよくみられる。発熱やのどの痛み、体のだるさや吐き気などの症状が出る。流行のピークは冬と、春から初夏にかけてのふたつがある。予防には患者との接触をさけるのが重要で、手洗いやマスクも有効。ワクチンはない。</p>
+        <p class="disease-source">出典：<a href="https://id-info.jihs.go.jp/infectious-diseases/group-a-streptococcal-infection/index.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a></p>
+      </div>
+
+      <div class="disease-card" id="rotavirus">
+        <h2>感染性胃腸炎（ロタウイルス）</h2>
+        <p>「ロタ」と呼ばれるウイルスが原因で起きる胃腸炎。6歳ごろまでの子どもに多く、ほとんどの子が5歳までに感染する。水のような下痢が出るほか、吐き気や発熱、腹痛などの症状がある。予防にはおむつを慎重に処理し、手洗いを徹底することが有効。ロタウイルスにはアルコール消毒が効きにくいが、使えるワクチンがある。</p>
+        <p class="disease-source">出典：<a href="https://www.mhlw.go.jp/bunya/kenkou/kekkaku-kansenshou19/Rotavirus/index.html" target="_blank" rel="noopener">厚生労働省</a></p>
+      </div>
+
+    </div>
+
+    <p class="diseases-note">各感染症の解説は国立健康危機管理研究機構および厚生労働省の公開情報をもとに作成しました。医療上の判断が必要な場合は医師にご相談ください。</p>
+
+  </main>
+
+  <p class="author-credit" aria-label="クレジット">
+    小宮山亮磨　朝日新聞デジタル企画報道部
+    <span class="author-sep">—</span>
+    <a href="https://ryomakom.github.io/my_profile/" target="_blank" rel="noopener">Home</a>
+  </p>
+
+</body>
+</html>
