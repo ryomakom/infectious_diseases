@@ -2955,6 +2955,10 @@ header::after{
     padding: 16px 16px 28px;
   }
 
+  .share-buttons{
+    display: none;
+  }
+
   header{
     padding: 14px 16px 10px;
     margin-bottom: 12px;
