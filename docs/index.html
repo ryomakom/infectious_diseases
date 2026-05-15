@@ -266,5 +266,24 @@
   <script src="chart.js"></script>
   <script src="newsDigest.js"></script>
   <script src="dataLoader.js"></script>
+  <script>
+  (function () {
+    var credit = document.querySelector('.author-credit');
+    if (!credit) return;
+    var timer = null;
+    function hide() {
+      credit.classList.add('is-hidden');
+    }
+    function scheduleShow() {
+      clearTimeout(timer);
+      timer = setTimeout(function () {
+        credit.classList.remove('is-hidden');
+      }, 2000);
+    }
+    window.addEventListener('scroll', function () { hide(); scheduleShow(); }, { passive: true });
+    window.addEventListener('touchstart', function () { hide(); scheduleShow(); }, { passive: true });
+    window.addEventListener('touchmove',  function () { hide(); scheduleShow(); }, { passive: true });
+  })();
+  </script>
 </body>
 </html>

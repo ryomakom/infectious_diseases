@@ -147,6 +147,12 @@ header::after{
   opacity: 0.85;
   z-index: 10;
   pointer-events: auto;
+  transition: opacity 1.2s ease;
+}
+
+.author-credit.is-hidden{
+  opacity: 0;
+  pointer-events: none;
 }
 
 .author-credit a{
@@ -2977,10 +2983,7 @@ header::after{
   /* シグナルカードの split レイアウトはコンテナクエリ（signal-card）で制御するため
      ここには記述しない。 */
 
-  /* 著者クレジット：スマホでは fixed オーバーレイが邪魔になるため非表示 */
-  .author-credit {
-    display: none;
-  }
+  /* 著者クレジット：スマホでは操作中に自動非表示（JS制御） */
 
   /* スマホでは外側カードの枠・角丸・背景を消してフル幅に展開する。
      内側の子カード（spark-card 等）は独自スタイルを維持する。 */
