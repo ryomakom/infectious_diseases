@@ -764,17 +764,9 @@ function renderRanking(result) {
   renderTopHighlights(highlights);
   els.rankingBody.innerHTML = "";
   rows.forEach(row => {
-    const series = getSeriesFor(row.category, row.pref);
-    const values = series.slice(-52).map(d => d.value);
-    const alertStart  = state.alertThresholdsMap ? state.alertThresholdsMap[row.category] : null;
-    const alertEnd    = state.alertEndMap        ? state.alertEndMap[row.category]        : null;
-    const attentionTh = state.attentionMap       ? state.attentionMap[row.category]       : null;
-    const fullSeries  = getSeriesFor(row.category, row.pref).filter(d => Number.isFinite(d.value)).map(d => d.value);
-    const walkSrc     = fullSeries.length >= values.length ? fullSeries : values;
-    const fullAlert   = computeAlertStates(walkSrc, alertStart, alertEnd);
-    const sparkAlert  = fullAlert.slice(-values.length);
-    const sparkAttn   = computeAttentionStates(values, attentionTh, sparkAlert);
-    const { normalPath, alertPath, attentionPath } = sparklineWithAlertStates(values, sparkAlert, sparkAttn, 52, 22);
+    // buildMiniSparkline は閾値クロス位置を線形補間して正確に色分けする
+    const mini = buildMiniSparkline(row.category, row.pref, 52, 22);
+    const { normalPath, alertPath, attentionPath } = mini;
     const tr = document.createElement("tr");
     tr.className = "go-to-chart";
     tr.setAttribute("role", "button");
