@@ -1014,8 +1014,7 @@ async function goToChart(pref, category) {
   if (chartContainer) chartContainer.querySelectorAll(".chart-target").forEach(el => el.classList.remove("chart-target"));
   if (chartTargetTimeout != null) clearTimeout(chartTargetTimeout);
   for (const chartEl of charts) {
-    const h2 = chartEl.querySelector("h2");
-    if (h2 && h2.textContent.trim() === category) {
+    if (chartEl.dataset.category === category) {
       chartEl.classList.remove("chart-target");
       void chartEl.offsetWidth; // reflow to restart animation
       chartEl.classList.add("chart-target");
