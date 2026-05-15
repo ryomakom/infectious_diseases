@@ -464,11 +464,12 @@ for (i in seq_along(cards)) {
       }
     }
 
-    # 区間分割（警報の境界はクロス位置で補間、注意報は端点で切り替え）
+    # 区間分割（警報・注意報ともにクロス位置を線形補間）
     pi <- c(1); pv <- c(values[1]); pst <- c(point_states[1])
     for (i in seq_len(n - 1)) {
       v1 <- values[i]; v2 <- values[i + 1]
       s1 <- point_states[i]; s2 <- point_states[i + 1]
+
       # 警報レベルへの出入りはクロス位置を補間挿入
       a1 <- (s1 == 2L); a2 <- (s2 == 2L)
       if (a1 != a2 && v2 != v1) {
@@ -481,6 +482,17 @@ for (i in seq_along(cards)) {
             pv <- c(pv, threshold_x, threshold_x)
             pst <- c(pst, s1, s2)
           }
+        }
+      } else if (!a1 && !a2 && s1 != s2 &&
+                 !is.na(attention_th) && is.finite(attention_th) && attention_th > 0 &&
+                 v2 != v1) {
+        # 注意報レベルへの出入りも閾値クロス位置を補間挿入
+        t <- (attention_th - v1) / (v2 - v1)
+        if (is.finite(t) && t > 0 && t < 1) {
+          cross <- i + t
+          pi <- c(pi, cross, cross)
+          pv <- c(pv, attention_th, attention_th)
+          pst <- c(pst, s1, s2)
         }
       }
       pi <- c(pi, i + 1); pv <- c(pv, v2); pst <- c(pst, s2)
