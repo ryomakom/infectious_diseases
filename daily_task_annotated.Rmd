@@ -463,10 +463,12 @@ latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
 latest_wk <- substr(latest_yr_wk, 6, 7)
 # 平年比の分母：過去3年の同時期4週（3年×4週=12点）の weekly_value 平均
 # 分子の current_ma4（直近4週MA）と対称になるよう、分母も同じ4週ウィンドウで揃える
+# COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
 latest_wk_int <- as.integer(latest_wk)
+baseline_yrs_main <- head(setdiff((latest_yr - 1):(latest_yr - 7), COVID_EXCL_YRS), 3)
 past_3_window_yr_wks <- sprintf("%04d-%02d",
-  rep((latest_yr - 1):(latest_yr - 3), each = 4),
-  rep((latest_wk_int - 3):latest_wk_int, times = 3)
+  rep(baseline_yrs_main, each = 4),
+  rep((latest_wk_int - 3):latest_wk_int, times = length(baseline_yrs_main))
 )
 
 # 現在値＝直近週の4週移動平均（ma4）。同週に複数日ある場合は最も新しい日の値を使う
@@ -592,6 +594,8 @@ fmt_num <- function(x, digits = 2) {
 MIN_CURRENT_MA4 <- 0.1
 MIN_AVG_FOR_GROWTH <- 0.1
 PERSISTENCE_WINDOW <- 4L
+# COVID流行期（外出自粛・マスク着用で多くの感染症が異常抑制）はベースラインから除外する
+COVID_EXCL_YRS <- 2020:2022
 
 # importance score weights
 W_ANOMALY <- 0.6
@@ -699,7 +703,7 @@ computeSeasonalBaseline <- function(rows) {
           current_week <- tail(week_series, 1)
           max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
           week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx <- year_series < current_year & week_distance <= 2 & is.finite(weekly_value_series)
+          hist_idx <- year_series < current_year & !year_series %in% COVID_EXCL_YRS & week_distance <= 2 & is.finite(weekly_value_series)
           hist_values <- weekly_value_series[hist_idx]
           if (length(hist_values) == 0) return(NA_real_)
           m <- mean(hist_values, na.rm = TRUE)
@@ -714,7 +718,7 @@ computeSeasonalBaseline <- function(rows) {
           current_week <- tail(week_series, 1)
           max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
           week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx <- year_series < current_year & week_distance <= 2 & is.finite(weekly_value_series)
+          hist_idx <- year_series < current_year & !year_series %in% COVID_EXCL_YRS & week_distance <= 2 & is.finite(weekly_value_series)
           hist_values <- weekly_value_series[hist_idx]
           if (length(hist_values) <= 1) return(NA_real_)
           sdv <- sd(hist_values, na.rm = TRUE)
@@ -1169,9 +1173,11 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
 
   # 季節ベースライン：過去3年の同時期4週（3年×4週=12点）のavg_valueの平均・SD
   # 分子（直近4週MA）と対称になるよう分母も同じ4週ウィンドウで揃える
+  # COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
+  baseline_yrs_block <- head(setdiff((latest_yr - 1L):(latest_yr - 7L), COVID_EXCL_YRS), 3L)
   past_3_window_yr_wks <- sprintf("%04d-%02d",
-    rep((latest_yr - 1L):(latest_yr - 3L), each = 4L),
-    rep((latest_wk - 3L):latest_wk, times = 3L)
+    rep(baseline_yrs_block, each = 4L),
+    rep((latest_wk - 3L):latest_wk, times = length(baseline_yrs_block))
   )
   hist <- block_weekly %>%
     filter(year_week %in% past_3_window_yr_wks) %>%
