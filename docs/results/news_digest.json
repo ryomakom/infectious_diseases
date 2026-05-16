@@ -7,43 +7,43 @@
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "鳥取県",
-      "current_ma4": 6.95,
+      "current_ma4": 7.1325,
       "current_value": 6.95,
       "previous_value": 7.32,
-      "ratio_alert": 0.87,
-      "ratio_heinen": 1.73,
+      "ratio_alert": 0.89,
+      "ratio_heinen": 1.78,
       "growth1Rate": -0.0505
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "茨城県",
-      "current_ma4": 6.78,
-      "current_value": 6.78,
-      "previous_value": 5.03,
-      "ratio_alert": 0.85,
-      "ratio_heinen": 1.85,
-      "growth1Rate": 0.3479
+      "pref": "北海道",
+      "current_ma4": 5.6325,
+      "current_value": 5.32,
+      "previous_value": 6.62,
+      "ratio_alert": 0.7,
+      "ratio_heinen": 1.42,
+      "growth1Rate": -0.1964
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "石川県",
-      "current_ma4": 6.14,
-      "current_value": 6.14,
-      "previous_value": 4.39,
-      "ratio_alert": 0.77,
-      "ratio_heinen": 3.38,
-      "growth1Rate": 0.3986
+      "pref": "佐賀県",
+      "current_ma4": 5.46,
+      "current_value": 5.17,
+      "previous_value": 5.92,
+      "ratio_alert": 0.68,
+      "ratio_heinen": 2.47,
+      "growth1Rate": -0.1267
     }
   ],
   "rising": [
     {
       "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.38,
+      "current_ma4": 0.2325,
       "current_value": 0.38,
       "previous_value": 0.26,
-      "ratio_alert": 0.08,
-      "ratio_heinen": 1.55,
+      "ratio_alert": 0.05,
+      "ratio_heinen": 0.95,
       "growth1Rate": 0.4615
     }
   ],
@@ -51,11 +51,11 @@
     {
       "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.38,
+      "current_ma4": 0.2325,
       "current_value": 0.38,
       "previous_value": 0.26,
-      "ratio_alert": 0.08,
-      "ratio_heinen": 1.55,
+      "ratio_alert": 0.05,
+      "ratio_heinen": 0.95,
       "growth1Rate": 0.4615
     }
   ],
@@ -63,7 +63,7 @@
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
       "pref": "全国",
-      "current_ma4": 3.21,
+      "current_ma4": 2.92,
       "current_value": 3.21,
       "seasonal_mean": 1.9998,
       "seasonal_zscore": 1.0586
@@ -71,7 +71,7 @@
     {
       "category": "手足口病",
       "pref": "全国",
-      "current_ma4": 0.38,
+      "current_ma4": 0.2325,
       "current_value": 0.38,
       "seasonal_mean": 0.3346,
       "seasonal_zscore": 0.1383
@@ -79,7 +79,7 @@
     {
       "category": "水痘",
       "pref": "全国",
-      "current_ma4": 0.38,
+      "current_ma4": 0.3525,
       "current_value": 0.38,
       "seasonal_mean": 0.3997,
       "seasonal_zscore": -0.055
@@ -92,8 +92,8 @@
   "spread_type": "地域拡散",
   "affected_blocks": [
     "中国",
-    "中部",
-    "関東"
+    "九州",
+    "北海道"
   ],
   "by_block": {
     "北海道": {
