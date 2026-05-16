@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>感染症ヒートマップ【内部用】</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 28px 20px 64px;
+      min-height: 100vh;
+    }
+
+    /* ── ヘッダー ── */
+    .page-header {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+    }
+    .internal-badge {
+      display: inline-block;
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .subtitle {
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.6;
+    }
+    .week-label {
+      font-weight: 600;
+      color: #0369a1;
+    }
+
+    /* ── テーブルラッパー ── */
+    .heatmap-wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      overflow-x: auto;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+
+    table {
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #e2e8f0;
+    }
+
+    /* 左上コーナー */
+    th.corner {
+      background: #f1f5f9;
+      min-width: 160px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+      font-weight: 500;
+      text-align: left;
+      vertical-align: bottom;
+    }
+
+    /* 地方ヘッダー */
+    th.region-header {
+      background: #f1f5f9;
+      font-weight: 700;
+      font-size: 0.83rem;
+      min-width: 110px;
+      padding: 10px 8px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* 疾患名セル */
+    td.disease-name {
+      background: #fff;
+      font-weight: 500;
+      font-size: 0.82rem;
+      padding: 0 14px;
+      color: #0f172a;
+      white-space: nowrap;
+      border-right: 2px solid #e2e8f0;
+      height: 48px;
+      vertical-align: middle;
+    }
+
+    /* データなし */
+    td.empty-cell {
+      background: #f8fafc;
+      color: #cbd5e1;
+      text-align: center;
+      font-size: 0.75rem;
+      height: 48px;
+      vertical-align: middle;
+    }
+
+    /* データあり */
+    td.data-cell {
+      text-align: center;
+      cursor: default;
+      height: 48px;
+      vertical-align: middle;
+      position: relative;
+      transition: filter 0.12s;
+    }
+    td.data-cell:hover { filter: brightness(0.85); }
+
+    /* 少数例ハッチ */
+    td.noisy {
+      background-image: repeating-linear-gradient(
+        45deg, transparent, transparent 4px,
+        rgba(0,0,0,0.055) 4px, rgba(0,0,0,0.055) 8px
+      );
+    }
+
+    .cell-inner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 3px 6px;
+      gap: 1px;
+    }
+
+    .z-val {
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .badges {
+      display: flex;
+      gap: 4px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    .badge-alert { color: #b91c1c; }
+    .badge-attn  { color: #c2410c; }
+
+    .noisy-label {
+      font-size: 0.6rem;
+      color: rgba(0,0,0,0.35);
+      line-height: 1;
+    }
+
+    /* ── 凡例 ── */
+    .legend-wrap {
+      max-width: 1100px;
+      margin: 18px auto 0;
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 14px 24px;
+    }
+    .legend-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.79rem;
+      color: #64748b;
+    }
+    .legend-title { font-weight: 600; color: #475569; }
+    .gradient-bar {
+      display: flex;
+      height: 16px;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+      width: 160px;
+    }
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 160px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      margin-top: 1px;
+    }
+    .badge-legend-alert { color: #b91c1c; font-weight: 700; font-size: 0.79rem; }
+    .badge-legend-attn  { color: #c2410c; font-weight: 700; font-size: 0.79rem; }
+    .noisy-legend-swatch {
+      display: inline-flex; align-items: center; gap: 5px; font-size: 0.79rem;
+    }
+    .noisy-swatch {
+      width: 16px; height: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 3px;
+      background-color: #fef3c7;
+      background-image: repeating-linear-gradient(
+        45deg, transparent, transparent 3px,
+        rgba(0,0,0,0.1) 3px, rgba(0,0,0,0.1) 6px
+      );
+    }
+
+    /* ── 注記 ── */
+    .notes {
+      max-width: 1100px;
+      margin: 16px auto 0;
+      font-size: 0.76rem;
+      color: #94a3b8;
+      line-height: 1.9;
+    }
+
+    /* ── ツールチップ ── */
+    #tooltip {
+      position: fixed;
+      display: none;
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 11px 14px;
+      border-radius: 9px;
+      font-size: 0.79rem;
+      line-height: 1.75;
+      pointer-events: none;
+      z-index: 9999;
+      max-width: 230px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.28);
+    }
+    #tooltip .tt-head {
+      font-weight: 700;
+      color: #fff;
+      font-size: 0.83rem;
+      margin-bottom: 4px;
+      line-height: 1.4;
+      border-bottom: 1px solid #334155;
+      padding-bottom: 4px;
+    }
+    #tooltip .tt-alert  { color: #fca5a5; font-weight: 600; }
+    #tooltip .tt-attn   { color: #fdba74; font-weight: 600; }
+    #tooltip .tt-noisy  { color: #94a3b8; font-size: 0.72rem; }
+    #tooltip .tt-na     { color: #64748b; }
+
+    /* ── ローディング ── */
+    #loading {
+      max-width: 1100px;
+      margin: 60px auto;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="internal-badge">内部用・非公開</div>
+  <h1>感染症ヒートマップ</h1>
+  <p class="subtitle">
+    <span class="week-label" id="week-label">読み込み中…</span><br>
+    色の濃さ＝Zスコア（季節平年差）　● 警報　▲ 注意報　ハッチ＝少数例（定点あたり0.1人未満）
+  </p>
+</div>
+
+<div id="loading">データを読み込み中…</div>
+
+<div class="heatmap-wrap" id="heatmap-wrap" style="display:none">
+  <table>
+    <thead>
+      <tr id="header-row">
+        <th class="corner">疾患 ↓　　地方 →</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="legend-wrap" id="legend" style="display:none">
+  <div class="legend-group">
+    <span class="legend-title">Zスコア：</span>
+    <div>
+      <div class="gradient-bar" id="gradient-bar"></div>
+      <div class="legend-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>5+</span></div>
+    </div>
+  </div>
+  <div class="legend-group">
+    <span class="badge-legend-alert">● 警報県あり</span>
+    <span class="badge-legend-attn">▲ 注意報県あり</span>
+    <span class="noisy-legend-swatch"><span class="noisy-swatch"></span>少数例</span>
+  </div>
+</div>
+
+<p class="notes" id="notes" style="display:none">
+  Zスコアは過去年の同週前後2週の人口加重平均値をベースラインとして算出。<br>
+  地方ごとの定点あたり患者数は都道府県の人口で加重平均（2020年国勢調査）。<br>
+  「少数例」（定点あたり0.1人未満）はZスコアが実態を反映しない場合があります。
+</p>
+
+<div id="tooltip"></div>
+
+<script>
+// ── 定数 ─────────────────────────────────────────────────────────────────
+const REGIONS   = ["北海道","東北","関東","中部","近畿","中国","四国","九州"];
+const NOISY_AVG = 0.10;   // 定点あたりこれ未満は少数例
+const NOISY_Z   = 10;     // Zスコアがこれ超も少数例扱い
+
+// 表示順（おおむね患者数の多い・関心の高い疾患順）
+// ※ category_to_display() 適用後の名前で記載
+//　　ＲＳウイルス感染症→RSウイルス、COVID-19→新型コロナウイルス
+const DISEASE_ORDER = [
+  "インフルエンザ",
+  "新型コロナウイルス",
+  "RSウイルス",
+  "感染性胃腸炎",
+  "A群溶血性レンサ球菌咽頭炎",
+  "手足口病",
+  "咽頭結膜熱",
+  "ヘルパンギーナ",
+  "水痘",
+  "流行性耳下腺炎",
+  "伝染性紅斑",
+  "突発性発しん",
+  "マイコプラズマ肺炎",
+  "クラミジア肺炎",
+  "百日咳",
+  "感染性胃腸炎（ロタウイルス）",
+  "流行性角結膜炎",
+  "急性出血性結膜炎",
+  "無菌性髄膜炎",
+  "細菌性髄膜炎",
+];
+
+// ── 色計算 ───────────────────────────────────────────────────────────────
+// Z: 0→白, 1→淡黄, 2→橙, 3→赤, 5+→濃赤
+const COLOR_STOPS = [
+  [255, 255, 255],  // Z=0
+  [254, 243, 199],  // Z=1  amber-100
+  [251, 191,  36],  // Z=2  amber-400
+  [239,  68,  68],  // Z=3  red-500
+  [185,  28,  28],  // Z=4  red-700
+  [127,  29,  29],  // Z=5  red-900
+];
+
+function zToRGB(z) {
+  const t   = Math.min(Math.max(z, 0), 5) / 5 * (COLOR_STOPS.length - 1);
+  const lo  = Math.floor(t);
+  const hi  = Math.min(lo + 1, COLOR_STOPS.length - 1);
+  const f   = t - lo;
+  const r   = Math.round(COLOR_STOPS[lo][0] + f * (COLOR_STOPS[hi][0] - COLOR_STOPS[lo][0]));
+  const g   = Math.round(COLOR_STOPS[lo][1] + f * (COLOR_STOPS[hi][1] - COLOR_STOPS[lo][1]));
+  const b   = Math.round(COLOR_STOPS[lo][2] + f * (COLOR_STOPS[hi][2] - COLOR_STOPS[lo][2]));
+  const lum = r * 0.299 + g * 0.587 + b * 0.114;
+  return { css: `rgb(${r},${g},${b})`, dark: lum < 145 };
+}
+
+// ── 凡例グラデーション生成 ────────────────────────────────────────────────
+(function buildGradient() {
+  const bar = document.getElementById('gradient-bar');
+  const steps = 40;
+  for (let i = 0; i <= steps; i++) {
+    const z = i / steps * 5;
+    const { css } = zToRGB(z);
+    const d = document.createElement('div');
+    d.style.flex = '1';
+    d.style.background = css;
+    bar.appendChild(d);
+  }
+})();
+
+// ── データ読み込み ────────────────────────────────────────────────────────
+fetch('results/news_digest.json')
+  .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then(buildHeatmap)
+  .catch(err => {
+    document.getElementById('loading').textContent = 'データの読み込みに失敗しました: ' + err.message;
+  });
+
+function buildHeatmap(digest) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('heatmap-wrap').style.display = '';
+  document.getElementById('legend').style.display = '';
+  document.getElementById('notes').style.display = '';
+
+  // 週ラベル
+  const week = digest.week || '';
+  document.getElementById('week-label').textContent =
+    week ? `${week}（週次データ）` : '最新週';
+
+  const matrix = digest.block_matrix || [];
+
+  // {category: {block: {...}}} のマップを構築
+  const map = {};
+  matrix.forEach(row => {
+    if (!map[row.category]) map[row.category] = {};
+    map[row.category][row.block] = row;
+  });
+
+  // 疾患一覧（DISEASE_ORDERに従い、データにない疾患は末尾に追加）
+  const inData = new Set(matrix.map(r => r.category));
+  const diseases = [
+    ...DISEASE_ORDER.filter(d => inData.has(d)),
+    ...[...inData].filter(d => !DISEASE_ORDER.includes(d)).sort()
+  ];
+
+  // ヘッダー行
+  const headerRow = document.getElementById('header-row');
+  REGIONS.forEach(r => {
+    const th = document.createElement('th');
+    th.className = 'region-header';
+    th.textContent = r;
+    headerRow.appendChild(th);
+  });
+
+  const tbody = document.getElementById('tbody');
+  const tooltip = document.getElementById('tooltip');
+
+  diseases.forEach(disease => {
+    const tr = document.createElement('tr');
+
+    // 疾患名
+    const tdName = document.createElement('td');
+    tdName.className = 'disease-name';
+    tdName.textContent = disease;
+    tr.appendChild(tdName);
+
+    REGIONS.forEach(region => {
+      const td = document.createElement('td');
+      const cell = (map[disease] || {})[region];
+
+      if (!cell || cell.avg_value === null) {
+        // データなし
+        td.className = 'empty-cell';
+        td.textContent = '—';
+      } else {
+        const z      = cell.zscore;
+        const noisy  = (cell.avg_value !== null && cell.avg_value < NOISY_AVG) || (z !== null && z > NOISY_Z);
+        const zDisp  = z === null ? null : (noisy && z > NOISY_Z) ? '>10' : z.toFixed(1);
+        const { css, dark } = zToRGB(z === null ? 0 : (noisy && z > NOISY_Z ? 3 : z));
+
+        td.className = 'data-cell' + (noisy ? ' noisy' : '');
+        td.style.backgroundColor = css;
+
+        // バッジ
+        const alertBadge = cell.n_alert  > 0 ? `<span class="badge-alert">● 警報${cell.n_alert}県</span>`   : '';
+        const attnBadge  = cell.n_attention > 0 ? `<span class="badge-attn">▲ 注意報${cell.n_attention}県</span>` : '';
+        const noisyLabel = noisy ? '<span class="noisy-label">少数例</span>' : '';
+
+        td.innerHTML = `
+          <div class="cell-inner">
+            <span class="z-val" style="color:${dark ? '#fff' : '#0f172a'}">${zDisp !== null ? 'Z=' + zDisp : '—'}</span>
+            <div class="badges">${alertBadge}${attnBadge}</div>
+            ${noisyLabel}
+          </div>`;
+
+        // ツールチップ
+        td.addEventListener('mousemove', e => {
+          const rh  = cell.ratio_heinen;
+          const avg = cell.avg_value;
+
+          const alertList = (cell.alert_prefs  || []).join('・') || 'なし';
+          const attnList  = (cell.attention_prefs || []).join('・') || 'なし';
+
+          const alertLine = cell.n_alert > 0
+            ? `<div class="tt-alert">● 警報：${alertList}</div>` : '';
+          const attnLine  = cell.n_attention > 0
+            ? `<div class="tt-attn">▲ 注意報：${attnList}</div>` : '';
+          const noisyLine = noisy
+            ? `<div class="tt-noisy">（少数例・Zスコアは参考値）</div>` : '';
+          const naLine    = z === null
+            ? `<div class="tt-na">Zスコア：算出不可</div>` : `<div>Zスコア：${cell.zscore.toFixed(2)}</div>`;
+          const rhLine    = rh !== null
+            ? `<div>平年比：${rh > 50 ? '&gt;50倍' : rh.toFixed(2) + '倍'}</div>` : '';
+          const avgLine   = avg !== null
+            ? `<div>定点あたり：${avg < 0.01 ? avg.toFixed(4) : avg < 0.1 ? avg.toFixed(3) : avg.toFixed(2)}人</div>` : '';
+
+          tooltip.innerHTML = `
+            <div class="tt-head">${region}　${disease}</div>
+            ${naLine}${rhLine}${avgLine}${alertLine}${attnLine}${noisyLine}
+          `;
+          tooltip.style.display = 'block';
+
+          // 画面端に収まるよう調整
+          const tw = 240, th2 = tooltip.offsetHeight;
+          let tx = e.clientX + 14, ty = e.clientY + 14;
+          if (tx + tw > window.innerWidth  - 8) tx = e.clientX - tw - 14;
+          if (ty + th2 > window.innerHeight - 8) ty = e.clientY - th2 - 14;
+          tooltip.style.left = tx + 'px';
+          tooltip.style.top  = ty + 'px';
+        });
+        td.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+      }
+
+      tr.appendChild(td);
+    });
+
+    tbody.appendChild(tr);
+  });
+}
+</script>
+</body>
+</html>

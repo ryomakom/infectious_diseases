@@ -1214,6 +1214,7 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
   block_order <- c("北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州")
   blocks_present <- intersect(block_order, unique(spotlight_by_block$block))
 
+  # by_block: 地方ごとの上位3疾患（既存）
   out <- list()
   for (b in blocks_present) {
     rows_b <- spotlight_by_block %>% filter(block == b)
@@ -1238,7 +1239,33 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
     })
     out[[b]] <- list(spotlights = spots)
   }
-  out
+
+  # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用）
+  matrix_rows <- combined %>%
+    mutate(block = factor(block, levels = block_order)) %>%
+    arrange(block, category)
+
+  matrix_out <- lapply(seq_len(nrow(matrix_rows)), function(i) {
+    r <- matrix_rows[i, ]
+    alert_prefs_v     <- r$alert_prefs[[1]]
+    if (is.null(alert_prefs_v))     alert_prefs_v     <- character(0)
+    attention_prefs_v <- r$attention_prefs[[1]]
+    if (is.null(attention_prefs_v)) attention_prefs_v <- character(0)
+    list(
+      category        = as.character(r$category[[1]]),
+      block           = as.character(r$block[[1]]),
+      avg_value       = safe_num(r$avg_value[[1]], 4),
+      zscore          = safe_num(r$zscore[[1]], 4),
+      ratio_heinen    = safe_num(r$ratio_heinen[[1]], 4),
+      n_alert         = as.integer(r$n_alert[[1]]),
+      alert_prefs     = unname(as.list(alert_prefs_v)),
+      n_attention     = as.integer(r$n_attention[[1]]),
+      attention_prefs = unname(as.list(attention_prefs_v)),
+      n_prefs         = as.integer(r$n_prefs[[1]])
+    )
+  })
+
+  list(by_block = out, matrix = matrix_out)
 }
 
 # 週次系列（category + pref ごと）
@@ -1435,6 +1462,8 @@ generated_text <- buildGeneratedText(list(
   geo_context = geo_context
 ), top_pref_df, rising_df, alert_df, rows = news_base, in_alert_now = in_alert_now)
 
+block_result <- buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk)
+
 news_digest <- list(
   week = as.character(reference_date),
   lead = list(
@@ -1447,7 +1476,8 @@ news_digest <- list(
   top_news = as_top_news(top_news_df),
   spread_type = geo_context$spread_type,
   affected_blocks = unname(as.list(geo_context$affected_blocks)),
-  by_block = buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk),
+  by_block = block_result$by_block,
+  block_matrix = block_result$matrix,
   generated_text = list(bullets = generated_text$bullets)
 )
 
