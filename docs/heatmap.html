@@ -192,12 +192,12 @@
       border-radius: 4px;
       overflow: hidden;
       border: 1px solid #e2e8f0;
-      width: 160px;
+      width: 200px;
     }
     .legend-labels {
       display: flex;
       justify-content: space-between;
-      width: 160px;
+      width: 200px;
       font-size: 0.72rem;
       color: #94a3b8;
       margin-top: 1px;
@@ -295,7 +295,7 @@
     <span class="legend-title">Zスコア：</span>
     <div>
       <div class="gradient-bar" id="gradient-bar"></div>
-      <div class="legend-labels"><span>0</span><span>1</span><span>2</span><span>3</span><span>5+</span></div>
+      <div class="legend-labels"><span>-3</span><span>-1</span><span>0</span><span>+1</span><span>+3</span><span>+5</span></div>
     </div>
   </div>
   <div class="legend-group">
@@ -346,34 +346,56 @@ const DISEASE_ORDER = [
 ];
 
 // ── 色計算 ───────────────────────────────────────────────────────────────
-// Z: 0→白, 1→淡黄, 2→橙, 3→赤, 5+→濃赤
-const COLOR_STOPS = [
-  [255, 255, 255],  // Z=0
-  [254, 243, 199],  // Z=1  amber-100
-  [251, 191,  36],  // Z=2  amber-400
-  [239,  68,  68],  // Z=3  red-500
-  [185,  28,  28],  // Z=4  red-700
-  [127,  29,  29],  // Z=5  red-900
+// Z < 0 → 青系、Z = 0 → 白、Z > 0 → 橙〜赤系
+// t=0 が Z=0（白）、t=1 が Z=-3（濃青） になるよう並べる
+const NEG_STOPS = [
+  [255, 255, 255],  // Z= 0  白
+  [147, 197, 253],  // Z=-1  blue-300
+  [ 37,  99, 235],  // Z=-2  blue-600
+  [ 30,  58, 138],  // Z≦-3  blue-900
+];
+const POS_STOPS = [
+  [255, 255, 255],  // Z= 0  白
+  [254, 243, 199],  // Z= 1  amber-100
+  [251, 191,  36],  // Z= 2  amber-400
+  [239,  68,  68],  // Z= 3  red-500
+  [185,  28,  28],  // Z= 4  red-700
+  [127,  29,  29],  // Z= 5  red-900
 ];
 
-function zToRGB(z) {
-  const t   = Math.min(Math.max(z, 0), 5) / 5 * (COLOR_STOPS.length - 1);
-  const lo  = Math.floor(t);
-  const hi  = Math.min(lo + 1, COLOR_STOPS.length - 1);
-  const f   = t - lo;
-  const r   = Math.round(COLOR_STOPS[lo][0] + f * (COLOR_STOPS[hi][0] - COLOR_STOPS[lo][0]));
-  const g   = Math.round(COLOR_STOPS[lo][1] + f * (COLOR_STOPS[hi][1] - COLOR_STOPS[lo][1]));
-  const b   = Math.round(COLOR_STOPS[lo][2] + f * (COLOR_STOPS[hi][2] - COLOR_STOPS[lo][2]));
-  const lum = r * 0.299 + g * 0.587 + b * 0.114;
-  return { css: `rgb(${r},${g},${b})`, dark: lum < 145 };
+function interpStops(stops, t) {
+  const idx = Math.min(Math.max(t, 0), 1) * (stops.length - 1);
+  const lo  = Math.floor(idx);
+  const hi  = Math.min(lo + 1, stops.length - 1);
+  const f   = idx - lo;
+  return [
+    Math.round(stops[lo][0] + f * (stops[hi][0] - stops[lo][0])),
+    Math.round(stops[lo][1] + f * (stops[hi][1] - stops[lo][1])),
+    Math.round(stops[lo][2] + f * (stops[hi][2] - stops[lo][2])),
+  ];
 }
 
-// ── 凡例グラデーション生成 ────────────────────────────────────────────────
+function zToRGB(z) {
+  let rgb;
+  if (z <= 0) {
+    // Z=-3〜0 を 0〜1 にマップ（-3以下はクランプ）
+    const t = Math.min(Math.max(-z, 0), 3) / 3;
+    rgb = interpStops(NEG_STOPS, t);
+  } else {
+    // Z=0〜5 を 0〜1 にマップ（5以上はクランプ）
+    const t = Math.min(z, 5) / 5;
+    rgb = interpStops(POS_STOPS, t);
+  }
+  const lum = rgb[0] * 0.299 + rgb[1] * 0.587 + rgb[2] * 0.114;
+  return { css: `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`, dark: lum < 145 };
+}
+
+// ── 凡例グラデーション生成（-3〜+5） ─────────────────────────────────────
 (function buildGradient() {
   const bar = document.getElementById('gradient-bar');
-  const steps = 40;
+  const steps = 64;
   for (let i = 0; i <= steps; i++) {
-    const z = i / steps * 5;
+    const z = -3 + i / steps * 8;   // -3〜+5
     const { css } = zToRGB(z);
     const d = document.createElement('div');
     d.style.flex = '1';
