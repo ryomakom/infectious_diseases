@@ -95,12 +95,6 @@
     "中部",
     "関東"
   ],
-  "generated_text": {
-    "bullets": [
-      "A群溶血性レンサ球菌咽頭炎：鳥取県、北海道で患者数が警報レベル",
-      "手足口病：宮崎県で患者数が警報レベル"
-    ]
-  },
   "by_block": {
     "北海道": {
       "spotlights": [
@@ -133,7 +127,7 @@
         {
           "category": "ヘルパンギーナ",
           "avg_value": 0.03,
-          "growth1Rate": 2.0,
+          "growth1Rate": 2,
           "zscore": 1.0781,
           "ratio_heinen": 2.5,
           "n_alert": 0,
@@ -189,7 +183,7 @@
         {
           "category": "クラミジア肺炎",
           "avg_value": 0.0287,
-          "growth1Rate": 0.0,
+          "growth1Rate": 0,
           "zscore": 0.7432,
           "ratio_heinen": 2.0125,
           "n_alert": 0,
@@ -430,5 +424,11 @@
         }
       ]
     }
+  },
+  "generated_text": {
+    "bullets": [
+      "A群溶血性レンサ球菌咽頭炎：鳥取県、北海道で患者数が警報レベル",
+      "手足口病：宮崎県で患者数が警報レベル"
+    ]
   }
 }
