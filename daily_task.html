@@ -734,7 +734,7 @@ for (week_label in distinct_weeks) {
 }</code></pre>
 <pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): cannot open
 ## URL
-## &#39;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/2026/19/2026-19-teiten.csv&#39;:
+## &#39;https://id-info.jihs.go.jp/surveillance/idwr/provisional/2026/19/2026-19-teiten.csv&#39;:
 ## HTTP status was &#39;404 Not Found&#39;</code></pre>
 <pre class="r"><code># — ログ結合＆出力 —
 new_logs &lt;- bind_rows(log_entries)
@@ -836,16 +836,12 @@ by_week &lt;- d %&gt;%
 latest_yr_wk &lt;- by_week %&gt;% pull(year_week) %&gt;% max()
 latest_yr &lt;- as.integer(substr(latest_yr_wk, 1, 4))
 latest_wk &lt;- substr(latest_yr_wk, 6, 7)
-# COVID流行期（外出自粛・マスク着用で多くの感染症が異常抑制）はベースラインから除外する
-COVID_EXCL_YRS &lt;- 2020:2022
 # 平年比の分母：過去3年の同時期4週（3年×4週=12点）の weekly_value 平均
 # 分子の current_ma4（直近4週MA）と対称になるよう、分母も同じ4週ウィンドウで揃える
-# COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
 latest_wk_int &lt;- as.integer(latest_wk)
-baseline_yrs_main &lt;- head(setdiff((latest_yr - 1):(latest_yr - 7), COVID_EXCL_YRS), 3)
 past_3_window_yr_wks &lt;- sprintf(&quot;%04d-%02d&quot;,
-  rep(baseline_yrs_main, each = 4),
-  rep((latest_wk_int - 3):latest_wk_int, times = length(baseline_yrs_main))
+  rep((latest_yr - 1):(latest_yr - 3), each = 4),
+  rep((latest_wk_int - 3):latest_wk_int, times = 3)
 )
 
 # 現在値＝直近週の4週移動平均（ma4）。同週に複数日ある場合は最も新しい日の値を使う
@@ -1076,8 +1072,8 @@ computeSeasonalBaseline &lt;- function(rows) {
           if (length(weekly_value_series) &lt;= 1 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year &lt;- tail(year_series, 1)
           current_week &lt;- tail(week_series, 1)
-          # 平年比と同じ定義：直近の非COVID年3年分 × 同時期4週ウィンドウ（12点）
-          baseline_yrs &lt;- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          # 平年比と同じ定義：直近3年 × 同時期4週ウィンドウ（12点）
+          baseline_yrs &lt;- (current_year - 1L):(current_year - 3L)
           target_wks   &lt;- (current_week - 3L):current_week
           hist_idx &lt;- year_series %in% baseline_yrs &amp; week_series %in% target_wks &amp; is.finite(weekly_value_series)
           hist_values &lt;- weekly_value_series[hist_idx]
@@ -1092,7 +1088,7 @@ computeSeasonalBaseline &lt;- function(rows) {
           if (length(weekly_value_series) &lt;= 2 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year &lt;- tail(year_series, 1)
           current_week &lt;- tail(week_series, 1)
-          baseline_yrs &lt;- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          baseline_yrs &lt;- (current_year - 1L):(current_year - 3L)
           target_wks   &lt;- (current_week - 3L):current_week
           hist_idx &lt;- year_series %in% baseline_yrs &amp; week_series %in% target_wks &amp; is.finite(weekly_value_series)
           hist_values &lt;- weekly_value_series[hist_idx]
@@ -1545,11 +1541,9 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
 
   # 季節ベースライン：過去3年の同時期4週（3年×4週=12点）のavg_valueの平均・SD
   # 分子（直近4週MA）と対称になるよう分母も同じ4週ウィンドウで揃える
-  # COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
-  baseline_yrs_block &lt;- head(setdiff((latest_yr - 1L):(latest_yr - 7L), COVID_EXCL_YRS), 3L)
   past_3_window_yr_wks &lt;- sprintf(&quot;%04d-%02d&quot;,
-    rep(baseline_yrs_block, each = 4L),
-    rep((latest_wk - 3L):latest_wk, times = length(baseline_yrs_block))
+    rep((latest_yr - 1L):(latest_yr - 3L), each = 4L),
+    rep((latest_wk - 3L):latest_wk, times = 3L)
   )
   hist &lt;- block_weekly %&gt;%
     filter(year_week %in% past_3_window_yr_wks) %&gt;%
@@ -1771,7 +1765,7 @@ ranking_wow &lt;- news_base %&gt;%
     round(current_value / previous_value, 4),
     NA_real_
   )) %&gt;%
-  select(category, pref, ratio_wow)
+  select(category, pref, ratio_wow, current_value)
 
 # 警報レベル状態：alert_start を一度超えたら alert_end を下回るまで継続
 in_alert_now &lt;- by_week %&gt;%
@@ -1809,8 +1803,16 @@ in_attention_now &lt;- by_week %&gt;%
 ranking &lt;- ranking %&gt;%
   left_join(ranking_wow, by = c(&quot;category&quot;, &quot;pref&quot;)) %&gt;%
   left_join(in_alert_now, by = c(&quot;category&quot;, &quot;pref&quot;)) %&gt;%
-  mutate(in_alert_level = if_else(is.na(in_alert_level), FALSE, in_alert_level)) %&gt;%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow, in_alert_level)
+  mutate(
+    in_alert_level = if_else(is.na(in_alert_level), FALSE, in_alert_level),
+    # 警報開始基準比：直近1週の値（current_value）を使う
+    ratio_alert = if_else(
+      !is.na(alert_start) &amp; alert_start &gt; 0 &amp; is.finite(current_value),
+      round(current_value / alert_start, 2),
+      ratio_alert
+    )
+  ) %&gt;%
+  select(category, pref, year_week, reference_date, current_value, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow, in_alert_level)
 
 write_excel_csv(ranking, &quot;docs/results/ranking.csv&quot;)
 message(&quot;ランキング出力: docs/results/ranking.csv&quot;)</code></pre>
