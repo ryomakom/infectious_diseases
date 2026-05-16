@@ -1393,11 +1393,11 @@ ranking_wow <- news_base %>%
     round(current_value / previous_value, 4),
     NA_real_
   )) %>%
-  select(category, pref, ratio_wow)
+  select(category, pref, ratio_wow, current_value)
 
 ranking <- ranking %>%
   left_join(ranking_wow, by = c("category", "pref")) %>%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow)
+  select(category, pref, year_week, reference_date, current_value, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow)
 
 write_excel_csv(ranking, "docs/results/ranking.csv")
 message("ランキング出力: docs/results/ranking.csv")

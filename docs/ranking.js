@@ -343,8 +343,8 @@ function buildHighlightReason(item) {
   if (Number.isFinite(item.persistenceRate) && item.persistenceRate >= 0.5 && item.persistenceWindow > 0) {
     reasons.push(`直近${item.persistenceWindow}週中 ${item.persistenceWeeks}週で警報超え`);
   }
-  if (!reasons.length && Number.isFinite(item.current_ma4)) {
-    reasons.push(`定点あたり患者数 ${item.current_ma4.toFixed(2)}`);
+  if (!reasons.length && Number.isFinite(item.current_value ?? item.current_ma4)) {
+    reasons.push(`定点あたり患者数 ${(item.current_value ?? item.current_ma4).toFixed(2)}`);
   }
   return reasons.slice(0, 2).join(" / ");
 }
@@ -450,8 +450,8 @@ function buildCategoryHighlightsPayload(category) {
     .filter(d => !isNationwide(d.pref))
     .slice()
     .sort((a, b) => {
-      const av = Number.isFinite(a.current_ma4) ? a.current_ma4 : -Infinity;
-      const bv = Number.isFinite(b.current_ma4) ? b.current_ma4 : -Infinity;
+      const av = Number.isFinite(a.current_value ?? a.current_ma4) ? (a.current_value ?? a.current_ma4) : -Infinity;
+      const bv = Number.isFinite(b.current_value ?? b.current_ma4) ? (b.current_value ?? b.current_ma4) : -Infinity;
       return bv - av;
     })
     .slice(0, 3)
@@ -500,7 +500,7 @@ function renderTopMetricCard(entry) {
       </div>
       <div class="ranking-top-card-current">
         <span class="metric-label">定点あたり患者数</span>
-        <span class="metric-value metric-value-current">${Number.isFinite(entry.current_ma4) ? entry.current_ma4.toFixed(2) : "—"}</span>
+        <span class="metric-value metric-value-current">${Number.isFinite(entry.current_value ?? entry.current_ma4) ? (entry.current_value ?? entry.current_ma4).toFixed(2) : "—"}</span>
       </div>
       <div class="ranking-top-card-spark">
         <span class="metric-value spark-wrap">
@@ -659,7 +659,7 @@ function renderTopHighlights(payload, signalKey) {
         </p>
         <div class="ranking-top-main-unified-current">
           <span class="label">定点あたり患者数</span>
-          <span class="value">${Number.isFinite(nationwideRow.current_ma4) ? nationwideRow.current_ma4.toFixed(2) : "—"}</span>
+          <span class="value">${Number.isFinite(nationwideRow.current_value ?? nationwideRow.current_ma4) ? (nationwideRow.current_value ?? nationwideRow.current_ma4).toFixed(2) : "—"}</span>
         </div>
         <div class="ranking-top-main-unified-spark">
           <span class="value spark-wrap">
@@ -778,7 +778,7 @@ function renderRanking(result) {
       <td>${row.category}</td>
       <td>${row.pref}</td>
       <td class="num ranking-cell-value">
-        <span class="ranking-value-num">${isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) + "人" : "—"}</span>
+        <span class="ranking-value-num">${Number.isFinite(row.current_value ?? row.current_ma4) ? (row.current_value ?? row.current_ma4).toFixed(2) + "人" : "—"}</span>
         <svg class="ranking-sparkline" aria-hidden="true" width="52" height="22" viewBox="0 0 52 22">
           <path class="ranking-sparkline-path" fill="none" stroke="currentColor" stroke-width="1.2" d="${normalPath}"></path>
           <path class="ranking-sparkline-path ranking-sparkline-path--attention" fill="none" stroke-width="1.5" d="${attentionPath}"></path>

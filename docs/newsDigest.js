@@ -308,7 +308,7 @@ function buildSignalSparkCard(item) {
   }
   const metricRow = hasCategory ? pickCardMetricRow(item.category) : null;
   const prefForSpark = asString(metricRow?.pref, "全国");
-  const currentMa4 = Number(metricRow?.current_ma4);
+  const currentMa4 = Number.isFinite(metricRow?.current_value) ? Number(metricRow.current_value) : Number(metricRow?.current_ma4);
   const alertThreshold = (metricRow?.alert_start != null && Number.isFinite(metricRow.alert_start))
     ? metricRow.alert_start
     : null;
@@ -393,10 +393,11 @@ function buildSignalSparkCard(item) {
   return wrap;
 }
 
+function curVal(d) { return Number.isFinite(d?.current_value) ? d.current_value : (d?.current_ma4 ?? -Infinity); }
 const SIGNAL_PREF_CONFIG = {
-  alert:   { title: "定点あたり患者数の多い都道府県", description: "最も警戒が必要",       sort: (a, b) => (b.current_ma4 ?? -Infinity) - (a.current_ma4 ?? -Infinity) },
-  rising:  { title: "定点あたり患者数の多い都道府県", description: "最も増加が激しい",     sort: (a, b) => (b.current_ma4 ?? -Infinity) - (a.current_ma4 ?? -Infinity) },
-  anomaly: { title: "定点あたり患者数の多い都道府県", description: "最も季節外れの多さ",   sort: (a, b) => (b.current_ma4 ?? -Infinity) - (a.current_ma4 ?? -Infinity) },
+  alert:   { title: "定点あたり患者数の多い都道府県", description: "最も警戒が必要",       sort: (a, b) => curVal(b) - curVal(a) },
+  rising:  { title: "定点あたり患者数の多い都道府県", description: "最も増加が激しい",     sort: (a, b) => curVal(b) - curVal(a) },
+  anomaly: { title: "定点あたり患者数の多い都道府県", description: "最も季節外れの多さ",   sort: (a, b) => curVal(b) - curVal(a) },
 };
 
 const SIGNAL_NO_DATA_MESSAGES = {
@@ -423,7 +424,7 @@ function buildTopPrefsSection(category, signalKey) {
 
   const rows = state.rankingData
     .filter(d => d.category === category && d.pref !== "全国" && d.pref !== "全国平均")
-    .filter(d => Number.isFinite(d.current_ma4))
+    .filter(d => Number.isFinite(d.current_value) || Number.isFinite(d.current_ma4))
     .sort(config.sort)
     .slice(0, 3);
 
@@ -463,7 +464,7 @@ function buildTopPrefsSection(category, signalKey) {
       <p class="news-digest-spark-category">${row.pref}</p>
       <div class="news-digest-spark-body">
         <div class="news-digest-spark-metric-col">
-          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label metric-lbl-top">定点あたり</span><span class="metric-lbl-row2"><span class="news-digest-spark-metric-label">患者数</span><span class="news-digest-spark-metric-number">${Number.isFinite(row.current_ma4) ? row.current_ma4.toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></span></span></p>
+          <p class="news-digest-spark-metric-value"><span class="news-digest-spark-metric-label metric-lbl-top">定点あたり</span><span class="metric-lbl-row2"><span class="news-digest-spark-metric-label">患者数</span><span class="news-digest-spark-metric-number">${Number.isFinite(curVal(row)) ? curVal(row).toFixed(2) : "—"}<span class="news-digest-spark-unit">人</span></span></span></p>
           ${alertThresholdHtml}
         </div>
         <div class="news-digest-spark-chart-col">

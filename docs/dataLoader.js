@@ -53,6 +53,7 @@ function loadRankingCsv() {
       pref: prefToDisplay(d.pref),
       ratio_heinen: Number.isFinite(+d.ratio_heinen) ? +d.ratio_heinen : null,
       ratio_alert: d.ratio_alert === "" || Number.isNaN(+d.ratio_alert) ? null : +d.ratio_alert,
+      current_value: (d.current_value === "" || d.current_value === "NA" || d.current_value == null || Number.isNaN(+d.current_value)) ? null : +d.current_value,
       current_ma4: +d.current_ma4,
       alert_start: (d.alert_start === "" || d.alert_start === "NA" || d.alert_start == null || Number.isNaN(+d.alert_start)) ? null : +d.alert_start,
       ratio_wow: (d.ratio_wow === "" || d.ratio_wow === "NA" || d.ratio_wow == null || Number.isNaN(+d.ratio_wow)) ? null : +d.ratio_wow,
@@ -106,6 +107,7 @@ function computeRankingFromAllData() {
       pref: latest.pref,
       ratio_heinen: ratioHeinen,
       ratio_alert: ratioAlert,
+      current_value: latest.value,
       current_ma4: latest.value
     });
   });
@@ -216,8 +218,8 @@ async function initialize() {
   const digestTopPrefsToLoad = new Set();
   digestSignalCategories.forEach(cat => {
     (state.rankingData || [])
-      .filter(d => d.category === cat && d.pref !== "全国" && d.pref !== "全国平均" && Number.isFinite(d.current_ma4))
-      .sort((a, b) => (b.current_ma4 ?? -Infinity) - (a.current_ma4 ?? -Infinity))
+      .filter(d => d.category === cat && d.pref !== "全国" && d.pref !== "全国平均" && (Number.isFinite(d.current_value) || Number.isFinite(d.current_ma4)))
+      .sort((a, b) => ((b.current_value ?? b.current_ma4 ?? -Infinity) - (a.current_value ?? a.current_ma4 ?? -Infinity)))
       .slice(0, 3)
       .forEach(d => { if (!alwaysLoaded.has(d.pref)) digestTopPrefsToLoad.add(d.pref); });
   });
