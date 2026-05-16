@@ -375,7 +375,7 @@ function buildSignalSparkCard(item) {
          </p>`
       : "";
   } else if (item.key === "anomaly") {
-    const ryoy = (metricRow?.ratio_yoy != null && Number.isFinite(metricRow.ratio_yoy)) ? metricRow.ratio_yoy : null;
+    const ryoy = (metricRow?.ratio_heinen != null && Number.isFinite(metricRow.ratio_heinen)) ? metricRow.ratio_heinen : null;
     if (ryoy !== null) {
       const pct = Math.round((ryoy - 1) * 100);
       alertThresholdHtml = `<p class="news-digest-spark-alert-threshold news-digest-spark-alert-threshold--split">

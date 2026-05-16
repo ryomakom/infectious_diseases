@@ -51,7 +51,7 @@ function loadRankingCsv() {
     .then(rows => rows.map(d => ({
       category: categoryToDisplay(d.category),
       pref: prefToDisplay(d.pref),
-      ratio_yoy: Number.isFinite(+d.ratio_yoy) ? +d.ratio_yoy : null,
+      ratio_heinen: Number.isFinite(+d.ratio_heinen) ? +d.ratio_heinen : null,
       ratio_alert: d.ratio_alert === "" || Number.isNaN(+d.ratio_alert) ? null : +d.ratio_alert,
       current_ma4: +d.current_ma4,
       alert_start: (d.alert_start === "" || d.alert_start === "NA" || d.alert_start == null || Number.isNaN(+d.alert_start)) ? null : +d.alert_start,
@@ -98,13 +98,13 @@ function computeRankingFromAllData() {
     const latest = arr[arr.length - 1];
     const prev = arr.slice(-5, -1);
     const baseline = prev.length ? d3.mean(prev, d => d.value) : latest.value;
-    const ratioYoy = baseline && baseline > 0 ? latest.value / baseline : 1;
+    const ratioHeinen = baseline && baseline > 0 ? latest.value / baseline : 1;
     const threshold = state.alertThresholdsMap[latest.category];
     const ratioAlert = threshold && threshold > 0 ? latest.value / threshold : null;
     rows.push({
       category: latest.category,
       pref: latest.pref,
-      ratio_yoy: ratioYoy,
+      ratio_heinen: ratioHeinen,
       ratio_alert: ratioAlert,
       current_ma4: latest.value
     });

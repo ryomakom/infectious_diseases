@@ -271,7 +271,7 @@ rising_rate <- first_field(news_digest$rising, "growth1Rate")
 anomaly_cat <- first_field(news_digest$anomalies, "category")
 anomaly_ryoy <- if (!is.na(anomaly_cat)) {
   r <- ranking %>% dplyr::filter(pref %in% nat_prefs, category == anomaly_cat)
-  if (nrow(r) > 0) r$ratio_yoy[[1]] else NA
+  if (nrow(r) > 0) r$ratio_heinen[[1]] else NA
 } else NA
 
 cards <- list(

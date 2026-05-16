@@ -101,7 +101,7 @@ ranking <- current_ma4 %>%
   inner_join(baseline_ma4, by = c("pref", "category")) %>%
   filter(baseline_ma4 > 0) %>%
   mutate(
-    ratio_yoy = round(current_ma4 / baseline_ma4, 2),
+    ratio_heinen = round(current_ma4 / baseline_ma4, 2),
     year_week = latest_yr_wk,
     reference_date = as.character(reference_date)
   ) %>%
@@ -113,7 +113,7 @@ ranking <- current_ma4 %>%
       NA_real_
     )
   ) %>%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert)
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert)
 
 # ranking.csv は news_base 計算後に ratio_wow を付与してから書き出す（下記）
 
@@ -125,13 +125,13 @@ if (nrow(ranking_valid) > 0) {
   if (nrow(nationwide_anchor) == 0) nationwide_anchor <- ranking_valid
 
   target_row <- nationwide_anchor %>%
-    arrange(desc(ratio_alert), desc(ratio_yoy), desc(current_ma4)) %>%
+    arrange(desc(ratio_alert), desc(ratio_heinen), desc(current_ma4)) %>%
     slice(1)
   target_category <- target_row$category[[1]]
 
   top_pref_rows <- ranking_valid %>%
     filter(category == target_category, pref != "全国") %>%
-    arrange(desc(ratio_alert), desc(ratio_yoy), desc(current_ma4)) %>%
+    arrange(desc(ratio_alert), desc(ratio_heinen), desc(current_ma4)) %>%
     slice_head(n = 3)
 
   nationwide_row <- ranking %>%
@@ -519,7 +519,7 @@ as_item_list <- function(df,n=3) {
          current_value=ifelse(is.finite(row$current_value[[1]]),as.numeric(row$current_value[[1]]),NA_real_),
          previous_value=ifelse(is.finite(row$previous_value[[1]]),as.numeric(row$previous_value[[1]]),NA_real_),
          ratio_alert=ifelse(is.finite(row$ratio_alert[[1]]),as.numeric(row$ratio_alert[[1]]),NA_real_),
-         ratio_yoy=ifelse(is.finite(row$ratio_yoy[[1]]),as.numeric(row$ratio_yoy[[1]]),NA_real_),
+         ratio_heinen=ifelse(is.finite(row$ratio_heinen[[1]]),as.numeric(row$ratio_heinen[[1]]),NA_real_),
          growth1Rate=ifelse(is.finite(row$growth1Rate[[1]]),as.numeric(row$growth1Rate[[1]]),NA_real_),
          weeksOverAlert=ifelse(is.finite(row$weeksOverAlert[[1]]),as.integer(row$weeksOverAlert[[1]]),NA_integer_),
          persistenceRate=ifelse(is.finite(row$persistenceRate[[1]]),as.numeric(row$persistenceRate[[1]]),NA_real_),
@@ -582,7 +582,7 @@ news_base <- ranking %>%
     weeksOverAlert=map2_int(ma4_series,alert_start,~{if(!is.finite(.y)||length(.x)==0) return(NA_integer_); sum(tail(.x,PERSISTENCE_WINDOW)>.y,na.rm=TRUE)}),
     persistenceRate=if_else(is.finite(weeksOverAlert),weeksOverAlert/persistenceWindow,NA_real_),
     current_ma4=safe_num(current_ma4,4),current_value=safe_num(current_value,4),previous_value=safe_num(previous_value,4),
-    ratio_alert=safe_num(ratio_alert,4),ratio_yoy=safe_num(ratio_yoy,4),growth1Rate=safe_num(growth1Rate,4),
+    ratio_alert=safe_num(ratio_alert,4),ratio_heinen=safe_num(ratio_heinen,4),growth1Rate=safe_num(growth1Rate,4),
     growth1Diff=safe_num(growth1Diff,4),growth4Rate=safe_num(growth4Rate,4),persistenceRate=safe_num(persistenceRate,4),
     recent4_avg=safe_num(recent4_avg,4),previous4_avg=safe_num(previous4_avg,4)
   ) %>%
@@ -593,7 +593,7 @@ news_base <- ranking %>%
     anomaly_diff=if_else(is.finite(seasonal_mean),current_value-seasonal_mean,NA_real_),
     seasonal_zscore=anomaly_z
   ) %>%
-  select(category,pref,year_week,reference_date,is_major,current_ma4,current_value,previous_value,ratio_alert,ratio_yoy,
+  select(category,pref,year_week,reference_date,is_major,current_ma4,current_value,previous_value,ratio_alert,ratio_heinen,
          recent4_avg,previous4_avg,growth1Rate,growth1Diff,growth4Rate,weeksOverAlert,persistenceRate,persistenceWindow,
          ma4_series,weekly_value_series,year_series,week_series,seasonal_mean,seasonal_std,seasonal_zscore,anomaly_z,anomaly_ratio,anomaly_diff) %>%
   filter(!is.na(category),!is.na(pref))
@@ -609,7 +609,7 @@ ranking_wow <- news_base %>%
 
 ranking <- ranking %>%
   left_join(ranking_wow, by = c("category", "pref")) %>%
-  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_yoy, alert_start, ratio_alert, ratio_wow)
+  select(category, pref, year_week, reference_date, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow)
 
 write_excel_csv(ranking, "docs/results/ranking.csv")
 cat("ranking.csv written.\n")

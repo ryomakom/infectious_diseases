@@ -265,7 +265,7 @@ function formatRatioAlert(v) {
   return `${v.toFixed(2)}倍`;
 }
 
-function formatRatioYoy(v) {
+function formatRatioHeinen(v) {
   if (v == null || !isFinite(v)) return "—";
   const pct = Math.round((v - 1) * 100);
   return pct >= 0 ? `+${pct}%` : `${pct}%`;
@@ -334,8 +334,8 @@ function buildHighlightReason(item) {
   if (Number.isFinite(item.ratio_alert) && item.ratio_alert > 1) {
     reasons.push(`警報開始基準比 ${item.ratio_alert.toFixed(2)}倍`);
   }
-  if (Number.isFinite(item.ratio_yoy) && item.ratio_yoy >= 2) {
-    reasons.push(`平年比 +${Math.round((item.ratio_yoy - 1) * 100)}%`);
+  if (Number.isFinite(item.ratio_heinen) && item.ratio_heinen >= 2) {
+    reasons.push(`平年比 +${Math.round((item.ratio_heinen - 1) * 100)}%`);
   }
   if (Number.isFinite(item.growth4Rate) && item.growth4Rate >= 0.2) {
     reasons.push(`4週で +${(item.growth4Rate * 100).toFixed(0)}%`);
@@ -395,8 +395,8 @@ function computeTopHighlights(filteredRows) {
     const av = Number.isFinite(a.ratio_alert) ? a.ratio_alert : -Infinity;
     const bv = Number.isFinite(b.ratio_alert) ? b.ratio_alert : -Infinity;
     if (bv !== av) return bv - av;
-    const ay = Number.isFinite(a.ratio_yoy) ? a.ratio_yoy : -Infinity;
-    const by = Number.isFinite(b.ratio_yoy) ? b.ratio_yoy : -Infinity;
+    const ay = Number.isFinite(a.ratio_heinen) ? a.ratio_heinen : -Infinity;
+    const by = Number.isFinite(b.ratio_heinen) ? b.ratio_heinen : -Infinity;
     if (by !== ay) return by - ay;
     const ac = Number.isFinite(a.current_ma4) ? a.current_ma4 : -Infinity;
     const bc = Number.isFinite(b.current_ma4) ? b.current_ma4 : -Infinity;
@@ -787,7 +787,7 @@ function renderRanking(result) {
       </td>
       <td class="num ${alertClass(row)}">${formatRatioAlert(row.ratio_alert)}</td>
       <td class="num">${formatWow(row._wow)}</td>
-      <td class="num">${formatRatioYoy(row.ratio_yoy)}</td>
+      <td class="num">${formatRatioHeinen(row.ratio_heinen)}</td>
     `;
     const click = () => {
       tr.classList.remove("ranking-row-flash");
@@ -1082,7 +1082,7 @@ function initializePrefControls() {
       if (els.rankingSortAnnounce) {
         const label = state.sortKey === "ratio_alert" ? "警報開始基準比"
           : state.sortKey === "ratio_wow" ? "前週比"
-          : state.sortKey === "ratio_yoy" ? "平年比"
+          : state.sortKey === "ratio_heinen" ? "平年比"
           : "定点あたり患者数";
         els.rankingSortAnnounce.textContent = `${label}の${state.sortDesc ? "降順" : "昇順"}でソートしました。`;
       }

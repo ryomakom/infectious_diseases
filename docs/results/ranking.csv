@@ -1,4 +1,4 @@
-﻿"category","pref","year_week","reference_date","current_ma4","baseline_ma4","ratio_yoy","alert_start","ratio_alert","ratio_wow","in_alert_level"
+﻿"category","pref","year_week","reference_date","current_ma4","baseline_ma4","ratio_heinen","alert_start","ratio_alert","ratio_wow","in_alert_level"
 "A群溶血性レンサ球菌咽頭炎","三重県","2026-18","2026-05-03",2.12,2.089166666666667,1.01,8,0.26,1.1099,FALSE
 "RSウイルス","三重県","2026-18","2026-05-03",0.49,1.5258333333333334,0.32,NA,NA,0.7778,FALSE
 "インフルエンザ","三重県","2026-18","2026-05-03",0.25,2.1791666666666667,0.11,30,0.01,1.1364,FALSE
