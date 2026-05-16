@@ -484,7 +484,7 @@ function buildHeatmap(digest) {
 
         td.innerHTML = `
           <div class="cell-inner">
-            <span class="z-val" style="color:${dark ? '#fff' : '#0f172a'}">${zDisp !== null ? 'Z=' + zDisp : '—'}</span>
+            <span class="z-val" style="color:${dark ? '#fff' : '#0f172a'}">${zDisp !== null ? zDisp : '—'}</span>
             <div class="badges">${alertBadge}${attnBadge}</div>
             ${noisyLabel}
           </div>`;
