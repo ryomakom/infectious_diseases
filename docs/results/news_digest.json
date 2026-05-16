@@ -1,11 +1,7 @@
 {
   "week": "2026-05-03",
   "lead": {
-    "category": "A群溶血性レンサ球菌咽頭炎",
-    "nationwide_ratio_alert": 0.4,
-    "nationwide_current_ma4": 3.21,
-    "reason": "A: 季節パターン逸脱（A群溶血性レンサ球菌咽頭炎 全国, z=1.06）",
-    "importance_score": 1.5301
+    "category": "A群溶血性レンサ球菌咽頭炎"
   },
   "top_prefectures": [
     {
@@ -16,11 +12,7 @@
       "previous_value": 7.32,
       "ratio_alert": 0.87,
       "ratio_heinen": 1.73,
-      "growth1Rate": -0.0505,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 2.2895
+      "growth1Rate": -0.0505
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -30,11 +22,7 @@
       "previous_value": 5.03,
       "ratio_alert": 0.85,
       "ratio_heinen": 1.85,
-      "growth1Rate": 0.3479,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 4.6312
+      "growth1Rate": 0.3479
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -44,11 +32,7 @@
       "previous_value": 4.39,
       "ratio_alert": 0.77,
       "ratio_heinen": 3.38,
-      "growth1Rate": 0.3986,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 4.4807
+      "growth1Rate": 0.3986
     }
   ],
   "rising": [
@@ -60,11 +44,7 @@
       "previous_value": 0.26,
       "ratio_alert": 0.08,
       "ratio_heinen": 1.55,
-      "growth1Rate": 0.4615,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 0.8451
+      "growth1Rate": 0.4615
     }
   ],
   "alerts": [
@@ -76,27 +56,7 @@
       "previous_value": 0.26,
       "ratio_alert": 0.08,
       "ratio_heinen": 1.55,
-      "growth1Rate": 0.4615,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 0.8451
-    }
-  ],
-  "improving": [
-    {
-      "category": "インフルエンザ",
-      "pref": "全国",
-      "current_ma4": 0.41,
-      "current_value": 0.41,
-      "previous_value": 0.61,
-      "ratio_alert": 0.01,
-      "ratio_heinen": 0.26,
-      "growth1Rate": -0.3279,
-      "weeksOverAlert": 0,
-      "persistenceRate": 0,
-      "persistenceWindow": 4,
-      "importance_score": 0.1454
+      "growth1Rate": 0.4615
     }
   ],
   "anomalies": [
@@ -106,8 +66,7 @@
       "current_ma4": 3.21,
       "current_value": 3.21,
       "seasonal_mean": 1.9998,
-      "seasonal_zscore": 1.0586,
-      "importance_score": 1.5301
+      "seasonal_zscore": 1.0586
     },
     {
       "category": "手足口病",
@@ -115,8 +74,7 @@
       "current_ma4": 0.38,
       "current_value": 0.38,
       "seasonal_mean": 0.3346,
-      "seasonal_zscore": 0.1383,
-      "importance_score": 0.8451
+      "seasonal_zscore": 0.1383
     },
     {
       "category": "水痘",
@@ -124,45 +82,12 @@
       "current_ma4": 0.38,
       "current_value": 0.38,
       "seasonal_mean": 0.3997,
-      "seasonal_zscore": -0.055,
-      "importance_score": 0.2808
-    }
-  ],
-  "news_candidates": [
-    {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "全国",
-      "importance_score": 1.5301,
-      "flags": [
-        "anomaly"
-      ]
-    },
-    {
-      "category": "手足口病",
-      "pref": "全国",
-      "importance_score": 0.8451,
-      "flags": [
-        "alert",
-        "anomaly",
-        "rising"
-      ]
-    },
-    {
-      "category": "水痘",
-      "pref": "全国",
-      "importance_score": 0.2808,
-      "flags": [
-        "anomaly"
-      ]
+      "seasonal_zscore": -0.055
     }
   ],
   "top_news": {
     "category": "A群溶血性レンサ球菌咽頭炎",
-    "pref": "全国",
-    "importance_score": 1.5301,
-    "flags": [
-      "anomaly"
-    ]
+    "pref": "全国"
   },
   "spread_type": "地域拡散",
   "affected_blocks": [
@@ -171,11 +96,339 @@
     "関東"
   ],
   "generated_text": {
-    "headline": "手足口病、宮崎県で警報水準",
-    "summary": "手足口病は宮崎県で警報基準値を超えています（全国平均では基準値の0.08倍）。",
     "bullets": [
       "A群溶血性レンサ球菌咽頭炎：鳥取県、北海道で患者数が警報レベル",
       "手足口病：宮崎県で患者数が警報レベル"
     ]
+  },
+  "by_block": {
+    "北海道": {
+      "spotlights": [
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 5.32,
+          "growth1Rate": -0.1964,
+          "zscore": 1.1347,
+          "ratio_heinen": 1.7055,
+          "n_alert": 1,
+          "alert_prefs": [
+            "北海道"
+          ],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 1
+        },
+        {
+          "category": "クラミジア肺炎",
+          "avg_value": 0.13,
+          "growth1Rate": null,
+          "zscore": 18.4975,
+          "ratio_heinen": 105.625,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 1
+        },
+        {
+          "category": "ヘルパンギーナ",
+          "avg_value": 0.03,
+          "growth1Rate": 2.0,
+          "zscore": 1.0781,
+          "ratio_heinen": 2.5,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 1
+        }
+      ]
+    },
+    "東北": {
+      "spotlights": [
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0636,
+          "growth1Rate": 8.0434,
+          "zscore": 3.2957,
+          "ratio_heinen": 7.8804,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 6
+        },
+        {
+          "category": "細菌性髄膜炎",
+          "avg_value": 0.0267,
+          "growth1Rate": null,
+          "zscore": 0.7688,
+          "ratio_heinen": 1.9619,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 6
+        },
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 3.1238,
+          "growth1Rate": 0.0716,
+          "zscore": 0.7542,
+          "ratio_heinen": 1.4484,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 6
+        }
+      ]
+    },
+    "関東": {
+      "spotlights": [
+        {
+          "category": "クラミジア肺炎",
+          "avg_value": 0.0287,
+          "growth1Rate": 0.0,
+          "zscore": 0.7432,
+          "ratio_heinen": 2.0125,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        },
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 2.9674,
+          "growth1Rate": 0.0279,
+          "zscore": 0.6265,
+          "ratio_heinen": 1.3902,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        },
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0494,
+          "growth1Rate": -0.3373,
+          "zscore": 0.3801,
+          "ratio_heinen": 1.3188,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        }
+      ]
+    },
+    "中部": {
+      "spotlights": [
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0791,
+          "growth1Rate": -0.2831,
+          "zscore": 1.7962,
+          "ratio_heinen": 2.7422,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 9
+        },
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 2.9277,
+          "growth1Rate": 0.0591,
+          "zscore": 1.027,
+          "ratio_heinen": 1.5945,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 9
+        },
+        {
+          "category": "手足口病",
+          "avg_value": 0.3121,
+          "growth1Rate": 0.174,
+          "zscore": 0.9144,
+          "ratio_heinen": 2.0113,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 9
+        }
+      ]
+    },
+    "近畿": {
+      "spotlights": [
+        {
+          "category": "クラミジア肺炎",
+          "avg_value": 0.0238,
+          "growth1Rate": 0.3861,
+          "zscore": 1.6728,
+          "ratio_heinen": 4.439,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        },
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 3.0633,
+          "growth1Rate": 0.0261,
+          "zscore": 1.6338,
+          "ratio_heinen": 1.9451,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        },
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0432,
+          "growth1Rate": -0.5015,
+          "zscore": 0.5183,
+          "ratio_heinen": 1.4085,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 7
+        }
+      ]
+    },
+    "中国": {
+      "spotlights": [
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 3.4912,
+          "growth1Rate": -0.0168,
+          "zscore": 1.4719,
+          "ratio_heinen": 1.8545,
+          "n_alert": 1,
+          "alert_prefs": [
+            "鳥取県"
+          ],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 5
+        },
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0724,
+          "growth1Rate": 3.7462,
+          "zscore": 1.6609,
+          "ratio_heinen": 3.9516,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 5
+        },
+        {
+          "category": "マイコプラズマ肺炎",
+          "avg_value": 0.2175,
+          "growth1Rate": 0.4702,
+          "zscore": 0.4615,
+          "ratio_heinen": 1.4739,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 5
+        }
+      ]
+    },
+    "四国": {
+      "spotlights": [
+        {
+          "category": "A群溶血性レンサ球菌咽頭炎",
+          "avg_value": 2.812,
+          "growth1Rate": -0.0953,
+          "zscore": 1.0681,
+          "ratio_heinen": 1.6702,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 4
+        },
+        {
+          "category": "無菌性髄膜炎",
+          "avg_value": 0.0614,
+          "growth1Rate": null,
+          "zscore": 0.7537,
+          "ratio_heinen": 3.3063,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 4
+        },
+        {
+          "category": "RSウイルス",
+          "avg_value": 0.8533,
+          "growth1Rate": 0.211,
+          "zscore": 0.6754,
+          "ratio_heinen": 1.5974,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 4
+        }
+      ]
+    },
+    "九州": {
+      "spotlights": [
+        {
+          "category": "手足口病",
+          "avg_value": 2.188,
+          "growth1Rate": 0.6549,
+          "zscore": 1.1635,
+          "ratio_heinen": 2.049,
+          "n_alert": 1,
+          "alert_prefs": [
+            "宮崎県"
+          ],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 8
+        },
+        {
+          "category": "水痘",
+          "avg_value": 0.6347,
+          "growth1Rate": 0.0958,
+          "zscore": 0.0945,
+          "ratio_heinen": 1.0974,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 1,
+          "attention_prefs": [
+            "大分県"
+          ],
+          "n_prefs": 8
+        },
+        {
+          "category": "クラミジア肺炎",
+          "avg_value": 0.016,
+          "growth1Rate": null,
+          "zscore": 2.0845,
+          "ratio_heinen": 6.7423,
+          "n_alert": 0,
+          "alert_prefs": [],
+          "n_attention": 0,
+          "attention_prefs": [],
+          "n_prefs": 8
+        }
+      ]
+    }
   }
 }

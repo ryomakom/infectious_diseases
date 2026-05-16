@@ -357,13 +357,6 @@ selectPersistentAlerts <- function(rows) {
   pick_top_major_first(base,rlang::quos(desc(persistenceRate),desc(ratio_alert),desc(weeksOverAlert),desc(current_ma4)),n=3)
 }
 
-selectImproving <- function(rows) {
-  base<-rows%>%filter(pref=="全国",is.finite(growth1Rate),growth1Rate<=-0.2,
-                      is.finite(current_value),current_value>=MIN_CURRENT_MA4,
-                      !is.finite(anomaly_z)|anomaly_z<2)
-  pick_top_major_first(base,rlang::quos(growth1Rate,desc(current_value)),n=3)
-}
-
 buildNewsCandidates <- function(digest) {
   parts<-list()
   if(nrow(digest$anomalies_df)>0) parts<-append(parts,list(digest$anomalies_df%>%mutate(flag="anomaly")))
@@ -392,62 +385,6 @@ buildGeoContext <- function(digest) {
     if("persistent_alert"%in%tf) sprintf("%sの警報超えは%sを中心に続いています。",tc,bt) else
       sprintf("%sの発生は%sを中心にみられます。",tc,bt)
   list(spread_type=st,affected_blocks=ab,sentence=sent)
-}
-
-buildSummary <- function(digest) {
-  lc<-digest$lead$category; tn<-digest$top_news; gc<-digest$geo_context
-  an<-digest$anomalies_df; tp<-digest$top_pref_df; ri<-digest$rising_df; pe<-digest$persistent_df
-  tpa<-tp%>%filter(is.finite(ratio_alert),ratio_alert>=1)
-  s1<-if(nrow(tn)>0){
-    tc<-as.character(tn$category[[1]]); tf<-unlist(tn$flags[[1]])
-    if("persistent_alert"%in%tf) sprintf("%sは%sで警報超えが続いています。",tc,as.character(tn$pref[[1]]))
-    else if("anomaly"%in%tf) sprintf("%sは%sで例年の季節水準を大きく上回っています。",tc,as.character(tn$pref[[1]]))
-    else if("rising"%in%tf) sprintf("%sは%sで増加が目立っています。",tc,as.character(tn$pref[[1]]))
-    else if(!is.na(lc)) sprintf("全国では%sが引き続き高水準で推移しています。",lc)
-    else "全国では明確な主題となる感染症は確認されませんでした。"
-  } else if(!is.na(lc)) sprintf("全国では%sが引き続き高水準で推移しています。",lc) else "全国では明確な主題となる感染症は確認されませんでした。"
-  s2<-if(!is.null(gc$sentence)&&nzchar(gc$sentence)) {
-    gc$sentence
-  } else if(nrow(pe)>0) {
-    sprintf("%sでは%sの警報超えが続いています。",paste(unique(head(pe$pref,3)),collapse="・"),as.character(pe$category[[1]]))
-  } else if(nrow(tpa)>0) {
-    sprintf("%sでは警報基準を上回っています。",paste(tpa$pref,collapse="、"))
-  } else if(nrow(tp)>0) {
-    sprintf("%sでは患者数が高水準です。",paste(tp$pref,collapse="、"))
-  } else {
-    "警報継続が目立つ地域は限定的です。"
-  }
-  s3<-if(nrow(an)>0){
-    ac<-as.character(an$category[[1]])
-    sprintf("一方、%sは%sで例年の数倍の水準です。",ac,paste(unique(head((an%>%filter(category==ac))$pref,3)),collapse="や"))
-  } else if(nrow(ri)>0) {
-    sprintf("%sで急増傾向がみられます。",paste(unique(head(ri$pref,2)),collapse="・"))
-  } else {
-    "季節逸脱や急増は限定的です。"
-  }
-  paste(c(s1,s2,s3),collapse=" ")
-}
-
-buildHeadline <- function(digest) {
-  tn<-digest$top_news
-  if(nrow(tn)>0){
-    tc<-as.character(tn$category[[1]]); tp2<-as.character(tn$pref[[1]]); tf<-unlist(tn$flags[[1]])
-    if("anomaly"%in%tf) return(sprintf("%s、%sで例年の数倍",tc,tp2))
-    if("persistent_alert"%in%tf) return(sprintf("%s、%sで警報超えが継続",tc,tp2))
-    if("rising"%in%tf) return(sprintf("%s、%sで増加が目立つ",tc,tp2))
-  }
-  lc<-digest$lead$category; nar<-digest$lead$nationwide_ratio_alert; an<-digest$anomalies_df; pe<-digest$persistent_df; tp<-digest$top_pref_df
-  al<-nrow(an)>0&&!is.na(lc)&&as.character(an$category[[1]])==lc
-  if(is.na(lc)) return("今週は全国で顕著な主題なし")
-  if(al){a<-an%>%slice(1);return(sprintf("%s、%sで例年の数倍",lc,as.character(a$pref[[1]])))}
-  if(is.finite(nar)&&nar<1){
-    ps<-if(nrow(tp)>0) tp else pe
-    if(nrow(ps)>0) return(sprintf("%s、%sなどで患者数が高水準",lc,paste(unique(head(ps$pref,2)),collapse="・")))
-    return(sprintf("%s、都道府県で患者数が高水準",lc))
-  }
-  if(nrow(pe)>0) return(sprintf("%sが各地で警報水準、%sで継続警戒",lc,paste(unique(head(pe$pref,2)),collapse="・")))
-  if(nrow(tp)>0) return(sprintf("%sで警報水準が目立つ、%sに注目",lc,paste(unique(head(tp$pref,2)),collapse="・")))
-  sprintf("%sの動向に注目",lc)
 }
 
 buildAlertBullets <- function(rows, in_alert_now) {
@@ -498,15 +435,108 @@ buildAnomalyBullets <- function(rows, alert_diseases) {
 }
 
 buildGeneratedText <- function(digest, top_pref_df, rising_df, persistent_df, rows, in_alert_now) {
-  summary_text  <- buildSummary(list(lead=digest$lead,top_news=digest$top_news,geo_context=digest$geo_context,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,rising_df=rising_df,persistent_df=persistent_df))
-  headline_text <- buildHeadline(list(lead=digest$lead,top_news=digest$top_news,anomalies_df=digest$anomalies_df,top_pref_df=top_pref_df,persistent_df=persistent_df))
   alert_diseases  <- unique(as.character(
     in_alert_now %>% filter(in_alert_level == TRUE, pref != "全国") %>% pull(category)
   ))
   alert_bullets   <- buildAlertBullets(rows, in_alert_now)
   anomaly_bullets <- buildAnomalyBullets(rows, alert_diseases)
   bullets <- c(alert_bullets, anomaly_bullets)
-  list(headline=headline_text, summary=summary_text, bullets=bullets)
+  list(bullets=bullets)
+}
+
+# ---- 地方ベースの集計（案A） ----
+# 人口加重平均：定点あたり患者数を県単純平均すると人口の少ない県が過大に効くため、
+# 人口で重みを付ける（厳密には定点数加重が筋だが、人口を proxy として用いる）。
+pref_population <- read_csv("data/prefecture_population.csv", show_col_types = FALSE)
+buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr_wk) {
+  block_weekly <- by_week %>%
+    left_join(pref_population, by = "pref") %>%
+    mutate(block = prefToBlock(pref)) %>%
+    filter(!is.na(block), pref != "全国", !is.na(population)) %>%
+    group_by(category, block, year_week, yr, wk) %>%
+    summarise(
+      avg_value = sum(weekly_value * population, na.rm = TRUE) / sum(population[!is.na(weekly_value)], na.rm = TRUE),
+      n_prefs = sum(!is.na(weekly_value)),
+      .groups = "drop"
+    )
+
+  latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
+  latest_wk <- as.integer(substr(latest_yr_wk, 6, 7))
+
+  all_weeks <- sort(unique(block_weekly$year_week))
+  latest_idx <- match(latest_yr_wk, all_weeks)
+  previous_yr_wk <- if (!is.na(latest_idx) && latest_idx > 1) all_weeks[latest_idx - 1] else NA_character_
+
+  current_block <- block_weekly %>% filter(year_week == latest_yr_wk) %>% select(category, block, avg_value, n_prefs)
+  previous_block <- block_weekly %>% filter(year_week == previous_yr_wk) %>% select(category, block, previous_avg_value = avg_value)
+
+  hist <- block_weekly %>%
+    filter(yr < latest_yr) %>%
+    mutate(wd = pmin(abs(wk - latest_wk), 52L - abs(wk - latest_wk))) %>%
+    filter(wd <= 2) %>%
+    group_by(category, block) %>%
+    summarise(seasonal_mean = mean(avg_value, na.rm = TRUE), seasonal_sd = sd(avg_value, na.rm = TRUE), .groups = "drop")
+
+  alert_block <- in_alert_now %>%
+    filter(in_alert_level == TRUE, pref != "全国") %>%
+    mutate(block = prefToBlock(pref)) %>%
+    filter(!is.na(block)) %>%
+    group_by(category, block) %>%
+    summarise(n_alert = n(), alert_prefs = list(as.character(pref)), .groups = "drop")
+
+  attention_block <- in_attention_now %>%
+    filter(in_attention_level == TRUE, pref != "全国") %>%
+    mutate(block = prefToBlock(pref)) %>%
+    filter(!is.na(block)) %>%
+    group_by(category, block) %>%
+    summarise(n_attention = n(), attention_prefs = list(as.character(pref)), .groups = "drop")
+
+  combined <- current_block %>%
+    left_join(previous_block, by = c("category", "block")) %>%
+    left_join(hist, by = c("category", "block")) %>%
+    left_join(alert_block, by = c("category", "block")) %>%
+    left_join(attention_block, by = c("category", "block")) %>%
+    mutate(
+      growth1Rate = if_else(is.finite(previous_avg_value) & previous_avg_value > 0 & is.finite(avg_value), (avg_value - previous_avg_value) / previous_avg_value, NA_real_),
+      zscore = if_else(is.finite(seasonal_mean) & is.finite(seasonal_sd) & seasonal_sd > 0 & is.finite(avg_value), (avg_value - seasonal_mean) / seasonal_sd, NA_real_),
+      ratio_heinen = if_else(is.finite(seasonal_mean) & seasonal_mean > 0 & is.finite(avg_value), avg_value / seasonal_mean, NA_real_),
+      n_alert = ifelse(is.na(n_alert), 0L, as.integer(n_alert)),
+      n_attention = ifelse(is.na(n_attention), 0L, as.integer(n_attention))
+    )
+
+  spotlight_by_block <- combined %>%
+    mutate(score = (n_alert > 0) * 1e6 + (n_attention > 0) * 1e4 + pmax(coalesce(zscore, 0), 0) * 100) %>%
+    group_by(block) %>%
+    arrange(desc(score), .by_group = TRUE) %>%
+    slice_head(n = 3) %>%
+    ungroup()
+
+  block_order <- c("北海道","東北","関東","中部","近畿","中国","四国","九州")
+  blocks_present <- intersect(block_order, unique(spotlight_by_block$block))
+
+  out <- list()
+  for (b in blocks_present) {
+    rows_b <- spotlight_by_block %>% filter(block == b)
+    spots <- lapply(seq_len(nrow(rows_b)), function(i) {
+      r <- rows_b[i, ]
+      alert_prefs_v <- r$alert_prefs[[1]]; if (is.null(alert_prefs_v)) alert_prefs_v <- character(0)
+      attention_prefs_v <- r$attention_prefs[[1]]; if (is.null(attention_prefs_v)) attention_prefs_v <- character(0)
+      list(
+        category=as.character(r$category[[1]]),
+        avg_value=safe_num(r$avg_value[[1]],4),
+        growth1Rate=safe_num(r$growth1Rate[[1]],4),
+        zscore=safe_num(r$zscore[[1]],4),
+        ratio_heinen=safe_num(r$ratio_heinen[[1]],4),
+        n_alert=as.integer(r$n_alert[[1]]),
+        alert_prefs=unname(as.list(alert_prefs_v)),
+        n_attention=as.integer(r$n_attention[[1]]),
+        attention_prefs=unname(as.list(attention_prefs_v)),
+        n_prefs=as.integer(r$n_prefs[[1]])
+      )
+    })
+    out[[b]] <- list(spotlights = spots)
+  }
+  out
 }
 
 as_item_list <- function(df,n=3) {
@@ -542,22 +572,10 @@ as_anomaly_list <- function(df,n=3) {
   })
 }
 
-as_candidate_list <- function(df) {
-  if(nrow(df)==0) return(list())
-  lapply(seq_len(nrow(df)),function(i){
-    row<-df[i,]
-    list(category=as.character(row$category[[1]]),pref=as.character(row$pref[[1]]),
-         importance_score=ifelse(is.finite(row$importance_score[[1]]),as.numeric(row$importance_score[[1]]),NA_real_),
-         flags=unname(as.list(unlist(row$flags[[1]]))))
-  })
-}
-
 as_top_news <- function(df) {
   if(nrow(df)==0) return(NULL)
   row<-df[1,]
-  list(category=as.character(row$category[[1]]),pref=as.character(row$pref[[1]]),
-       importance_score=ifelse(is.finite(row$importance_score[[1]]),as.numeric(row$importance_score[[1]]),NA_real_),
-       flags=unname(as.list(unlist(row$flags[[1]]))))
+  list(category=as.character(row$category[[1]]),pref=as.character(row$pref[[1]]))
 }
 
 # ---- Build news_base ----
@@ -633,26 +651,15 @@ lead_category <- lead_bundle$lead_category
 top_pref_df    <- selectTopPrefectures(news_base,lead_row,anomalies_df=anomalies_df,prefer_anomaly_prefs=isTRUE(grepl("^A: 季節パターン逸脱",lead_bundle$lead$reason)))
 rising_df      <- selectRising(news_base)
 persistent_df  <- selectPersistentAlerts(news_base)
-improving_df   <- selectImproving(news_base)
 
 top_pref_df   <- attachImportanceScore(top_pref_df)
 rising_df     <- attachImportanceScore(rising_df)
 persistent_df <- attachImportanceScore(persistent_df)
-improving_df  <- attachImportanceScore(improving_df)
 anomalies_df  <- attachImportanceScore(anomalies_df)
 
 news_candidates_df <- buildNewsCandidates(list(anomalies_df=anomalies_df,rising_df=rising_df,persistent_df=persistent_df))
 top_news_df <- if(nrow(news_candidates_df)>0) news_candidates_df%>%slice_head(n=1) else tibble()
 geo_context <- buildGeoContext(list(top_news=top_news_df,top_pref_df=top_pref_df,rising_df=rising_df,persistent_df=persistent_df))
-
-lead_anomaly_df <- anomalies_df%>%filter(category==lead_category)
-lead_importance_score <- if(nrow(lead_anomaly_df)>0) {
-  as.numeric(lead_anomaly_df$importance_score[[1]])
-} else if(nrow(lead_row)>0) {
-  as.numeric(computeImportanceScore(lead_row[1,]))
-} else {
-  NA_real_
-}
 
 # ---- ヒステリシス警報状態（alert_start超え→alert_end未満になるまで継続） ----
 in_alert_now <- cleaned_diseases %>%
@@ -681,32 +688,31 @@ in_alert_now <- cleaned_diseases %>%
   ungroup() %>%
   select(pref, category, in_alert_level = in_alert)
 
-generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df,rows=news_base,in_alert_now=in_alert_now)
+# 注意報レベル状態：現在週の値が attention 閾値以上か（単純判定）
+in_attention_now <- cleaned_diseases %>%
+  mutate(date = as.Date(date), value = as.numeric(value)) %>%
+  left_join(alert %>% select(category, attention), by = "category") %>%
+  filter(!is.na(attention), attention > 0) %>%
+  group_by(pref, category) %>%
+  filter(date == max(date)) %>%
+  ungroup() %>%
+  mutate(in_attention_level = is.finite(value) & value >= attention) %>%
+  select(pref, category, in_attention_level)
 
-lead_reason <- if(!is.null(lead_bundle$lead$reason)) {
-  lead_bundle$lead$reason
-} else if(nrow(lead_row)>0) {
-  sprintf("%s（全国 ratio_alert=%s）",lead_pick$reason,fmt_num(lead_row$ratio_alert[[1]]))
-} else {
-  "該当データなし"
-}
+generated_text <- buildGeneratedText(list(lead=lead_bundle$lead,anomalies_df=anomalies_df,top_news=top_news_df,geo_context=geo_context),top_pref_df,rising_df,persistent_df,rows=news_base,in_alert_now=in_alert_now)
 
 news_digest <- list(
   week=as.character(reference_date),
-  lead=list(category=ifelse(is.na(lead_category),NA_character_,lead_category),
-            nationwide_ratio_alert=lead_bundle$lead$nationwide_ratio_alert,
-            nationwide_current_ma4=lead_bundle$lead$nationwide_current_ma4,
-            reason=lead_reason,importance_score=lead_importance_score),
+  lead=list(category=ifelse(is.na(lead_category),NA_character_,lead_category)),
   top_prefectures=as_item_list(top_pref_df,3),
   rising=as_item_list(rising_df,3),
-  persistent_alerts=as_item_list(persistent_df,3),
-  improving=as_item_list(improving_df,3),
+  alerts=as_item_list(persistent_df,3),
   anomalies=as_anomaly_list(anomalies_df,3),
-  news_candidates=as_candidate_list(news_candidates_df),
   top_news=as_top_news(top_news_df),
   spread_type=geo_context$spread_type,
   affected_blocks=unname(as.list(geo_context$affected_blocks)),
-  generated_text=generated_text
+  by_block=buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk),
+  generated_text=list(bullets=generated_text$bullets)
 )
 
 writeLines(toJSON(news_digest,auto_unbox=TRUE,pretty=TRUE,na="null"),"docs/results/news_digest.json")

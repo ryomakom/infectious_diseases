@@ -221,53 +221,6 @@ function createSignalCard(title, mode, items, noteText) {
   return card;
 }
 
-function createSpreadCard(digest) {
-  const card = document.createElement("section");
-  card.className = "news-signal-card";
-  card.innerHTML = `<h4 class="news-signal-title">広域化</h4>`;
-  const note = document.createElement("p");
-  note.className = "news-signal-note";
-  const blocks = digest.affected_blocks.length ? digest.affected_blocks.join("・") : "該当なし";
-  note.textContent = `${digest.spread_type || "未判定"} / 影響ブロック: ${blocks}`;
-  card.appendChild(note);
-
-  const blockButtons = document.createElement("div");
-  blockButtons.className = "news-signal-chips";
-  const topCategory = digest.top_news.category || digest.lead.category || "";
-  if (digest.affected_blocks.length) {
-    digest.affected_blocks.forEach(block => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.className = "news-signal-chip news-signal-chip--block";
-      b.textContent = block;
-      b.addEventListener("click", () => {
-        const prefs = getPrefsFromBlocks([block]);
-        applyDigestNavigationSelection({
-          category: topCategory,
-          prefs,
-          periodWeeks: 52,
-          updateRankingPrefs: true,
-          updateChartPrefs: true,
-          scrollTarget: "ranking"
-        });
-        state.activeDigestCategory = topCategory || null;
-        if (topCategory && typeof window.renderCategoryHighlights === "function") {
-          window.renderCategoryHighlights(topCategory);
-        }
-        renderNewsDigestSection(state.newsDigest);
-      });
-      blockButtons.appendChild(b);
-    });
-  } else {
-    const empty = document.createElement("p");
-    empty.className = "news-signal-empty";
-    empty.textContent = "ブロック情報なし";
-    card.appendChild(empty);
-  }
-  card.appendChild(blockButtons);
-  return card;
-}
-
 function pickAlertLeadCategoryFromNationwide() {
   if (!Array.isArray(state.rankingData) || !state.rankingData.length) return "";
   const rows = state.rankingData
