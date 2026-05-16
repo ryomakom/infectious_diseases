@@ -701,9 +701,10 @@ computeSeasonalBaseline <- function(rows) {
           if (length(weekly_value_series) <= 1 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year <- tail(year_series, 1)
           current_week <- tail(week_series, 1)
-          max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
-          week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx <- year_series < current_year & !year_series %in% COVID_EXCL_YRS & week_distance <= 2 & is.finite(weekly_value_series)
+          # 平年比と同じ定義：直近の非COVID年3年分 × 同時期4週ウィンドウ（12点）
+          baseline_yrs <- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          target_wks   <- (current_week - 3L):current_week
+          hist_idx <- year_series %in% baseline_yrs & week_series %in% target_wks & is.finite(weekly_value_series)
           hist_values <- weekly_value_series[hist_idx]
           if (length(hist_values) == 0) return(NA_real_)
           m <- mean(hist_values, na.rm = TRUE)
@@ -716,9 +717,9 @@ computeSeasonalBaseline <- function(rows) {
           if (length(weekly_value_series) <= 2 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year <- tail(year_series, 1)
           current_week <- tail(week_series, 1)
-          max_week <- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
-          week_distance <- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx <- year_series < current_year & !year_series %in% COVID_EXCL_YRS & week_distance <= 2 & is.finite(weekly_value_series)
+          baseline_yrs <- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          target_wks   <- (current_week - 3L):current_week
+          hist_idx <- year_series %in% baseline_yrs & week_series %in% target_wks & is.finite(weekly_value_series)
           hist_values <- weekly_value_series[hist_idx]
           if (length(hist_values) <= 1) return(NA_real_)
           sdv <- sd(hist_values, na.rm = TRUE)
