@@ -836,12 +836,16 @@ by_week &lt;- d %&gt;%
 latest_yr_wk &lt;- by_week %&gt;% pull(year_week) %&gt;% max()
 latest_yr &lt;- as.integer(substr(latest_yr_wk, 1, 4))
 latest_wk &lt;- substr(latest_yr_wk, 6, 7)
+# COVID流行期（外出自粛・マスク着用で多くの感染症が異常抑制）はベースラインから除外する
+COVID_EXCL_YRS &lt;- 2020:2022
 # 平年比の分母：過去3年の同時期4週（3年×4週=12点）の weekly_value 平均
 # 分子の current_ma4（直近4週MA）と対称になるよう、分母も同じ4週ウィンドウで揃える
+# COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
 latest_wk_int &lt;- as.integer(latest_wk)
+baseline_yrs_main &lt;- head(setdiff((latest_yr - 1):(latest_yr - 7), COVID_EXCL_YRS), 3)
 past_3_window_yr_wks &lt;- sprintf(&quot;%04d-%02d&quot;,
-  rep((latest_yr - 1):(latest_yr - 3), each = 4),
-  rep((latest_wk_int - 3):latest_wk_int, times = 3)
+  rep(baseline_yrs_main, each = 4),
+  rep((latest_wk_int - 3):latest_wk_int, times = length(baseline_yrs_main))
 )
 
 # 現在値＝直近週の4週移動平均（ma4）。同週に複数日ある場合は最も新しい日の値を使う
@@ -1072,9 +1076,10 @@ computeSeasonalBaseline &lt;- function(rows) {
           if (length(weekly_value_series) &lt;= 1 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year &lt;- tail(year_series, 1)
           current_week &lt;- tail(week_series, 1)
-          max_week &lt;- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
-          week_distance &lt;- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx &lt;- year_series &lt; current_year &amp; week_distance &lt;= 2 &amp; is.finite(weekly_value_series)
+          # 平年比と同じ定義：直近の非COVID年3年分 × 同時期4週ウィンドウ（12点）
+          baseline_yrs &lt;- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          target_wks   &lt;- (current_week - 3L):current_week
+          hist_idx &lt;- year_series %in% baseline_yrs &amp; week_series %in% target_wks &amp; is.finite(weekly_value_series)
           hist_values &lt;- weekly_value_series[hist_idx]
           if (length(hist_values) == 0) return(NA_real_)
           m &lt;- mean(hist_values, na.rm = TRUE)
@@ -1087,9 +1092,9 @@ computeSeasonalBaseline &lt;- function(rows) {
           if (length(weekly_value_series) &lt;= 2 || length(year_series) != length(weekly_value_series) || length(week_series) != length(weekly_value_series)) return(NA_real_)
           current_year &lt;- tail(year_series, 1)
           current_week &lt;- tail(week_series, 1)
-          max_week &lt;- ifelse(any(week_series == 53, na.rm = TRUE), 53, 52)
-          week_distance &lt;- pmin(abs(week_series - current_week), max_week - abs(week_series - current_week))
-          hist_idx &lt;- year_series &lt; current_year &amp; week_distance &lt;= 2 &amp; is.finite(weekly_value_series)
+          baseline_yrs &lt;- head(setdiff((current_year - 1L):(current_year - 7L), COVID_EXCL_YRS), 3L)
+          target_wks   &lt;- (current_week - 3L):current_week
+          hist_idx &lt;- year_series %in% baseline_yrs &amp; week_series %in% target_wks &amp; is.finite(weekly_value_series)
           hist_values &lt;- weekly_value_series[hist_idx]
           if (length(hist_values) &lt;= 1) return(NA_real_)
           sdv &lt;- sd(hist_values, na.rm = TRUE)
@@ -1540,9 +1545,11 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
 
   # 季節ベースライン：過去3年の同時期4週（3年×4週=12点）のavg_valueの平均・SD
   # 分子（直近4週MA）と対称になるよう分母も同じ4週ウィンドウで揃える
+  # COVID流行期（2020〜2022）はベースラインから除外し、直近の非COVID年を3年分使う
+  baseline_yrs_block &lt;- head(setdiff((latest_yr - 1L):(latest_yr - 7L), COVID_EXCL_YRS), 3L)
   past_3_window_yr_wks &lt;- sprintf(&quot;%04d-%02d&quot;,
-    rep((latest_yr - 1L):(latest_yr - 3L), each = 4L),
-    rep((latest_wk - 3L):latest_wk, times = 3L)
+    rep(baseline_yrs_block, each = 4L),
+    rep((latest_wk - 3L):latest_wk, times = length(baseline_yrs_block))
   )
   hist &lt;- block_weekly %&gt;%
     filter(year_week %in% past_3_window_yr_wks) %&gt;%

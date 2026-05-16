@@ -1,38 +1,38 @@
 {
   "week": "2026-05-03",
   "lead": {
-    "category": "A群溶血性レンサ球菌咽頭炎"
+    "category": "水痘"
   },
   "top_prefectures": [
     {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "鳥取県",
-      "current_ma4": 7.1325,
-      "current_value": 6.95,
-      "previous_value": 7.32,
-      "ratio_alert": 0.89,
-      "ratio_heinen": 1.78,
-      "growth1Rate": -0.0505
+      "category": "水痘",
+      "pref": "沖縄県",
+      "current_ma4": 0.825,
+      "current_value": 0.46,
+      "previous_value": 0.96,
+      "ratio_alert": 0.41,
+      "ratio_heinen": 1.88,
+      "growth1Rate": -0.5208
     },
     {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "北海道",
-      "current_ma4": 5.6325,
-      "current_value": 5.32,
-      "previous_value": 6.62,
-      "ratio_alert": 0.7,
-      "ratio_heinen": 1.42,
-      "growth1Rate": -0.1964
+      "category": "水痘",
+      "pref": "宮崎県",
+      "current_ma4": 0.735,
+      "current_value": 0.6,
+      "previous_value": 1,
+      "ratio_alert": 0.37,
+      "ratio_heinen": 3.51,
+      "growth1Rate": -0.4
     },
     {
-      "category": "A群溶血性レンサ球菌咽頭炎",
-      "pref": "佐賀県",
-      "current_ma4": 5.46,
-      "current_value": 5.17,
-      "previous_value": 5.92,
-      "ratio_alert": 0.68,
-      "ratio_heinen": 2.47,
-      "growth1Rate": -0.1267
+      "category": "水痘",
+      "pref": "大分県",
+      "current_ma4": 0.7125,
+      "current_value": 1.06,
+      "previous_value": 0.67,
+      "ratio_alert": 0.36,
+      "ratio_heinen": 3.1,
+      "growth1Rate": 0.5821
     }
   ],
   "rising": [
@@ -61,40 +61,36 @@
   ],
   "anomalies": [
     {
-      "category": "A群溶血性レンサ球菌咽頭炎",
+      "category": "水痘",
       "pref": "全国",
-      "current_ma4": 2.92,
-      "current_value": 3.21,
-      "seasonal_mean": 1.9998,
-      "seasonal_zscore": 1.0586
+      "current_ma4": 0.3525,
+      "current_value": 0.38,
+      "seasonal_mean": 0.2083,
+      "seasonal_zscore": 1.1842
+    },
+    {
+      "category": "突発性発しん",
+      "pref": "全国",
+      "current_ma4": 0.2925,
+      "current_value": 0.33,
+      "seasonal_mean": 0.2908,
+      "seasonal_zscore": 0.9605
     },
     {
       "category": "手足口病",
       "pref": "全国",
       "current_ma4": 0.2325,
       "current_value": 0.38,
-      "seasonal_mean": 0.3346,
-      "seasonal_zscore": 0.1383
-    },
-    {
-      "category": "水痘",
-      "pref": "全国",
-      "current_ma4": 0.3525,
-      "current_value": 0.38,
-      "seasonal_mean": 0.3997,
-      "seasonal_zscore": -0.055
+      "seasonal_mean": 0.2458,
+      "seasonal_zscore": 0.6768
     }
   ],
   "top_news": {
-    "category": "A群溶血性レンサ球菌咽頭炎",
+    "category": "手足口病",
     "pref": "全国"
   },
-  "spread_type": "地域拡散",
-  "affected_blocks": [
-    "中国",
-    "九州",
-    "北海道"
-  ],
+  "spread_type": "局所",
+  "affected_blocks": [],
   "by_block": {
     "北海道": {
       "spotlights": [
