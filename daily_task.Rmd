@@ -461,7 +461,13 @@ by_week <- d %>%
 latest_yr_wk <- by_week %>% pull(year_week) %>% max()
 latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
 latest_wk <- substr(latest_yr_wk, 6, 7)
-past_3_weeks <- sprintf("%04d-%s", (latest_yr - 1):(latest_yr - 3), latest_wk)
+# 平年比の分母：過去3年の同時期4週（3年×4週=12点）の weekly_value 平均
+# 分子の current_ma4（直近4週MA）と対称になるよう、分母も同じ4週ウィンドウで揃える
+latest_wk_int <- as.integer(latest_wk)
+past_3_window_yr_wks <- sprintf("%04d-%02d",
+  rep((latest_yr - 1):(latest_yr - 3), each = 4),
+  rep((latest_wk_int - 3):latest_wk_int, times = 3)
+)
 
 # 現在値＝直近週の数値（移動平均ではない）。同週に複数日ある場合は最も新しい日の値を使う
 current_ma4 <- d %>%
@@ -474,9 +480,9 @@ current_ma4 <- d %>%
 reference_date <- d %>% filter(year_week == latest_yr_wk) %>% pull(date) %>% max(na.rm = TRUE)
 
 baseline_ma4 <- by_week %>%
-  filter(year_week %in% past_3_weeks) %>%
+  filter(year_week %in% past_3_window_yr_wks) %>%
   group_by(pref, category) %>%
-  summarise(baseline_ma4 = mean(ma4), .groups = "drop")
+  summarise(baseline_ma4 = mean(weekly_value, na.rm = TRUE), .groups = "drop")
 
 alert <- read_csv("data/alert_thresholds.csv", col_types = "cdddc")
 
@@ -1106,7 +1112,7 @@ buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df, rows, i
 }
 
 # ---- 地方ベースの集計（案A） ----
-# 全疾患×全地方について最新週の人口加重平均、前週比、季節Zスコア（過去全年・±2週）、
+# 全疾患×全地方について直近4週の人口加重平均（=4週MA）、前期比、季節Zスコア（過去3年・同時期4週）、
 # 警報県を計算し、各地方ごとに「目立つ」疾患トップ3を JSON 出力用に整形する。
 # 人口加重とする理由：定点あたり患者数を県単純平均すると人口の少ない県が過大に効く。
 # 厳密には定点数加重が筋だが、定点数の管理が重いため人口を proxy として用いる。
@@ -1126,27 +1132,49 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
   latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
   latest_wk <- as.integer(substr(latest_yr_wk, 6, 7))
 
-  all_weeks <- sort(unique(block_weekly$year_week))
+  # 実データから週順を取得（年跨ぎに対応）
+  all_weeks  <- sort(unique(block_weekly$year_week))
   latest_idx <- match(latest_yr_wk, all_weeks)
-  previous_yr_wk <- if (!is.na(latest_idx) && latest_idx > 1) all_weeks[latest_idx - 1] else NA_character_
 
+  # 直近4週・前4週（非重複）を実データの週順から取得
+  current_4_wks  <- all_weeks[max(1L, latest_idx - 3L):latest_idx]
+  previous_4_wks <- if (!is.na(latest_idx) && latest_idx >= 5L) {
+    all_weeks[(latest_idx - 7L):(latest_idx - 4L)]
+  } else {
+    character(0)
+  }
+
+  # 現在値：直近4週のblock人口加重平均の平均（=4週MA）
   current_block <- block_weekly %>%
-    filter(year_week == latest_yr_wk) %>%
-    select(category, block, avg_value, n_prefs)
+    filter(year_week %in% current_4_wks) %>%
+    group_by(category, block) %>%
+    summarise(
+      avg_value = mean(avg_value, na.rm = TRUE),
+      n_prefs   = as.integer(round(mean(n_prefs))),
+      .groups   = "drop"
+    )
 
+  # 前期4週のblock人口加重平均の平均（growth1Rate用）
   previous_block <- block_weekly %>%
-    filter(year_week == previous_yr_wk) %>%
-    select(category, block, previous_avg_value = avg_value)
+    filter(year_week %in% previous_4_wks) %>%
+    group_by(category, block) %>%
+    summarise(
+      previous_avg_value = mean(avg_value, na.rm = TRUE),
+      .groups = "drop"
+    )
 
-  # 季節ベースライン：過去年の同週±2週からmean/sdを算出
+  # 季節ベースライン：過去3年の同時期4週（3年×4週=12点）のavg_valueの平均・SD
+  # 分子（直近4週MA）と対称になるよう分母も同じ4週ウィンドウで揃える
+  past_3_window_yr_wks <- sprintf("%04d-%02d",
+    rep((latest_yr - 1L):(latest_yr - 3L), each = 4L),
+    rep((latest_wk - 3L):latest_wk, times = 3L)
+  )
   hist <- block_weekly %>%
-    filter(yr < latest_yr) %>%
-    mutate(wd = pmin(abs(wk - latest_wk), 52L - abs(wk - latest_wk))) %>%
-    filter(wd <= 2) %>%
+    filter(year_week %in% past_3_window_yr_wks) %>%
     group_by(category, block) %>%
     summarise(
       seasonal_mean = mean(avg_value, na.rm = TRUE),
-      seasonal_sd   = sd(avg_value, na.rm = TRUE),
+      seasonal_sd   = sd(avg_value,   na.rm = TRUE),
       .groups       = "drop"
     )
 
