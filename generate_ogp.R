@@ -334,7 +334,7 @@ p <- ggplot() +
   annotate("text",
            x = 0.5 + approx_text_width("主な感染症の流行状況", SZ_TITLE) + 0.18,
            y = H - 0.85,
-           label = "都道府県別にみた定点あたり患者数の推移",
+           label = "定点あたり患者数の推移",
            hjust = 0, vjust = 0,
            family = ff, size = SZ_TITLE_SUB, color = "#555555") +
   # 最新データ ＋ 最終更新（同じ行）

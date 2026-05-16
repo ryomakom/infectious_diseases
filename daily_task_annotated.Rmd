@@ -1302,9 +1302,9 @@ buildAlertBullets <- function(rows, in_alert_now) {
     n_total <- nrow(prefs_in_alert)
     top3 <- head(as.character(prefs_in_alert$pref), 3)
     if (n_total <= 3) {
-      sprintf("%s：%sで患者数が警報基準に", cat, paste(top3, collapse = "、"))
+      sprintf("%s：%sで患者数が警報レベル", cat, paste(top3, collapse = "、"))
     } else {
-      sprintf("%s：%sなど%d都道府県で患者数が警報基準に", cat, paste(top3, collapse = "、"), n_total)
+      sprintf("%s：%sなど%d都道府県で患者数が警報レベル", cat, paste(top3, collapse = "、"), n_total)
     }
   })
 }
