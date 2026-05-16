@@ -469,13 +469,13 @@ past_3_window_yr_wks <- sprintf("%04d-%02d",
   rep((latest_wk_int - 3):latest_wk_int, times = 3)
 )
 
-# 現在値＝直近週の数値（移動平均ではない）。同週に複数日ある場合は最も新しい日の値を使う
+# 現在値＝直近週の4週移動平均（ma4）。同週に複数日ある場合は最も新しい日の値を使う
 current_ma4 <- d %>%
   filter(year_week == latest_yr_wk) %>%
   group_by(pref, category) %>%
   slice_max(date, n = 1, with_ties = FALSE) %>%
   ungroup() %>%
-  select(pref, category, current_ma4 = value)
+  select(pref, category, current_ma4 = ma4)
 
 reference_date <- d %>% filter(year_week == latest_yr_wk) %>% pull(date) %>% max(na.rm = TRUE)
 
