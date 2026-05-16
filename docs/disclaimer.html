@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>感染症の解説 | 主な感染症の流行状況</title>
-  <meta name="description" content="このサイトで扱っている主な感染症について、症状・感染経路・予防法などをわかりやすく解説します。">
+  <title>このサイトについて・感染症の解説 | 主な感染症の流行状況</title>
+  <meta name="description" content="サイトの概要と、掲載している主な感染症の解説ページです。">
   <meta name="robots" content="index, follow">
   <meta name="author" content="小宮山亮磨">
   <meta name="theme-color" content="#ffffff">
@@ -18,24 +18,93 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    .diseases-intro {
+    /* ── サイト概要セクション ── */
+    .about-section {
       max-width: 720px;
-      margin: 0 auto 36px;
-      color: var(--color-text-sub, #555);
-      font-size: 0.95rem;
-      line-height: 1.8;
+      margin: 0 auto 40px;
     }
 
-    .back-link {
+    .about-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text, #0f172a);
+      margin: 0 0 16px;
+      padding-left: 12px;
+      border-left: 4px solid var(--color-primary, #0369a1);
+    }
+
+    .about-card {
+      background: var(--color-surface, #fff);
+      border: 1px solid var(--color-border, #e2e8f0);
+      border-radius: var(--radius-md, 12px);
+      padding: 24px 28px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .about-card p {
+      font-size: 0.93rem;
+      line-height: 1.9;
+      color: var(--color-text, #0f172a);
+      margin: 0 0 14px;
+    }
+    .about-card p:last-child { margin-bottom: 0; }
+    .about-card a {
+      color: var(--color-primary, #0369a1);
+      text-decoration: none;
+    }
+    .about-card a:hover { text-decoration: underline; }
+
+    /* セクション区切り */
+    .section-divider {
+      max-width: 720px;
+      margin: 40px auto;
+      border: none;
+      border-top: 1px solid var(--color-border, #e2e8f0);
+    }
+
+    .disease-section-heading {
+      max-width: 720px;
+      margin: 0 auto 20px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text, #0f172a);
+      padding-left: 12px;
+      border-left: 4px solid var(--color-primary, #0369a1);
+    }
+
+    /* about セクションのハイライト */
+    .about-card.is-highlighted {
+      background: var(--color-primary-muted, #e0f2fe);
+      border-color: var(--color-primary, #0369a1);
+      box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.25), var(--shadow-md);
+    }
+    @keyframes about-pulse {
+      0%   { box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.25), var(--shadow-md); }
+      40%  { box-shadow: 0 0 0 6px rgba(3, 105, 161, 0.35), var(--shadow-md); }
+      100% { box-shadow: 0 0 0 2px rgba(3, 105, 161, 0.25), var(--shadow-md); }
+    }
+    .about-card.is-highlighted {
+      animation: about-pulse 0.8s ease-out 0.2s 1;
+    }
+
+    /* ── 感染症カード ── */
+    .close-btn {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      font-family: var(--font-sans);
+      font-weight: 500;
       color: var(--color-primary, #0369a1);
-      font-size: 0.9rem;
-      text-decoration: none;
-      margin-bottom: 24px;
+      background: var(--color-primary-muted, #e0f2fe);
+      border: 1px solid var(--color-primary, #0369a1);
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 28px;
+      transition: background 0.15s;
     }
-    .back-link:hover { text-decoration: underline; }
+    .close-btn:hover { background: #bae6fd; }
 
     .disease-list {
       max-width: 720px;
@@ -96,6 +165,7 @@
     }
 
     @media (max-width: 640px) {
+      .about-card { padding: 18px 16px; }
       .disease-card {
         padding: 16px 18px;
         border-radius: 6px;
@@ -123,12 +193,27 @@
 <body>
   <header>
     <h1>主な感染症の流行状況</h1>
-    <p class="header-intro">このサイトで扱っている感染症の解説ページです。</p>
+    <p class="header-intro">このサイトの概要と、掲載している感染症の説明です。</p>
   </header>
 
   <main id="main" role="main" style="padding: 24px 20px 64px;">
 
-    <a class="back-link" href="index.html">← グラフに戻る</a>
+    <button class="close-btn" onclick="window.close()">✕ このウィンドウを閉じる</button>
+
+    <!-- このサイトについて -->
+    <section class="about-section" id="about">
+      <h2>このサイトについて</h2>
+      <div class="about-card">
+        <p>新型コロナウイルス感染症やインフルエンザなど、日本国内の主な20の感染症の流行状況を調べられます。<a href="https://id-info.jihs.go.jp/surveillance/idwr/provisional/sokuhou.html" target="_blank" rel="noopener">国立健康危機管理研究機構</a>のサイトから、都道府県別の定点（医療機関）あたり患者数をGitHub Actionsで自動収集し、D3.jsで可視化しています。</p>
+        <p>一部の感染症は、定点あたり患者数について「注意報」と「警報」の基準値が設定されています。大きな流行が起きる手前が「注意報レベル」で、実際に流行が起きていることが疑われるのが「警報レベル」です。</p>
+        <p>それぞれの自治体は、保健所ごとに報告される定点あたり患者数を、この基準値と照らし合わせながら注意報や警報を出します。このサイトで収集しているのは保健所ごとではなく都道府県ごとのデータなので、実際の注意報や警報とは一致していない場合があります。あくまで参考情報としてご活用ください。</p>
+      </div>
+    </section>
+
+    <hr class="section-divider">
+
+    <!-- 感染症の解説 -->
+    <h2 class="disease-section-heading">感染症の説明</h2>
 
     <div class="disease-list">
 
@@ -281,7 +366,6 @@
     function highlightCard() {
       var hash = location.hash.slice(1);
 
-      // すべてのカードをリセット
       clearTimeout(_fadeTimer);
       document.querySelectorAll(".disease-card").forEach(function (c) {
         c.classList.remove("is-highlighted");
@@ -293,19 +377,16 @@
       var card = document.getElementById(hash);
       if (!card || !card.classList.contains("disease-card")) return;
 
-      // 他のカードを薄くして選択カードを目立たせる
       document.querySelectorAll(".disease-card").forEach(function (c) {
         if (c !== card) c.style.opacity = "0.45";
       });
       card.classList.add("is-highlighted");
 
-      // スムーズスクロール
       setTimeout(function () {
         var top = card.getBoundingClientRect().top + window.scrollY - 32;
         window.scrollTo({ top: top, behavior: "smooth" });
       }, 80);
 
-      // 2秒後に他のカードの opacity を戻す
       _fadeTimer = setTimeout(function () {
         document.querySelectorAll(".disease-card").forEach(function (c) {
           c.style.transition = "opacity 0.6s ease";
@@ -314,8 +395,31 @@
       }, 2000);
     }
 
-    highlightCard();
-    window.addEventListener("hashchange", highlightCard);
+    function highlightAbout() {
+      var aboutCard = document.querySelector(".about-card");
+      if (!aboutCard) return;
+      aboutCard.classList.add("is-highlighted");
+      setTimeout(function () {
+        var top = aboutCard.getBoundingClientRect().top + window.scrollY - 32;
+        window.scrollTo({ top: top, behavior: "smooth" });
+      }, 80);
+      setTimeout(function () {
+        aboutCard.style.transition = "background 0.6s ease, box-shadow 0.6s ease";
+        aboutCard.classList.remove("is-highlighted");
+      }, 2500);
+    }
+
+    function handleHash() {
+      var hash = location.hash.slice(1);
+      if (hash === "about") {
+        highlightAbout();
+      } else {
+        highlightCard();
+      }
+    }
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
   </script>
 
 </body>

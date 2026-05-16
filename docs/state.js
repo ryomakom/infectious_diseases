@@ -137,7 +137,8 @@ const DISEASE_ANCHOR_MAP = {
   "無菌性髄膜炎": "viral-meningitis",
   "咽頭結膜熱": "pharyngoconjunctival",
   "A群溶血性レンサ球菌咽頭炎": "strep",
-  "感染性胃腸炎（ロタウイルス）": "rotavirus"
+  "感染性胃腸炎（ロタウイルス）": "rotavirus",
+  "百日咳": "pertussis"
 };
 
 function getDiseaseAnchor(category) {
@@ -148,7 +149,7 @@ function openDiseaseInfo(category, event) {
   if (event) { event.stopPropagation(); event.preventDefault(); }
   const anchor = getDiseaseAnchor(category);
   if (!anchor) return;
-  const url = "diseases.html#" + anchor;
+  const url = "disclaimer.html#" + anchor;
   const isMobile = window.matchMedia("(pointer: coarse)").matches;
   if (isMobile) {
     window.open(url, "_blank");
@@ -162,7 +163,7 @@ function makeDiseaseInfoLink(category) {
   if (!anchor) return null;
   const a = document.createElement("a");
   a.className = "disease-info-link";
-  a.href = "diseases.html#" + anchor;
+  a.href = "disclaimer.html#" + anchor;
   a.textContent = "↗";
   a.setAttribute("aria-label", category + "の解説");
   a.setAttribute("title", "解説ページを開く");
