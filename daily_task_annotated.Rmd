@@ -1397,6 +1397,14 @@ ranking_wow <- news_base %>%
 
 ranking <- ranking %>%
   left_join(ranking_wow, by = c("category", "pref")) %>%
+  mutate(
+    # 警報開始基準比：直近1週の値（current_value）を使う
+    ratio_alert = if_else(
+      !is.na(alert_start) & alert_start > 0 & is.finite(current_value),
+      round(current_value / alert_start, 2),
+      ratio_alert
+    )
+  ) %>%
   select(category, pref, year_week, reference_date, current_value, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow)
 
 write_excel_csv(ranking, "docs/results/ranking.csv")
