@@ -140,7 +140,13 @@ function applyUrlState() {
 // 各シェアボタンの href にはベースURL（エンコード形）が埋め込まれているので
 // それを現在のページURL（エンコード形）に置換する。
 function _updateShareButtonHrefs() {
-  const encNew = encodeURIComponent(location.href);
+  // location.href に ?w= がなければ SITE_WEEK を付加する。
+  // これにより週次データ更新時にシェアURLが変わり、SNSが最新OGP画像を再取得する。
+  let shareUrl = location.href;
+  if (typeof SITE_WEEK !== "undefined" && SITE_WEEK && !/[?&]w=/.test(shareUrl)) {
+    shareUrl += (shareUrl.includes("?") ? "&" : "?") + "w=" + SITE_WEEK;
+  }
+  const encNew = encodeURIComponent(shareUrl);
   const encBase = encodeURIComponent("https://ryomakom.github.io/infectious_diseases/");
   document.querySelectorAll(".share-buttons a.share-btn").forEach(a => {
     if (!a.dataset.origHref) a.dataset.origHref = a.href;

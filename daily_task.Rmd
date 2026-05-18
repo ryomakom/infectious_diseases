@@ -368,7 +368,18 @@ all_logs <- bind_rows(existing_logs, new_logs) %>%
 
 write_csv(all_logs, log_file)
 
-# last_fetch.txt は reference_date 確定後に書き出す（下記）
+# 「最終更新」: ダウンロードに成功した最後の日付を last_fetch.txt に書き出す
+{
+  last_success_rows <- all_logs %>% filter(action == "downloaded")
+  if (nrow(last_success_rows) > 0) {
+    last_success_ts <- max(as.POSIXct(last_success_rows$timestamp), na.rm = TRUE)
+    if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+    writeLines(format(as.Date(last_success_ts), "%Y-%m-%d"), "docs/results/last_fetch.txt")
+    message("last_fetch.txt を ", format(as.Date(last_success_ts), "%Y-%m-%d"), " に更新しました")
+  } else {
+    message("今回のダウンロード成功なし。last_fetch.txt は更新しません")
+  }
+}
 
 # 新規データがあれば統合
 if (length(data_list) > 0) {
@@ -474,10 +485,6 @@ current_ma4 <- d %>%
 
 reference_date <- d %>% filter(year_week == latest_yr_wk) %>% pull(date) %>% max(na.rm = TRUE)
 
-# 「最終更新」用: 取得試行日時ではなく最新データの基準日を書き出す。
-# これによりデータが実際に更新された週だけ日付が変わる。
-if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
-writeLines(format(as.Date(reference_date), "%Y-%m-%d"), "docs/results/last_fetch.txt")
 
 baseline_ma4 <- by_week %>%
   filter(year_week %in% past_3_window_yr_wks) %>%
@@ -1527,11 +1534,10 @@ tryCatch(
   error = function(e) message("OGP画像生成に失敗: ", conditionMessage(e))
 )
 
-# index.html のキャッシュバースト更新:
+# index.html の更新:
 #   1. OGP画像URL の ?v=YYYYMMDD を基準日で更新
-#   2. SNSシェアボタンの共有URLに ?w=<latest_yr_wk> を付与し週次データ更新時に変える
-#      → SNS各社はURLをキャッシュキーとするため、URLが変わると最新OGP画像を再取得する
-#      → latest_yr_wk（例: "2026-21"）を使うことで、データが実際に更新された週だけ変わる
+#   2. SITE_WEEK 変数を最新週番号で更新（JSがシェアURLの ?w= に付与するために使用）
+#   3. 静的シェアボタンの ?w= を除去（JSの location.href 置換と干渉するため）
 tryCatch({
   v_str <- format(as.Date(reference_date), "%Y%m%d")
   w_str <- as.character(latest_yr_wk)   # 例: "2026-21"
@@ -1541,20 +1547,19 @@ tryCatch({
   # (1) OGP画像の ?v= 更新
   html <- gsub("ogp\\.png\\?v=\\d{8}", paste0("ogp.png?v=", v_str), html)
 
-  # (2) シェアボタンURLの ?w= 更新
-  #     各SNSのhref内はURLエンコード済み。
-  #     %2Finfectious_diseases%2F の直後に %3Fw%3D<week> (?w=<week>) を付与する。
-  #     既存の %3Fw%3D[^"&]+ があれば上書きする。
+  # (2) SITE_WEEK 変数の更新（JSがシェアURLに ?w= を付与する際に参照）
+  html <- gsub('var SITE_WEEK = "[^"]*"', paste0('var SITE_WEEK = "', w_str, '"'), html)
+
+  # (3) 静的シェアボタンの ?w= を除去（JSが動的に付与するため不要・干渉する）
   base_enc <- "infectious_diseases%2F"
-  w_enc    <- paste0("%3Fw%3D", w_str)   # ?w=2026-21 のエンコード
   html <- gsub(
     paste0(base_enc, "(?:%3Fw%3D[^\"&%]+)?"),
-    paste0(base_enc, w_enc),
+    base_enc,
     html, perl = TRUE
   )
 
   writeLines(html, html_path, useBytes = TRUE)
-  message("index.html の ?v= を ", v_str, "、?w= を ", w_str, " に更新しました")
+  message("index.html を更新: ?v=", v_str, " SITE_WEEK=", w_str)
 }, error = function(e) message("index.html の更新に失敗: ", conditionMessage(e)))
 
 ```
