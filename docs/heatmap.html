@@ -65,16 +65,17 @@
       border-collapse: collapse;
       font-size: 0.8rem;
       width: 100%;
+      table-layout: fixed;
     }
 
     th, td {
       border: 1px solid #e2e8f0;
     }
 
-    /* 左上コーナー */
+    /* 左上コーナー（疾患名列） */
     th.corner {
       background: #f1f5f9;
-      min-width: 160px;
+      width: 19%;
       padding: 10px 14px;
       font-size: 0.75rem;
       color: #94a3b8;
@@ -83,13 +84,12 @@
       vertical-align: bottom;
     }
 
-    /* 地方ヘッダー */
+    /* 地方ヘッダー（9列で残り 81% を等分 = 9%/列） */
     th.region-header {
       background: #f1f5f9;
       font-weight: 700;
       font-size: 0.83rem;
-      min-width: 37px;
-      width: 37px;
+      width: 9%;
       padding: 10px 2px;
       text-align: center;
       white-space: nowrap;
@@ -103,6 +103,8 @@
       padding: 0 14px;
       color: #0f172a;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       border-right: 2px solid #e2e8f0;
       height: 48px;
       vertical-align: middle;
