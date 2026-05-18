@@ -1527,17 +1527,33 @@ tryCatch(
   error = function(e) message("OGP画像生成に失敗: ", conditionMessage(e))
 )
 
-# OGP画像のキャッシュバスト: index.html の ?v= パラメータを基準日で更新する。
-# SNS各社はURLが変わらない限り古い画像をキャッシュし続けるため、
-# データ更新のたびに ?v=YYYYMMDD を書き換えて新規フェッチを促す。
+# index.html のキャッシュバースト更新:
+#   1. OGP画像URL の ?v=YYYYMMDD を基準日で更新
+#   2. SNSシェアボタンの共有URLに ?w=YYYYMMDD を付与し毎週変える
+#      → SNS各社はURLをキャッシュキーとするため、URLが変わると最新OGP画像を再取得する
 tryCatch({
   v_str <- format(as.Date(reference_date), "%Y%m%d")
   html_path <- "docs/index.html"
   html <- readLines(html_path, encoding = "UTF-8", warn = FALSE)
+
+  # (1) OGP画像の ?v= 更新
   html <- gsub("ogp\\.png\\?v=\\d{8}", paste0("ogp.png?v=", v_str), html)
+
+  # (2) シェアボタンURLの ?w= 更新
+  #     各SNSのhref内はURLエンコード済み。
+  #     %2Finfectious_diseases%2F の直後に %3Fw%3DYYYYMMDD (?w=YYYYMMDD) を付与する。
+  #     既存の %3Fw%3D\d+ があれば上書きする。
+  base_enc <- "infectious_diseases%2F"
+  w_enc    <- paste0("%3Fw%3D", v_str)   # ?w=YYYYMMDD のエンコード
+  html <- gsub(
+    paste0(base_enc, "(?:%3Fw%3D\\d+)?"),
+    paste0(base_enc, w_enc),
+    html, perl = TRUE
+  )
+
   writeLines(html, html_path, useBytes = TRUE)
-  message("OGP ?v= を ", v_str, " に更新しました")
-}, error = function(e) message("index.html の ?v= 更新に失敗: ", conditionMessage(e)))
+  message("index.html の ?v=/?w= を ", v_str, " に更新しました")
+}, error = function(e) message("index.html の更新に失敗: ", conditionMessage(e)))
 
 ```
 
