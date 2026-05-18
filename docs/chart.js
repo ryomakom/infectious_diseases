@@ -430,18 +430,15 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
   const wrapper = container.append("div").attr("class", "chart-wrapper");
   const leftCharts = wrapper.append("div").attr("class", "left-charts");
 
-  const GAP = 4;
   const paddingLR = 20;
-  const cardInnerW = container.node().clientWidth - paddingLR;
-  const leftW = Math.max(160, Math.floor(cardInnerW - GAP));
-  leftCharts.style("width", `${leftW}px`);
-  const leftChartsW = leftCharts.node().clientWidth;
-  const totalFocusW = leftChartsW;
+  const cardInnerW = Math.max(160, container.node().clientWidth - paddingLR);
+  const totalFocusW = cardInnerW;
   const focusWidth = Math.max(1, totalFocusW - focusMargin.left - focusMargin.right);
 
   const svgFocusRoot = leftCharts.append("svg")
     .attr("class", "svg-content chart-svg")
-    .attr("width", totalFocusW)
+    .attr("viewBox", `0 0 ${totalFocusW} ${FOCUS_OUTER_H}`)
+    .attr("preserveAspectRatio", "none")
     .attr("height", FOCUS_OUTER_H);
 
   const clipId = "clip-" + cssSafe(category);
@@ -459,7 +456,7 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
     .attr("transform", focusTransform)
     .attr("clip-path", `url(#${clipId})`);
 
-  return { container, leftCharts, leftChartsW, focusWidth, svgFocusRoot, svgFocus, focusTransform };
+  return { container, leftCharts, leftChartsW: totalFocusW, focusWidth, svgFocusRoot, svgFocus, focusTransform };
 }
 
 // Draw x/y axes, y-axis unit text, and alert threshold band.
@@ -885,7 +882,8 @@ function drawBrush(ctx) {
   const svgContext = sliderWrapper.append("svg")
     .attr("class", "svg-content")
     .attr("viewBox", `0 0 ${totalCtxW} ${totalCtxH}`)
-    .attr("preserveAspectRatio", "xMidYMid meet")
+    .attr("preserveAspectRatio", "none")
+    .attr("height", totalCtxH)
     .append("g")
     .attr("transform", `translate(${contextMargin.left},${contextMargin.top})`);
 
