@@ -1535,11 +1535,19 @@ tryCatch(
 )
 
 # index.html の更新:
-#   1. OGP画像URL の ?v=YYYYMMDD を基準日で更新
+#   1. OGP画像URL の ?v=YYYYMMDD を最終ダウンロード成功日で更新
+#      → reference_date（データ週末日）ではなく last_fetch.txt の日付を使う。
+#        データが新しくダウンロードされるたびに画像URLが変わり、
+#        XなどのSNSが古い画像をキャッシュし続けるのを防ぐ。
 #   2. SITE_WEEK 変数を最新週番号で更新（JSがシェアURLの ?w= に付与するために使用）
 #   3. 静的シェアボタンの ?w= を除去（JSの location.href 置換と干渉するため）
 tryCatch({
-  v_str <- format(as.Date(reference_date), "%Y%m%d")
+  # ?v= には最終ダウンロード成功日を使う（last_fetch.txt から読む）
+  last_fetch_date <- tryCatch(
+    as.Date(readLines("docs/results/last_fetch.txt", warn = FALSE)[1]),
+    error = function(e) as.Date(reference_date)
+  )
+  v_str <- format(last_fetch_date, "%Y%m%d")
   w_str <- as.character(latest_yr_wk)   # 例: "2026-21"
   html_path <- "docs/index.html"
   html <- readLines(html_path, encoding = "UTF-8", warn = FALSE)
