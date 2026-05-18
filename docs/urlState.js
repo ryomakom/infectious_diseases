@@ -139,18 +139,29 @@ function applyUrlState() {
 // ── シェアボタンの href を現在の location.href に書き換え ────────────────
 // 各シェアボタンの href にはベースURL（エンコード形）が埋め込まれているので
 // それを現在のページURL（エンコード形）に置換する。
+// SITE_WEEK（R が書き込むデータ週番号）で ?w= を上書きし、
+// 新しいデータが出た週だけ SNS が最新 OGP 画像を再取得するようにする。
 function _updateShareButtonHrefs() {
-  // location.href に ?w= がなければ SITE_WEEK を付加する。
-  // これにより週次データ更新時にシェアURLが変わり、SNSが最新OGP画像を再取得する。
+  // シェアURLを組み立て: location.href の ?w= を SITE_WEEK で上書き
   let shareUrl = location.href;
-  if (typeof SITE_WEEK !== "undefined" && SITE_WEEK && !/[?&]w=/.test(shareUrl)) {
-    shareUrl += (shareUrl.includes("?") ? "&" : "?") + "w=" + SITE_WEEK;
+  if (typeof SITE_WEEK !== "undefined" && SITE_WEEK) {
+    if (/[?&]w=/.test(shareUrl)) {
+      // 既存の ?w=... を SITE_WEEK で置換（normalizeUrl が付けた ISO 週番号を上書き）
+      shareUrl = shareUrl.replace(/([?&])w=[^&]*/, "$1w=" + SITE_WEEK);
+    } else {
+      shareUrl += (shareUrl.includes("?") ? "&" : "?") + "w=" + SITE_WEEK;
+    }
   }
   const encNew = encodeURIComponent(shareUrl);
   const encBase = encodeURIComponent("https://ryomakom.github.io/infectious_diseases/");
+  // 静的 HTML に残る %3Fw%3D... も同時に除去してから置換（二重 ?w= を防ぐ）
+  // [^"&]* で % も許容し、%3D などパーセントエンコード済み文字を含む ?w=... 全体をマッチさせる
+  const reBase = new RegExp(
+    encBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "(?:%3F[^\"&]*)?"
+  );
   document.querySelectorAll(".share-buttons a.share-btn").forEach(a => {
     if (!a.dataset.origHref) a.dataset.origHref = a.href;
-    a.href = a.dataset.origHref.split(encBase).join(encNew);
+    a.href = a.dataset.origHref.replace(reBase, encNew);
   });
 }
 
