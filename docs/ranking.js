@@ -84,6 +84,12 @@ function renderDiseaseTags() {
 function sortRankingRows(rows) {
   return rows.slice().sort((a, b) => {
     const _rv = (row) => {
+      // ratio_alert: CSVは round(...,2) 済みなので current_value/alert_start で高精度再計算
+      if (state.sortKey === "ratio_alert") {
+        if (Number.isFinite(row.current_value) && Number.isFinite(row.alert_start) && row.alert_start > 0)
+          return row.current_value / row.alert_start;
+        return Number.isFinite(row.ratio_alert) ? row.ratio_alert : null;
+      }
       const v = row[state.sortKey];
       if (Number.isFinite(v)) return v;
       if (state.sortKey === "current_value" && Number.isFinite(row.current_ma4)) return row.current_ma4;
