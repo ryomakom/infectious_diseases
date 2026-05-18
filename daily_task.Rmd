@@ -368,12 +368,7 @@ all_logs <- bind_rows(existing_logs, new_logs) %>%
 
 write_csv(all_logs, log_file)
 
-# 取得試行日時をフロント用に出力（ログの最終タイムスタンプ）
-if (nrow(all_logs) > 0) {
-  last_attempt <- max(as.POSIXct(all_logs$timestamp), na.rm = TRUE)
-  if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
-  writeLines(format(last_attempt, "%Y-%m-%d"), "docs/results/last_fetch.txt")
-}
+# last_fetch.txt は reference_date 確定後に書き出す（下記）
 
 # 新規データがあれば統合
 if (length(data_list) > 0) {
@@ -478,6 +473,11 @@ current_ma4 <- d %>%
   select(pref, category, current_ma4 = ma4)
 
 reference_date <- d %>% filter(year_week == latest_yr_wk) %>% pull(date) %>% max(na.rm = TRUE)
+
+# 「最終更新」用: 取得試行日時ではなく最新データの基準日を書き出す。
+# これによりデータが実際に更新された週だけ日付が変わる。
+if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+writeLines(format(as.Date(reference_date), "%Y-%m-%d"), "docs/results/last_fetch.txt")
 
 baseline_ma4 <- by_week %>%
   filter(year_week %in% past_3_window_yr_wks) %>%
