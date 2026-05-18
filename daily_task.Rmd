@@ -1527,6 +1527,18 @@ tryCatch(
   error = function(e) message("OGP画像生成に失敗: ", conditionMessage(e))
 )
 
+# OGP画像のキャッシュバスト: index.html の ?v= パラメータを基準日で更新する。
+# SNS各社はURLが変わらない限り古い画像をキャッシュし続けるため、
+# データ更新のたびに ?v=YYYYMMDD を書き換えて新規フェッチを促す。
+tryCatch({
+  v_str <- format(as.Date(reference_date), "%Y%m%d")
+  html_path <- "docs/index.html"
+  html <- readLines(html_path, encoding = "UTF-8", warn = FALSE)
+  html <- gsub("ogp\\.png\\?v=\\d{8}", paste0("ogp.png?v=", v_str), html)
+  writeLines(html, html_path, useBytes = TRUE)
+  message("OGP ?v= を ", v_str, " に更新しました")
+}, error = function(e) message("index.html の ?v= 更新に失敗: ", conditionMessage(e)))
+
 ```
 
 
