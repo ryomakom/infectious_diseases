@@ -734,7 +734,7 @@ for (week_label in distinct_weeks) {
 }</code></pre>
 <pre><code>## Warning in download.file(url, destfile = local_file, mode = &quot;wb&quot;): cannot open
 ## URL
-## &#39;https://id-info.jihs.go.jp/surveillance/idwr/provisional/2026/19/2026-19-teiten.csv&#39;:
+## &#39;https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/2026/19/2026-19-teiten.csv&#39;:
 ## HTTP status was &#39;404 Not Found&#39;</code></pre>
 <pre class="r"><code># — ログ結合＆出力 —
 new_logs &lt;- bind_rows(log_entries)
@@ -743,14 +743,20 @@ all_logs &lt;- bind_rows(existing_logs, new_logs) %&gt;%
 
 write_csv(all_logs, log_file)
 
-# 取得試行日時をフロント用に出力（ログの最終タイムスタンプ）
-if (nrow(all_logs) &gt; 0) {
-  last_attempt &lt;- max(as.POSIXct(all_logs$timestamp), na.rm = TRUE)
-  if (!dir.exists(&quot;docs/results&quot;)) dir.create(&quot;docs/results&quot;, recursive = TRUE)
-  writeLines(format(last_attempt, &quot;%Y-%m-%d&quot;), &quot;docs/results/last_fetch.txt&quot;)
-}
-
-# 新規データがあれば統合
+# 「最終更新」: ダウンロードに成功した最後の日付を last_fetch.txt に書き出す
+{
+  last_success_rows &lt;- all_logs %&gt;% filter(action == &quot;downloaded&quot;)
+  if (nrow(last_success_rows) &gt; 0) {
+    last_success_ts &lt;- max(as.POSIXct(last_success_rows$timestamp), na.rm = TRUE)
+    if (!dir.exists(&quot;docs/results&quot;)) dir.create(&quot;docs/results&quot;, recursive = TRUE)
+    writeLines(format(as.Date(last_success_ts), &quot;%Y-%m-%d&quot;), &quot;docs/results/last_fetch.txt&quot;)
+    message(&quot;last_fetch.txt を &quot;, format(as.Date(last_success_ts), &quot;%Y-%m-%d&quot;), &quot; に更新しました&quot;)
+  } else {
+    message(&quot;今回のダウンロード成功なし。last_fetch.txt は更新しません&quot;)
+  }
+}</code></pre>
+<pre><code>## last_fetch.txt を 2026-05-13 に更新しました</code></pre>
+<pre class="r"><code># 新規データがあれば統合
 if (length(data_list) &gt; 0) {
   latest_data &lt;- bind_rows(data_list) %&gt;% distinct()
   cleaned_diseases &lt;- cleaned_diseases %&gt;%
@@ -853,6 +859,7 @@ current_ma4 &lt;- d %&gt;%
   select(pref, category, current_ma4 = ma4)
 
 reference_date &lt;- d %&gt;% filter(year_week == latest_yr_wk) %&gt;% pull(date) %&gt;% max(na.rm = TRUE)
+
 
 baseline_ma4 &lt;- by_week %&gt;%
   filter(year_week %in% past_3_window_yr_wks) %&gt;%
@@ -1505,6 +1512,16 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
       .groups   = &quot;drop&quot;
     )
 
+  # 全国を擬似ブロックとして追加（avg_value は 全国系列の weekly_value そのまま）
+  nation_weekly &lt;- by_week %&gt;%
+    filter(pref == &quot;全国&quot;) %&gt;%
+    transmute(
+      category, block = &quot;全国&quot;, year_week, yr, wk,
+      avg_value = weekly_value,
+      n_prefs   = 47L
+    )
+  block_weekly &lt;- bind_rows(block_weekly, nation_weekly)
+
   latest_yr &lt;- as.integer(substr(latest_yr_wk, 1, 4))
   latest_wk &lt;- as.integer(substr(latest_yr_wk, 6, 7))
 
@@ -1564,6 +1581,16 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
       alert_prefs = list(as.character(pref)),
       .groups     = &quot;drop&quot;
     )
+  alert_nation &lt;- in_alert_now %&gt;%
+    filter(in_alert_level == TRUE, pref != &quot;全国&quot;) %&gt;%
+    group_by(category) %&gt;%
+    summarise(
+      block       = &quot;全国&quot;,
+      n_alert     = n(),
+      alert_prefs = list(as.character(pref)),
+      .groups     = &quot;drop&quot;
+    )
+  alert_block &lt;- bind_rows(alert_block, alert_nation)
 
   attention_block &lt;- in_attention_now %&gt;%
     filter(in_attention_level == TRUE, pref != &quot;全国&quot;) %&gt;%
@@ -1575,6 +1602,16 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
       attention_prefs = list(as.character(pref)),
       .groups         = &quot;drop&quot;
     )
+  attention_nation &lt;- in_attention_now %&gt;%
+    filter(in_attention_level == TRUE, pref != &quot;全国&quot;) %&gt;%
+    group_by(category) %&gt;%
+    summarise(
+      block           = &quot;全国&quot;,
+      n_attention     = n(),
+      attention_prefs = list(as.character(pref)),
+      .groups         = &quot;drop&quot;
+    )
+  attention_block &lt;- bind_rows(attention_block, attention_nation)
 
   combined &lt;- current_block %&gt;%
     left_join(previous_block,  by = c(&quot;category&quot;, &quot;block&quot;)) %&gt;%
@@ -1613,7 +1650,10 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
     slice_head(n = 3) %&gt;%
     ungroup()
 
+  # by_block 用（既存。地方ごとの上位3疾患を出すので「全国」は含めない）
   block_order &lt;- c(&quot;北海道&quot;, &quot;東北&quot;, &quot;関東&quot;, &quot;中部&quot;, &quot;近畿&quot;, &quot;中国&quot;, &quot;四国&quot;, &quot;九州&quot;)
+  # block_matrix 用（ヒートマップで一番左に「全国」を出す）
+  matrix_block_order &lt;- c(&quot;全国&quot;, block_order)
   blocks_present &lt;- intersect(block_order, unique(spotlight_by_block$block))
 
   # by_block: 地方ごとの上位3疾患（既存）
@@ -1642,9 +1682,9 @@ buildBlockSummary &lt;- function(by_week, in_alert_now, in_attention_now, latest
     out[[b]] &lt;- list(spotlights = spots)
   }
 
-  # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用）
+  # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用、先頭は全国）
   matrix_rows &lt;- combined %&gt;%
-    mutate(block = factor(block, levels = block_order)) %&gt;%
+    mutate(block = factor(block, levels = matrix_block_order)) %&gt;%
     arrange(block, category)
 
   matrix_out &lt;- lapply(seq_len(nrow(matrix_rows)), function(i) {
@@ -1902,6 +1942,42 @@ tryCatch(
   error = function(e) message(&quot;OGP画像生成に失敗: &quot;, conditionMessage(e))
 )</code></pre>
 <pre><code>## OGP画像を生成: docs/ogp.png</code></pre>
+<pre class="r"><code># index.html の更新:
+#   1. OGP画像URL の ?v=YYYYMMDD を最終ダウンロード成功日で更新
+#      → reference_date（データ週末日）ではなく last_fetch.txt の日付を使う。
+#        データが新しくダウンロードされるたびに画像URLが変わり、
+#        XなどのSNSが古い画像をキャッシュし続けるのを防ぐ。
+#   2. SITE_WEEK 変数を最新週番号で更新（JSがシェアURLの ?w= に付与するために使用）
+#   3. 静的シェアボタンの ?w= を除去（JSの location.href 置換と干渉するため）
+tryCatch({
+  # ?v= には最終ダウンロード成功日を使う（last_fetch.txt から読む）
+  last_fetch_date &lt;- tryCatch(
+    as.Date(readLines(&quot;docs/results/last_fetch.txt&quot;, warn = FALSE)[1]),
+    error = function(e) as.Date(reference_date)
+  )
+  v_str &lt;- format(last_fetch_date, &quot;%Y%m%d&quot;)
+  w_str &lt;- as.character(latest_yr_wk)   # 例: &quot;2026-21&quot;
+  html_path &lt;- &quot;docs/index.html&quot;
+  html &lt;- readLines(html_path, encoding = &quot;UTF-8&quot;, warn = FALSE)
+
+  # (1) OGP画像の ?v= 更新
+  html &lt;- gsub(&quot;ogp\\.png\\?v=\\d{8}&quot;, paste0(&quot;ogp.png?v=&quot;, v_str), html)
+
+  # (2) SITE_WEEK 変数の更新（JSがシェアURLに ?w= を付与する際に参照）
+  html &lt;- gsub(&#39;var SITE_WEEK = &quot;[^&quot;]*&quot;&#39;, paste0(&#39;var SITE_WEEK = &quot;&#39;, w_str, &#39;&quot;&#39;), html)
+
+  # (3) 静的シェアボタンの ?w= を除去（JSが動的に付与するため不要・干渉する）
+  base_enc &lt;- &quot;infectious_diseases%2F&quot;
+  html &lt;- gsub(
+    paste0(base_enc, &quot;(?:%3Fw%3D[^\&quot;&amp;%]+)?&quot;),
+    base_enc,
+    html, perl = TRUE
+  )
+
+  writeLines(html, html_path, useBytes = TRUE)
+  message(&quot;index.html を更新: ?v=&quot;, v_str, &quot; SITE_WEEK=&quot;, w_str)
+}, error = function(e) message(&quot;index.html の更新に失敗: &quot;, conditionMessage(e)))</code></pre>
+<pre><code>## index.html を更新: ?v=20260513 SITE_WEEK=2026-18</code></pre>
 
 
 

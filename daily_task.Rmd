@@ -1137,6 +1137,16 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
       .groups   = "drop"
     )
 
+  # 全国を擬似ブロックとして追加（avg_value は 全国系列の weekly_value そのまま）
+  nation_weekly <- by_week %>%
+    filter(pref == "全国") %>%
+    transmute(
+      category, block = "全国", year_week, yr, wk,
+      avg_value = weekly_value,
+      n_prefs   = 47L
+    )
+  block_weekly <- bind_rows(block_weekly, nation_weekly)
+
   latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
   latest_wk <- as.integer(substr(latest_yr_wk, 6, 7))
 
@@ -1196,6 +1206,16 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
       alert_prefs = list(as.character(pref)),
       .groups     = "drop"
     )
+  alert_nation <- in_alert_now %>%
+    filter(in_alert_level == TRUE, pref != "全国") %>%
+    group_by(category) %>%
+    summarise(
+      block       = "全国",
+      n_alert     = n(),
+      alert_prefs = list(as.character(pref)),
+      .groups     = "drop"
+    )
+  alert_block <- bind_rows(alert_block, alert_nation)
 
   attention_block <- in_attention_now %>%
     filter(in_attention_level == TRUE, pref != "全国") %>%
@@ -1207,6 +1227,16 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
       attention_prefs = list(as.character(pref)),
       .groups         = "drop"
     )
+  attention_nation <- in_attention_now %>%
+    filter(in_attention_level == TRUE, pref != "全国") %>%
+    group_by(category) %>%
+    summarise(
+      block           = "全国",
+      n_attention     = n(),
+      attention_prefs = list(as.character(pref)),
+      .groups         = "drop"
+    )
+  attention_block <- bind_rows(attention_block, attention_nation)
 
   combined <- current_block %>%
     left_join(previous_block,  by = c("category", "block")) %>%
@@ -1245,7 +1275,10 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
     slice_head(n = 3) %>%
     ungroup()
 
+  # by_block 用（既存。地方ごとの上位3疾患を出すので「全国」は含めない）
   block_order <- c("北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州")
+  # block_matrix 用（ヒートマップで一番左に「全国」を出す）
+  matrix_block_order <- c("全国", block_order)
   blocks_present <- intersect(block_order, unique(spotlight_by_block$block))
 
   # by_block: 地方ごとの上位3疾患（既存）
@@ -1274,9 +1307,9 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
     out[[b]] <- list(spotlights = spots)
   }
 
-  # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用）
+  # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用、先頭は全国）
   matrix_rows <- combined %>%
-    mutate(block = factor(block, levels = block_order)) %>%
+    mutate(block = factor(block, levels = matrix_block_order)) %>%
     arrange(block, category)
 
   matrix_out <- lapply(seq_len(nrow(matrix_rows)), function(i) {
