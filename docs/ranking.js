@@ -83,8 +83,14 @@ function renderDiseaseTags() {
 
 function sortRankingRows(rows) {
   return rows.slice().sort((a, b) => {
-    const av = a[state.sortKey];
-    const bv = b[state.sortKey];
+    const _rv = (row) => {
+      const v = row[state.sortKey];
+      if (Number.isFinite(v)) return v;
+      if (state.sortKey === "current_value" && Number.isFinite(row.current_ma4)) return row.current_ma4;
+      return null;
+    };
+    const av = _rv(a);
+    const bv = _rv(b);
     const aa = (av == null || !Number.isFinite(av)) ? -Infinity : av;
     const bb = (bv == null || !Number.isFinite(bv)) ? -Infinity : bv;
     if (aa < bb) return state.sortDesc ? 1 : -1;
