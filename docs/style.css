@@ -2762,7 +2762,7 @@ header::after{
 .left-charts{
   flex: 1 1 auto;
   min-width: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .chart-legend{
@@ -2773,7 +2773,6 @@ header::after{
 }
 
 .chart-svg{
-  width: 100%;
   margin-bottom: 12px;
 }
 
@@ -2807,7 +2806,6 @@ header::after{
 
 .svg-content{
   display: block;
-  width: 100%;
 }
 
 .chart svg{

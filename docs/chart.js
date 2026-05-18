@@ -226,7 +226,8 @@ function buildChartRenderSignature(category, catData, selectedPrefs) {
     catData.length,
     dateMin,
     dateMax,
-    sumValue.toFixed(6)
+    sumValue.toFixed(6),
+    window.innerWidth
   ].join("::");
 }
 
@@ -430,15 +431,13 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
   const wrapper = container.append("div").attr("class", "chart-wrapper");
   const leftCharts = wrapper.append("div").attr("class", "left-charts");
 
-  const paddingLR = 20;
-  const cardInnerW = Math.max(160, container.node().clientWidth - paddingLR);
+  const cardInnerW = Math.max(160, leftCharts.node().clientWidth);
   const totalFocusW = cardInnerW;
   const focusWidth = Math.max(1, totalFocusW - focusMargin.left - focusMargin.right);
 
   const svgFocusRoot = leftCharts.append("svg")
     .attr("class", "svg-content chart-svg")
-    .attr("viewBox", `0 0 ${totalFocusW} ${FOCUS_OUTER_H}`)
-    .attr("preserveAspectRatio", "none")
+    .attr("width", totalFocusW)
     .attr("height", FOCUS_OUTER_H);
 
   const clipId = "clip-" + cssSafe(category);
@@ -881,8 +880,7 @@ function drawBrush(ctx) {
   const xAxisContext = d3.axisBottom(xContext).ticks(d3.timeYear.every(3)).tickFormat(d => `${d.getFullYear()}年`);
   const svgContext = sliderWrapper.append("svg")
     .attr("class", "svg-content")
-    .attr("viewBox", `0 0 ${totalCtxW} ${totalCtxH}`)
-    .attr("preserveAspectRatio", "none")
+    .attr("width", totalCtxW)
     .attr("height", totalCtxH)
     .append("g")
     .attr("transform", `translate(${contextMargin.left},${contextMargin.top})`);
