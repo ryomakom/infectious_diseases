@@ -651,61 +651,6 @@ pick_top_major_first <- function(df, sort_exprs, n = 3) {
   bind_rows(ordered_major, ordered_non_major)
 }
 
-selectLead <- function(rows) {
-  nationwide <- rows %>% filter(pref == "全国")
-
-  cand_growth <- nationwide %>%
-    filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
-    filter(is.finite(previous_value), previous_value >= MIN_CURRENT_MA4) %>%
-    filter(is.finite(growth1Rate)) %>%
-    mutate(growth_diff = current_value - previous_value) %>%
-    arrange(desc(growth1Rate), desc(current_value), desc(growth_diff))
-
-  if (nrow(cand_growth) > 0) {
-    return(list(row = cand_growth %>% slice(1), reason = "D: 全国で前週比増加率最大"))
-  }
-
-  cand_anomaly <- nationwide %>%
-    filter(is.finite(anomaly_z)) %>%
-    arrange(desc(anomaly_z), desc(anomaly_ratio), desc(anomaly_diff), desc(current_value))
-  if (nrow(cand_anomaly) > 0) {
-    return(list(row = cand_anomaly %>% slice(1), reason = "A: 全国で季節逸脱度最大"))
-  }
-
-  list(row = nationwide %>% arrange(desc(current_value)) %>% slice_head(n = 1), reason = "E: 代替（全国の現在値最大）")
-}
-
-integrateAnomalyIntoLead <- function(digest) {
-  anomalies_df <- digest$anomalies_df
-  rows <- digest$rows
-  if (nrow(anomalies_df) == 0) return(digest)
-
-  top_anom <- anomalies_df %>% slice(1)
-  target_cat <- as.character(top_anom$category[[1]])
-  nationwide_row <- rows %>%
-    filter(pref == "全国", category == target_cat) %>%
-    arrange(desc(ratio_alert), desc(current_ma4)) %>%
-    slice_head(n = 1)
-
-  digest$lead$category <- target_cat
-  digest$lead$reason <- sprintf(
-    "A: 季節パターン逸脱（%s %s, z=%s）",
-    target_cat,
-    as.character(top_anom$pref[[1]]),
-    fmt_num(top_anom$seasonal_zscore[[1]], 2)
-  )
-  if (nrow(nationwide_row) > 0) {
-    digest$lead$nationwide_ratio_alert <- ifelse(is.finite(nationwide_row$ratio_alert[[1]]), as.numeric(nationwide_row$ratio_alert[[1]]), NA_real_)
-    digest$lead$nationwide_current_ma4 <- ifelse(is.finite(nationwide_row$current_ma4[[1]]), as.numeric(nationwide_row$current_ma4[[1]]), NA_real_)
-    digest$lead_row <- nationwide_row
-  } else {
-    digest$lead$nationwide_ratio_alert <- NA_real_
-    digest$lead$nationwide_current_ma4 <- NA_real_
-    digest$lead_row <- rows %>% filter(category == target_cat) %>% arrange(desc(current_ma4)) %>% slice_head(n = 1)
-  }
-  digest$lead_category <- target_cat
-  digest
-}
 
 selectRising <- function(rows, alert_categories = character(0)) {
   rows %>%
@@ -1127,26 +1072,6 @@ message("ランキング出力: docs/results/ranking.csv")
 
 anomalies_df <- detectAnomalies(news_base)
 
-lead_pick <- selectLead(news_base)
-lead_row <- lead_pick$row
-lead_category <- if (nrow(lead_row) > 0) as.character(lead_row$category[[1]]) else NA_character_
-
-lead_bundle <- integrateAnomalyIntoLead(list(
-  lead = list(
-    category = lead_category,
-    nationwide_ratio_alert = if (nrow(lead_row) > 0 && is.finite(lead_row$ratio_alert[[1]])) as.numeric(lead_row$ratio_alert[[1]]) else NA_real_,
-    nationwide_current_ma4 = if (nrow(lead_row) > 0 && is.finite(lead_row$current_ma4[[1]])) as.numeric(lead_row$current_ma4[[1]]) else NA_real_,
-    reason = lead_pick$reason
-  ),
-  anomalies_df = anomalies_df,
-  rows = news_base,
-  lead_row = lead_row,
-  lead_category = lead_category
-))
-
-lead_row <- lead_bundle$lead_row
-lead_category <- lead_bundle$lead_category
-
 rising_df <- selectRising(news_base)
 
 generated_text <- buildGeneratedText(rows = news_base, in_alert_now = in_alert_now)
@@ -1154,13 +1079,10 @@ generated_text <- buildGeneratedText(rows = news_base, in_alert_now = in_alert_n
 block_result <- buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk)
 
 # news_digest.json は JS 側で実際に参照されるフィールドだけを出力する。
-# - メインサイト (newsDigest.js) で使用: lead.category / rising / anomalies / generated_text.bullets
+# - メインサイト (newsDigest.js) で使用: rising / anomalies / generated_text.bullets
 # - heatmap.html で使用: week / block_matrix
 news_digest <- list(
   week = as.character(reference_date),
-  lead = list(
-    category = ifelse(is.na(lead_category), NA_character_, lead_category)
-  ),
   rising = as_item_list(rising_df, 3),
   anomalies = as_anomaly_list(anomalies_df, 3),
   block_matrix = block_result$matrix,

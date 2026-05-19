@@ -12,7 +12,6 @@
 /**
  * @typedef {Object} NewsDigest
  * @property {string} [week]
- * @property {{category?:string}|null} [lead]
  * @property {{bullets?:string[]}|null} [generated_text]
  * @property {NewsDigestItem[]} [rising]
  * @property {Array<{category?:string}>} [anomalies]
@@ -41,12 +40,8 @@ function toDigestItems(value) {
 function normalizeNewsDigest(raw) {
   if (!isObject(raw)) return null;
   const generated = isObject(raw.generated_text) ? raw.generated_text : {};
-  const lead = isObject(raw.lead) ? raw.lead : {};
   return {
     week: asString(raw.week, ""),
-    lead: {
-      category: asString(lead.category, "")
-    },
     generated_text: {
       bullets: asArray(generated.bullets).filter(v => typeof v === "string")
     },
@@ -202,7 +197,7 @@ function buildIntroSignals(digest) {
     {
       key: "alert",
       label: "最も警戒が必要",
-      category: pickAlertLeadCategoryFromNationwide() || asString(digest?.lead?.category, ""),
+      category: pickAlertLeadCategoryFromNationwide(),
       description: "（全国平均の警報開始基準比が最も高い）",
       noDataMessage: "今週は警戒が必要な感染症はありません",
       definition: "定点あたり患者数を、警報を出すときの基準となる人数で割った値（警報開始基準比）が最も高い感染症。1.0倍を超えると警報水準を突破している状態"
