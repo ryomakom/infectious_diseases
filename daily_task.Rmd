@@ -1458,7 +1458,7 @@ in_alert_now <- by_week %>%
   ungroup() %>%
   select(pref, category, in_alert_level = in_alert)
 
-# 注意報レベル状態：現在週の値が attention 閾値以上か（単純判定）
+# 注意報レベル状態：直近1週の値（weekly_value）が attention 閾値以上か
 in_attention_now <- by_week %>%
   left_join(alert %>% select(category, attention), by = "category") %>%
   filter(!is.na(attention) & attention > 0, year_week == latest_yr_wk) %>%

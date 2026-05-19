@@ -190,6 +190,7 @@ function buildMiniSparkline(category, pref, width, height, seriesValuesOverride)
   const walkSource = fullSeries.length >= values.length ? fullSeries : values;
   const fullAlertStates = computeAlertStates(walkSource, alertStart, alertEnd);
   const alertStates     = fullAlertStates.slice(-values.length);
+  // 注意報判定はセルと同じく直近1週の値（values）で行う
   const attentionStates = computeAttentionStates(values, attentionTh, alertStates);
 
   const paths = { normal: "", alert: "", attention: "" };
@@ -305,7 +306,7 @@ function wowClass(_v) { return ""; }
 function yoyClass(_v) { return ""; }
 
 // 「警報レベル」セルの色: in_alert_level (R 側で時系列ウォーク済み) のみ赤く塗る
-// 注意報レベル: R 側 (in_attention_level) と同じく単週の current_value で判定
+// 注意報レベル: 直近1週の値（current_value）で判定する
 function alertClass(row) {
   if (row && row.in_alert_level) return "ratio-alert--danger";
   const attention = state.attentionMap ? state.attentionMap[row.category] : null;
