@@ -305,10 +305,11 @@ function wowClass(_v) { return ""; }
 function yoyClass(_v) { return ""; }
 
 // 「警報レベル」セルの色: in_alert_level (R 側で時系列ウォーク済み) のみ赤く塗る
+// 注意報レベル: R 側 (in_attention_level) と同じく単週の current_value で判定
 function alertClass(row) {
   if (row && row.in_alert_level) return "ratio-alert--danger";
   const attention = state.attentionMap ? state.attentionMap[row.category] : null;
-  if (attention && Number.isFinite(row.current_ma4) && row.current_ma4 >= attention) return "ratio-alert--caution";
+  if (attention && Number.isFinite(row.current_value) && row.current_value >= attention) return "ratio-alert--caution";
   return "";
 }
 
