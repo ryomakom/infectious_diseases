@@ -7,409 +7,37 @@
     {
       "category": "水痘",
       "pref": "大分県",
-      "current_ma4": 0.76,
       "current_value": 1,
       "previous_value": 1.06,
-      "ratio_alert": 0.38,
-      "ratio_heinen": 3.26,
       "growth1Rate": -0.0566
     },
     {
       "category": "水痘",
       "pref": "福岡県",
-      "current_ma4": 0.7575,
       "current_value": 0.87,
       "previous_value": 0.67,
-      "ratio_alert": 0.38,
-      "ratio_heinen": 2.19,
       "growth1Rate": 0.2985
     },
     {
       "category": "水痘",
       "pref": "沖縄県",
-      "current_ma4": 0.7525,
       "current_value": 0.63,
       "previous_value": 0.46,
-      "ratio_alert": 0.38,
-      "ratio_heinen": 1.75,
       "growth1Rate": 0.3696
     }
   ],
   "rising": [],
-  "alerts": [
-    {
-      "category": "手足口病",
-      "pref": "全国",
-      "current_ma4": 0.2925,
-      "current_value": 0.35,
-      "previous_value": 0.38,
-      "ratio_alert": 0.06,
-      "ratio_heinen": 0.97,
-      "growth1Rate": -0.0789
-    }
-  ],
   "anomalies": [
     {
-      "category": "水痘",
-      "pref": "全国",
-      "current_ma4": 0.3675,
-      "current_value": 0.39,
-      "seasonal_mean": 0.2308,
-      "seasonal_zscore": 0.9835
+      "category": "水痘"
     },
     {
-      "category": "手足口病",
-      "pref": "全国",
-      "current_ma4": 0.2925,
-      "current_value": 0.35,
-      "seasonal_mean": 0.3008,
-      "seasonal_zscore": 0.1825
+      "category": "手足口病"
     },
     {
-      "category": "マイコプラズマ肺炎",
-      "pref": "全国",
-      "current_ma4": 0.17,
-      "current_value": 0.17,
-      "seasonal_mean": 0.165,
-      "seasonal_zscore": 0.042
+      "category": "マイコプラズマ肺炎"
     }
   ],
-  "top_news": {
-    "category": "水痘",
-    "pref": "全国"
-  },
-  "spread_type": "局所",
-  "affected_blocks": [
-    "九州"
-  ],
-  "by_block": {
-    "北海道": {
-      "spotlights": [
-        {
-          "category": "感染性胃腸炎（ロタウイルス）",
-          "avg_value": 0.11,
-          "growth1Rate": 2.3846,
-          "zscore": 1.7125,
-          "ratio_heinen": 4.4,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 1
-        },
-        {
-          "category": "水痘",
-          "avg_value": 0.4575,
-          "growth1Rate": -0.2651,
-          "zscore": 1.6246,
-          "ratio_heinen": 2.0333,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 1
-        },
-        {
-          "category": "マイコプラズマ肺炎",
-          "avg_value": 0.185,
-          "growth1Rate": 0.7209,
-          "zscore": 0.5137,
-          "ratio_heinen": 1.4051,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 1
-        }
-      ]
-    },
-    "東北": {
-      "spotlights": [
-        {
-          "category": "水痘",
-          "avg_value": 0.4123,
-          "growth1Rate": 0.2021,
-          "zscore": 0.4754,
-          "ratio_heinen": 1.4674,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 1,
-          "attention_prefs": [
-            "山形県"
-          ],
-          "n_prefs": 6
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.0269,
-          "growth1Rate": 0.3592,
-          "zscore": 0.9826,
-          "ratio_heinen": 2.5405,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 6
-        },
-        {
-          "category": "A群溶血性レンサ球菌咽頭炎",
-          "avg_value": 2.7746,
-          "growth1Rate": 0.109,
-          "zscore": 0.1963,
-          "ratio_heinen": 1.133,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 6
-        }
-      ]
-    },
-    "関東": {
-      "spotlights": [
-        {
-          "category": "マイコプラズマ肺炎",
-          "avg_value": 0.1872,
-          "growth1Rate": 0.6764,
-          "zscore": 0.8649,
-          "ratio_heinen": 1.6632,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        },
-        {
-          "category": "クラミジア肺炎",
-          "avg_value": 0.0226,
-          "growth1Rate": 0.1907,
-          "zscore": 0.7566,
-          "ratio_heinen": 2.0986,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.05,
-          "growth1Rate": 0.3767,
-          "zscore": 0.4889,
-          "ratio_heinen": 1.4628,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        }
-      ]
-    },
-    "中部": {
-      "spotlights": [
-        {
-          "category": "クラミジア肺炎",
-          "avg_value": 0.0141,
-          "growth1Rate": 0.4084,
-          "zscore": 5.5817,
-          "ratio_heinen": 20.3356,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 9
-        },
-        {
-          "category": "水痘",
-          "avg_value": 0.3149,
-          "growth1Rate": 0.2569,
-          "zscore": 3.0286,
-          "ratio_heinen": 2.3755,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 9
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.08,
-          "growth1Rate": 1.181,
-          "zscore": 1.9072,
-          "ratio_heinen": 2.3351,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 9
-        }
-      ]
-    },
-    "近畿": {
-      "spotlights": [
-        {
-          "category": "水痘",
-          "avg_value": 0.3091,
-          "growth1Rate": 0.0608,
-          "zscore": 2.2078,
-          "ratio_heinen": 1.9067,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.0667,
-          "growth1Rate": 0.1934,
-          "zscore": 2.0045,
-          "ratio_heinen": 2.2858,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        },
-        {
-          "category": "A群溶血性レンサ球菌咽頭炎",
-          "avg_value": 2.5607,
-          "growth1Rate": 0.2811,
-          "zscore": 0.7651,
-          "ratio_heinen": 1.4223,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 7
-        }
-      ]
-    },
-    "中国": {
-      "spotlights": [
-        {
-          "category": "水痘",
-          "avg_value": 0.31,
-          "growth1Rate": 0.5763,
-          "zscore": 3.3646,
-          "ratio_heinen": 2.6495,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 5
-        },
-        {
-          "category": "手足口病",
-          "avg_value": 0.3712,
-          "growth1Rate": 1.356,
-          "zscore": 0.6152,
-          "ratio_heinen": 1.556,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 5
-        },
-        {
-          "category": "A群溶血性レンサ球菌咽頭炎",
-          "avg_value": 2.9744,
-          "growth1Rate": 0.1994,
-          "zscore": 0.592,
-          "ratio_heinen": 1.3345,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 5
-        }
-      ]
-    },
-    "四国": {
-      "spotlights": [
-        {
-          "category": "水痘",
-          "avg_value": 0.2406,
-          "growth1Rate": 0.2866,
-          "zscore": 2.5897,
-          "ratio_heinen": 2.0585,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 4
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.0334,
-          "growth1Rate": null,
-          "zscore": 1.0989,
-          "ratio_heinen": 3.0777,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 4
-        },
-        {
-          "category": "伝染性紅斑",
-          "avg_value": 0.2561,
-          "growth1Rate": -0.1526,
-          "zscore": 0.97,
-          "ratio_heinen": 2.3691,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 4
-        }
-      ]
-    },
-    "九州": {
-      "spotlights": [
-        {
-          "category": "手足口病",
-          "avg_value": 1.5951,
-          "growth1Rate": 5.0879,
-          "zscore": 1.2712,
-          "ratio_heinen": 2.0883,
-          "n_alert": 1,
-          "alert_prefs": [
-            "宮崎県"
-          ],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 8
-        },
-        {
-          "category": "水痘",
-          "avg_value": 0.599,
-          "growth1Rate": 0.1476,
-          "zscore": 1.743,
-          "ratio_heinen": 2.1284,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 1,
-          "attention_prefs": [
-            "大分県"
-          ],
-          "n_prefs": 8
-        },
-        {
-          "category": "無菌性髄膜炎",
-          "avg_value": 0.0341,
-          "growth1Rate": 0.1056,
-          "zscore": 2.0065,
-          "ratio_heinen": 2.1336,
-          "n_alert": 0,
-          "alert_prefs": [],
-          "n_attention": 0,
-          "attention_prefs": [],
-          "n_prefs": 8
-        }
-      ]
-    }
-  },
   "block_matrix": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -420,8 +48,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -432,8 +59,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -444,8 +70,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -456,8 +81,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -468,8 +92,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -480,8 +103,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -492,8 +114,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -504,8 +125,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -516,8 +136,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -528,8 +147,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -540,8 +158,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -554,8 +171,7 @@
         "宮崎県"
       ],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -566,8 +182,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -581,8 +196,7 @@
       "attention_prefs": [
         "大分県",
         "山形県"
-      ],
-      "n_prefs": 47
+      ]
     },
     {
       "category": "流行性耳下腺炎",
@@ -593,8 +207,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -605,8 +218,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -617,8 +229,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -629,8 +240,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -641,8 +251,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 47
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -653,8 +262,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -665,8 +273,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -677,8 +284,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -689,8 +295,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -701,8 +306,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -713,8 +317,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -725,8 +328,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -737,8 +339,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -749,8 +350,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -761,8 +361,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -773,8 +372,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -785,8 +383,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -797,8 +394,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -809,8 +405,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -821,8 +416,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -833,8 +427,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -845,8 +438,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -857,8 +449,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -869,8 +460,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 1
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -881,8 +471,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -893,8 +482,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -905,8 +493,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -917,8 +504,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -929,8 +515,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -941,8 +526,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -953,8 +537,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -965,8 +548,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -977,8 +559,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -989,8 +570,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -1001,8 +581,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -1013,8 +592,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -1025,8 +603,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -1039,8 +616,7 @@
       "n_attention": 1,
       "attention_prefs": [
         "山形県"
-      ],
-      "n_prefs": 6
+      ]
     },
     {
       "category": "流行性耳下腺炎",
@@ -1051,8 +627,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -1063,8 +638,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -1075,8 +649,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -1087,8 +660,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -1099,8 +671,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 6
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -1111,8 +682,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -1123,8 +693,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -1135,8 +704,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -1147,8 +715,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -1159,8 +726,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -1171,8 +737,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -1183,8 +748,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -1195,8 +759,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -1207,8 +770,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -1219,8 +781,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -1231,8 +792,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -1243,8 +803,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -1255,8 +814,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -1267,8 +825,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -1279,8 +836,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -1291,8 +847,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -1303,8 +858,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -1315,8 +869,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -1327,8 +880,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -1339,8 +891,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -1351,8 +902,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -1363,8 +913,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -1375,8 +924,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -1387,8 +935,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -1399,8 +946,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -1411,8 +957,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -1423,8 +968,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -1435,8 +979,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -1447,8 +990,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -1459,8 +1001,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -1471,8 +1012,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -1483,8 +1023,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -1495,8 +1034,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -1507,8 +1045,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -1519,8 +1056,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -1531,8 +1067,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -1543,8 +1078,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -1555,8 +1089,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 9
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -1567,8 +1100,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -1579,8 +1111,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -1591,8 +1122,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -1603,8 +1133,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -1615,8 +1144,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -1627,8 +1155,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -1639,8 +1166,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -1651,8 +1177,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -1663,8 +1188,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -1675,8 +1199,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -1687,8 +1210,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -1699,8 +1221,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -1711,8 +1232,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -1723,8 +1243,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -1735,8 +1254,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -1747,8 +1265,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -1759,8 +1276,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -1771,8 +1287,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -1783,8 +1298,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 7
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -1795,8 +1309,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -1807,8 +1320,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -1819,8 +1331,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -1831,8 +1342,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -1843,8 +1353,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -1855,8 +1364,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -1867,8 +1375,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -1879,8 +1386,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -1891,8 +1397,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -1903,8 +1408,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -1915,8 +1419,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -1927,8 +1430,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -1939,8 +1441,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -1951,8 +1452,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -1963,8 +1463,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -1975,8 +1474,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -1987,8 +1485,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -1999,8 +1496,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -2011,8 +1507,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 5
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -2023,8 +1518,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -2035,8 +1529,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -2047,8 +1540,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -2059,8 +1551,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -2071,8 +1562,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -2083,8 +1573,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -2095,8 +1584,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -2107,8 +1595,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -2119,8 +1606,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -2131,8 +1617,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -2143,8 +1628,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -2155,8 +1639,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -2167,8 +1650,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -2179,8 +1661,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "流行性耳下腺炎",
@@ -2191,8 +1672,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -2203,8 +1683,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -2215,8 +1694,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -2227,8 +1705,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -2239,8 +1716,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 4
+      "attention_prefs": []
     },
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
@@ -2251,8 +1727,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "RSウイルス",
@@ -2263,8 +1738,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "インフルエンザ",
@@ -2275,8 +1749,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "クラミジア肺炎",
@@ -2287,8 +1760,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "ヘルパンギーナ",
@@ -2299,8 +1771,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "マイコプラズマ肺炎",
@@ -2311,8 +1782,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "伝染性紅斑",
@@ -2323,8 +1793,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "咽頭結膜熱",
@@ -2335,8 +1804,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "急性出血性結膜炎",
@@ -2347,8 +1815,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎",
@@ -2359,8 +1826,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "感染性胃腸炎（ロタウイルス）",
@@ -2371,8 +1837,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "手足口病",
@@ -2385,8 +1850,7 @@
         "宮崎県"
       ],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "新型コロナウイルス",
@@ -2397,8 +1861,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "水痘",
@@ -2411,8 +1874,7 @@
       "n_attention": 1,
       "attention_prefs": [
         "大分県"
-      ],
-      "n_prefs": 8
+      ]
     },
     {
       "category": "流行性耳下腺炎",
@@ -2423,8 +1885,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "流行性角結膜炎",
@@ -2435,8 +1896,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "無菌性髄膜炎",
@@ -2447,8 +1907,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "突発性発しん",
@@ -2459,8 +1918,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     },
     {
       "category": "細菌性髄膜炎",
@@ -2471,8 +1929,7 @@
       "n_alert": 0,
       "alert_prefs": [],
       "n_attention": 0,
-      "attention_prefs": [],
-      "n_prefs": 8
+      "attention_prefs": []
     }
   ],
   "generated_text": {
