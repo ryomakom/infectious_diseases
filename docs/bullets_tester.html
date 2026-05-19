@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bullets テスター</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      max-width: 860px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #222;
+      background: #fafafa;
+    }
+    h1 { font-size: 1.3rem; margin-bottom: 4px; }
+    .sub { color: #666; font-size: 0.85rem; margin-bottom: 24px; }
+
+    /* Loading */
+    #loading { padding: 32px 0; }
+    #loading p { margin: 0 0 10px; }
+    progress { width: 100%; height: 6px; border-radius: 3px; }
+
+    /* Controls */
+    #app { display: none; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .controls label { font-size: 0.9rem; color: #555; }
+    select {
+      font-size: 1rem;
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background: #fff;
+    }
+    button {
+      font-size: 0.95rem;
+      padding: 7px 20px;
+      border: none;
+      border-radius: 5px;
+      background: #2c7be5;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover { background: #1a5fbf; }
+    button:disabled { background: #aaa; cursor: default; }
+
+    /* Results */
+    #output { min-height: 60px; }
+    .week-label {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    .bullet-list { list-style: none; padding: 0; margin: 0; }
+    .bullet-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-left: 4px solid #2c7be5;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .bullet-item.alert  { border-left-color: #e53e3e; }
+    .bullet-item.anomaly { border-left-color: #d69e2e; }
+    .bullet-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
+    .no-result {
+      color: #888;
+      font-style: italic;
+      padding: 12px 0;
+    }
+    .error-msg { color: #c00; padding: 12px 0; }
+  </style>
+</head>
+<body>
+  <h1>Bullets テスター</h1>
+  <p class="sub">任意の週を選んで bullets（警報・平年比異常）を確認します。</p>
+
+  <div id="loading">
+    <p id="load-status">週次データを読み込んでいます…</p>
+    <progress id="prog" value="0" max="100"></progress>
+  </div>
+
+  <div id="app">
+    <div class="controls">
+      <label for="week-select">週：</label>
+      <select id="week-select"></select>
+      <button id="run-btn">生成</button>
+    </div>
+    <div id="output"></div>
+  </div>
+
+  <script>
+  "use strict";
+
+  // ── 定数 ──────────────────────────────────────────────
+  const MIN_CURRENT_MA4 = 0.1;
+
+  // カテゴリ名の正規化（state.js の categoryToDisplay と同じ）
+  const CAT_MAP = {
+    "COVID-19":                     "新型コロナウイルス",
+    "ＲＳウイルス感染症":           "RSウイルス",
+    "Ａ群溶血性レンサ球菌咽頭炎":   "A群溶血性レンサ球菌咽頭炎"
+  };
+  function normCategory(cat) {
+    return CAT_MAP[cat] !== undefined ? CAT_MAP[cat] : cat;
+  }
+
+  // ── パス候補（index.html と同じ多パス解決） ─────────────
+  const _cb = (() => {
+    const d = new Date();
+    return `?v=${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}`;
+  })();
+
+  function pathCandidates(rel) {
+    const p = rel.replace(/^\.\//, "");
+    return [...new Set([p, "./"+p, "docs/"+p, "./docs/"+p])];
+  }
+
+  async function fetchCsv(rel, rowFn) {
+    for (const path of pathCandidates(rel)) {
+      try {
+        const data = await d3.csv(path + _cb, rowFn);
+        return data;
+      } catch (_) {}
+    }
+    throw new Error("CSV 読み込み失敗: " + rel);
+  }
+
+  // ── データ読み込み ────────────────────────────────────
+  async function loadAll() {
+    setStatus("週次データを読み込んでいます…", 10);
+
+    // 週次集計データ（by_week: pref, category, year_week, ma4, weekly_value, yr, wk）
+    const weekly = await fetchCsv("results/merged_weekly.csv", d => ({
+      pref:         d.pref,
+      category:     normCategory(d.category),
+      year_week:    d.year_week,
+      ma4:          parseFloat(d.ma4),
+      weekly_value: parseFloat(d.weekly_value),
+      yr:           parseInt(d.yr, 10),
+      wk:           parseInt(d.wk, 10)
+    }));
+
+    setStatus("警報閾値を読み込んでいます…", 70);
+
+    // 警報閾値
+    const alertRows = await fetchCsv("data/alert_thresholds.csv", d => ({
+      category:    normCategory(d.category),
+      alert_start: parseFloat(d.alert_start),
+      alert_end:   parseFloat(d.alert_end)
+    }));
+
+    setStatus("完了", 100);
+
+    const alertStartMap = {};
+    const alertEndMap   = {};
+    alertRows.forEach(r => {
+      if (isFinite(r.alert_start) && r.alert_start > 0) alertStartMap[r.category] = r.alert_start;
+      if (isFinite(r.alert_end)   && r.alert_end   > 0) alertEndMap[r.category]   = r.alert_end;
+    });
+
+    return { weekly, alertStartMap, alertEndMap };
+  }
+
+  // ── 週セレクタ構築 ────────────────────────────────────
+  function buildWeekSelect(allWeeks) {
+    const sel = document.getElementById("week-select");
+    // 新しい順で表示
+    const sorted = [...allWeeks].sort((a, b) => b.localeCompare(a));
+    sorted.forEach(yw => {
+      const opt = document.createElement("option");
+      opt.value = yw;
+      const yr = parseInt(yw.slice(0, 4), 10);
+      const wk = parseInt(yw.slice(5, 7), 10);
+      opt.textContent = `${yr}年 第${wk}週  (${yw})`;
+      sel.appendChild(opt);
+    });
+  }
+
+  // ── 過去3年ウィンドウ ─────────────────────────────────
+  function past3Window(targetYW) {
+    const yr = parseInt(targetYW.slice(0, 4), 10);
+    const wk = parseInt(targetYW.slice(5, 7), 10);
+    const s = new Set();
+    for (let y = yr - 1; y >= yr - 3; y--) {
+      for (let w = wk - 3; w <= wk; w++) {
+        if (w > 0) s.add(`${String(y).padStart(4,"0")}-${String(w).padStart(2,"0")}`);
+      }
+    }
+    return s;
+  }
+
+  // ── ヒステリシス警報判定 ─────────────────────────────
+  function computeInAlertNow(weekly, alertStartMap, alertEndMap, targetYW) {
+    const filtered = weekly.filter(d => d.year_week <= targetYW);
+    const groups   = d3.groups(filtered, d => `${d.pref}\x00${d.category}`);
+    const result   = new Map();
+
+    groups.forEach(([key, rows]) => {
+      const [, category] = key.split("\x00");
+      const aStart = alertStartMap[category];
+      if (!aStart) return;
+      let aEnd = alertEndMap[category];
+      if (!aEnd || !isFinite(aEnd) || aEnd <= 0) aEnd = aStart;
+
+      rows.sort((a, b) => a.year_week.localeCompare(b.year_week));
+
+      let flag = false;
+      let hasTarget = false;
+      let stateAtTarget = false;
+
+      rows.forEach(row => {
+        const v = row.weekly_value;
+        if (isFinite(v)) {
+          if (!flag && v >= aStart)      flag = true;
+          else if (flag && v < aEnd)     flag = false;
+        }
+        if (row.year_week === targetYW) {
+          hasTarget      = true;
+          stateAtTarget  = flag;
+        }
+      });
+
+      if (hasTarget) result.set(key, stateAtTarget);
+    });
+
+    return result;
+  }
+
+  // ── 都道府県タイプ接尾辞 ─────────────────────────────
+  function prefTypeSuffix(prefs) {
+    if (!prefs.length) return "";
+    const lastChars = prefs.map(p => p[p.length - 1]);
+    return ["都", "道", "府", "県"].filter(c => lastChars.includes(c)).join("");
+  }
+
+  // ── 季節ベースライン（平均・標準偏差） ───────────────
+  function computeSeasonalStats(rows, cy, cw) {
+    // rows: {yr, wk, weekly_value} の時系列（対象週まで）
+    const byr = [cy - 1, cy - 2, cy - 3];
+    const bwk = [cw - 3, cw - 2, cw - 1, cw];
+    const vals = rows
+      .filter(r => byr.includes(r.yr) && bwk.includes(r.wk) && isFinite(r.weekly_value))
+      .map(r => r.weekly_value);
+    if (vals.length === 0) return { mean: NaN, std: NaN };
+    const m = d3.mean(vals);
+    if (!isFinite(m)) return { mean: NaN, std: NaN };
+    if (vals.length <= 2) return { mean: m, std: NaN };
+    const s = d3.deviation(vals);
+    return { mean: m, std: (isFinite(s) && s > 0) ? s : NaN };
+  }
+
+  // ── Bullets 生成 ────────────────────────────────────
+  function generateBullets(weekly, alertStartMap, alertEndMap, targetYW) {
+    const window3      = past3Window(targetYW);
+    const inAlertNow   = computeInAlertNow(weekly, alertStartMap, alertEndMap, targetYW);
+    const targetRows   = weekly.filter(d => d.year_week === targetYW);
+    const baselineData = weekly.filter(d => window3.has(d.year_week));
+    const seriesData   = weekly.filter(d => d.year_week <= targetYW);
+
+    // ベースライン：過去3年同週ウィンドウの weekly_value 平均（per pref+cat）
+    const baselineMap = new Map();
+    d3.groups(baselineData, d => `${d.pref}\x00${d.category}`).forEach(([key, rows]) => {
+      const vals = rows.map(r => r.weekly_value).filter(v => isFinite(v));
+      if (vals.length > 0) baselineMap.set(key, d3.mean(vals));
+    });
+
+    // 時系列（per pref+cat, 対象週まで昇順）
+    const seriesMap = new Map();
+    d3.groups(seriesData, d => `${d.pref}\x00${d.category}`).forEach(([key, rows]) => {
+      seriesMap.set(key, rows.sort((a, b) => a.year_week.localeCompare(b.year_week)));
+    });
+
+    // 各行のスコア計算
+    const rows = [];
+    targetRows.forEach(d => {
+      if (!isFinite(d.ma4)) return;
+      const key      = `${d.pref}\x00${d.category}`;
+      const baseline = baselineMap.get(key);
+      if (!isFinite(baseline) || baseline <= 0) return;
+
+      const series = seriesMap.get(key) || [];
+      const cy     = d.yr, cw = d.wk;
+      const { mean: seasonal_mean, std: seasonal_std } = computeSeasonalStats(series, cy, cw);
+
+      const cv = d.weekly_value;
+      const anomaly_z = (isFinite(cv) && isFinite(seasonal_mean) && isFinite(seasonal_std) && seasonal_std > 0)
+        ? (cv - seasonal_mean) / seasonal_std
+        : NaN;
+      const anomaly_ratio = (isFinite(cv) && isFinite(seasonal_mean) && seasonal_mean >= MIN_CURRENT_MA4)
+        ? cv / seasonal_mean
+        : NaN;
+
+      rows.push({
+        pref:          d.pref,
+        category:      d.category,
+        current_ma4:   d.ma4,
+        current_value: cv,
+        anomaly_z,
+        anomaly_ratio,
+        seasonal_mean
+      });
+    });
+
+    // ── 警報 bullets ──
+    const alertEntries = [];
+    inAlertNow.forEach((isAlert, key) => {
+      if (!isAlert) return;
+      const [pref, category] = key.split("\x00");
+      if (pref === "全国") return;
+      const row = rows.find(r => r.pref === pref && r.category === category);
+      if (!row || !isFinite(row.current_ma4) || row.current_ma4 < MIN_CURRENT_MA4) return;
+      alertEntries.push({ pref, category, current_ma4: row.current_ma4 });
+    });
+
+    alertEntries.sort((a, b) =>
+      a.category < b.category ? -1 : a.category > b.category ? 1 : b.current_ma4 - a.current_ma4
+    );
+
+    const alertBullets   = [];
+    const alertDiseases  = [...new Set(alertEntries.map(d => d.category))];
+    alertDiseases.forEach(cat => {
+      const entries = alertEntries.filter(d => d.category === cat);
+      const nTotal  = entries.length;
+      const allPrefs = entries.map(d => d.pref);
+      const top3    = allPrefs.slice(0, 3);
+      if (nTotal <= 3) {
+        alertBullets.push({ type: "alert", text: `${cat}：${top3.join("、")}で患者数が警報レベル` });
+      } else {
+        const suffix = prefTypeSuffix(allPrefs);
+        alertBullets.push({ type: "alert", text: `${cat}：${top3.join("、")}など${nTotal}${suffix}で患者数が警報レベル` });
+      }
+    });
+
+    // ── 平年比異常 bullets ──
+    const anomalyBullets = rows
+      .filter(r =>
+        r.pref === "全国" &&
+        isFinite(r.anomaly_z) && r.anomaly_z >= 3 &&
+        isFinite(r.current_ma4) && r.current_ma4 >= MIN_CURRENT_MA4 &&
+        isFinite(r.anomaly_ratio) && r.anomaly_ratio > 1 &&
+        !alertDiseases.includes(r.category)
+      )
+      .sort((a, b) => b.anomaly_z - a.anomaly_z)
+      .map(r => {
+        const pct = Math.round((r.anomaly_ratio - 1) * 100);
+        const topPrefs = rows
+          .filter(x => x.category === r.category && x.pref !== "全国" &&
+                       isFinite(x.current_ma4) && x.current_ma4 >= MIN_CURRENT_MA4)
+          .sort((a, b) => b.current_ma4 - a.current_ma4)
+          .slice(0, 3)
+          .map(x => x.pref);
+        const text = topPrefs.length >= 1
+          ? `${r.category}：全国の患者数が平年比+${pct}%で、とくに${topPrefs.join("、")}で多い`
+          : `${r.category}：全国の患者数が平年比+${pct}%`;
+        return { type: "anomaly", text };
+      });
+
+    return [...alertBullets, ...anomalyBullets];
+  }
+
+  // ── UI ──────────────────────────────────────────────
+  function setStatus(msg, pct) {
+    document.getElementById("load-status").textContent = msg;
+    document.getElementById("prog").value = pct;
+  }
+
+  function renderBullets(bullets, targetYW) {
+    const out = document.getElementById("output");
+    const yr  = parseInt(targetYW.slice(0, 4), 10);
+    const wk  = parseInt(targetYW.slice(5, 7), 10);
+    out.innerHTML = `<div class="week-label">${yr}年 第${wk}週（${targetYW}）</div>`;
+
+    if (bullets.length === 0) {
+      out.insertAdjacentHTML("beforeend", `<p class="no-result">（該当なし）</p>`);
+      return;
+    }
+
+    const ul = document.createElement("ul");
+    ul.className = "bullet-list";
+    bullets.forEach(b => {
+      const li = document.createElement("li");
+      li.className = `bullet-item ${b.type}`;
+      const icon = b.type === "alert" ? "🔴" : "⚠️";
+      li.innerHTML = `<span class="bullet-icon">${icon}</span><span>${b.text}</span>`;
+      ul.appendChild(li);
+    });
+    out.appendChild(ul);
+  }
+
+  // ── エントリポイント ─────────────────────────────────
+  (async () => {
+    let weekly, alertStartMap, alertEndMap;
+    try {
+      ({ weekly, alertStartMap, alertEndMap } = await loadAll());
+    } catch (e) {
+      document.getElementById("loading").innerHTML =
+        `<p class="error-msg">データ読み込みエラー：${e.message}</p>
+         <p>daily_task.Rmd を実行して docs/results/merged_weekly.csv を生成してください。</p>`;
+      return;
+    }
+
+    // 週一覧を取得
+    const allWeeks = [...new Set(weekly.map(d => d.year_week))].sort();
+
+    // UI 初期化
+    document.getElementById("loading").style.display = "none";
+    document.getElementById("app").style.display = "";
+    buildWeekSelect(allWeeks);
+
+    const btn = document.getElementById("run-btn");
+    const sel = document.getElementById("week-select");
+
+    function run() {
+      const targetYW = sel.value;
+      if (!targetYW) return;
+      btn.disabled = true;
+      btn.textContent = "処理中…";
+      // レンダリングをブロックしないよう setTimeout 1 tick 後に実行
+      setTimeout(() => {
+        try {
+          const bullets = generateBullets(weekly, alertStartMap, alertEndMap, targetYW);
+          renderBullets(bullets, targetYW);
+        } catch (e) {
+          document.getElementById("output").innerHTML =
+            `<p class="error-msg">エラー：${e.message}</p>`;
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "生成";
+        }
+      }, 10);
+    }
+
+    btn.addEventListener("click", run);
+    // 初期表示：最新週
+    if (allWeeks.length > 0) run();
+  })();
+  </script>
+</body>
+</html>

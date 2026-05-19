@@ -465,6 +465,9 @@ by_week <- d %>%
     .groups = "drop"
   )
 
+# bullets_tester.html 用：週次集計データを丸ごと出力
+write_csv(by_week, "docs/results/merged_weekly.csv")
+
 latest_yr_wk <- by_week %>% pull(year_week) %>% max()
 latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
 latest_wk <- substr(latest_yr_wk, 6, 7)
