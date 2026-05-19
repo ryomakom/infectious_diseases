@@ -600,17 +600,6 @@ MIN_CURRENT_MA4 <- 0.1
 MIN_AVG_FOR_GROWTH <- 0.1
 PERSISTENCE_WINDOW <- 4L
 
-# importance score weights
-W_ANOMALY <- 0.6
-W_ALERT <- 0.8
-W_LEVEL <- 0.4
-W_PERSISTENCE <- 0.5
-W_GROWTH <- 0.3
-BONUS_ANOMALY <- 1.0
-BONUS_ALERT <- 2.0
-BONUS_PERSIST <- 3.0
-BONUS_RISING <- 0.5
-
 major_categories <- c(
   "インフルエンザ",
   "RSウイルス",
@@ -639,60 +628,6 @@ is_major_category <- function(cat) {
 prefToBlock <- function(pref) {
   out <- unname(PREF_TO_BLOCK[pref])
   ifelse(is.na(out), NA_character_, out)
-}
-
-classifySpreadType <- function(blocks) {
-  n <- length(unique(blocks[!is.na(blocks)]))
-  if (n <= 1) return("局所")
-  if (n <= 3) return("地域拡散")
-  "全国拡散"
-}
-
-computeBlockCounts <- function(top_pref_df, rising_df, alert_df) {
-  bind_rows(
-    top_pref_df %>% select(category, pref),
-    rising_df %>% select(category, pref),
-    alert_df %>% select(category, pref)
-  ) %>%
-    mutate(block = prefToBlock(pref)) %>%
-    filter(!is.na(block)) %>%
-    group_by(category, block) %>%
-    summarise(n = n(), .groups = "drop")
-}
-
-buildGeoContext <- function(digest) {
-  top_news <- digest$top_news
-  top_pref_df <- digest$top_pref_df
-  rising_df <- digest$rising_df
-  alert_df <- digest$alert_df
-  block_counts <- computeBlockCounts(top_pref_df, rising_df, alert_df)
-  if (nrow(top_news) == 0) {
-    return(list(
-      spread_type = "局所",
-      affected_blocks = character(0),
-      sentence = "地域分布は限定的です。"
-    ))
-  }
-  target_cat <- as.character(top_news$category[[1]])
-  target_blocks <- block_counts %>%
-    filter(category == target_cat) %>%
-    arrange(desc(n), block)
-  affected_blocks <- target_blocks$block
-  spread_type <- classifySpreadType(affected_blocks)
-  flags <- unlist(top_news$flags[[1]])
-  block_text <- if (length(affected_blocks) > 0) paste(affected_blocks, collapse = "・") else "限定的な地域"
-  sentence <- if ("rising" %in% flags) {
-    sprintf("%sの増加は%sを中心にみられます。", target_cat, block_text)
-  } else if ("alert" %in% flags) {
-    sprintf("%sの警報超えは%sを中心にみられます。", target_cat, block_text)
-  } else {
-    sprintf("%sの発生は%sを中心にみられます。", target_cat, block_text)
-  }
-  list(
-    spread_type = spread_type,
-    affected_blocks = affected_blocks,
-    sentence = sentence
-  )
 }
 
 computeSeasonalBaseline <- function(rows) {
@@ -739,86 +674,6 @@ computeSeasonalZscore <- function(row) {
   if (!is.finite(cv) || !is.finite(sm) || !is.finite(ss) || ss <= 0) return(NA_real_)
   z <- (cv - sm) / ss
   ifelse(is.finite(z), z, NA_real_)
-}
-
-computeImportanceScore <- function(row) {
-  sz <- ifelse(is.finite(row$seasonal_zscore), as.numeric(row$seasonal_zscore), 0)
-  ra <- ifelse(is.finite(row$ratio_alert), as.numeric(row$ratio_alert), 0)
-  cm <- ifelse(is.finite(row$current_ma4), as.numeric(row$current_ma4), 0)
-  pr <- ifelse(is.finite(row$persistenceRate), as.numeric(row$persistenceRate), 0)
-  gr <- ifelse(is.finite(row$growth1Rate), as.numeric(row$growth1Rate), 0)
-  wo <- ifelse(is.finite(row$weeksOverAlert), as.numeric(row$weeksOverAlert), 0)
-
-  anomaly_component <- max(sz, 0) * W_ANOMALY
-  alert_component <- max(ra, 0) * W_ALERT
-  level_component <- log(1 + max(cm, 0)) * W_LEVEL
-  persistence_component <- max(pr, 0) * W_PERSISTENCE
-  growth_component <- max(gr, 0) * 0.15
-
-  score <- anomaly_component + alert_component + level_component + persistence_component + growth_component
-  if (sz >= 2.5) score <- score + BONUS_ANOMALY
-  if (ra >= 1) score <- score + 1.5
-  if (wo >= 2) score <- score + BONUS_PERSIST
-  if (gr >= 0.2) score <- score + BONUS_RISING
-  ifelse(is.finite(score), as.numeric(score), 0)
-}
-
-attachImportanceScore <- function(df) {
-  if (nrow(df) == 0) {
-    df$importance_score <- numeric(0)
-    return(df)
-  }
-  getcol <- function(nm, default = NA_real_) {
-    if (nm %in% names(df)) return(df[[nm]])
-    rep(default, nrow(df))
-  }
-  df %>%
-    mutate(
-      importance_score = mapply(
-        function(seasonal_zscore, ratio_alert, current_ma4, persistenceRate, growth1Rate, weeksOverAlert) {
-          computeImportanceScore(list(
-            seasonal_zscore = seasonal_zscore,
-            ratio_alert = ratio_alert,
-            current_ma4 = current_ma4,
-            persistenceRate = persistenceRate,
-            growth1Rate = growth1Rate,
-            weeksOverAlert = weeksOverAlert
-          ))
-        },
-        getcol("seasonal_zscore"),
-        getcol("ratio_alert"),
-        getcol("current_ma4"),
-        getcol("persistenceRate"),
-        getcol("growth1Rate"),
-        getcol("weeksOverAlert")
-      )
-    )
-}
-
-buildNewsCandidates <- function(digest) {
-  anomalies_df <- digest$anomalies_df
-  rising_df <- digest$rising_df
-  alert_df <- digest$alert_df
-
-  parts <- list()
-  if (nrow(anomalies_df) > 0) parts <- append(parts, list(anomalies_df %>% mutate(flag = "anomaly")))
-  if (nrow(rising_df) > 0) parts <- append(parts, list(rising_df %>% mutate(flag = "rising")))
-  if (nrow(alert_df) > 0) parts <- append(parts, list(alert_df %>% mutate(flag = "alert")))
-  if (length(parts) == 0) return(tibble())
-
-  bind_rows(parts) %>%
-    group_by(category, pref) %>%
-    summarise(
-      importance_score = max(importance_score, na.rm = TRUE),
-      flags = list(sort(unique(flag))),
-      .groups = "drop"
-    ) %>%
-    arrange(desc(importance_score))
-}
-
-pickTopNews <- function(candidates) {
-  if (nrow(candidates) == 0) return(candidates)
-  candidates %>% slice_head(n = 1)
 }
 
 detectAnomalies <- function(rows) {
@@ -893,16 +748,6 @@ selectLead <- function(rows) {
   }
 
   list(row = nationwide %>% arrange(desc(current_value)) %>% slice_head(n = 1), reason = "E: 代替（全国の現在値最大）")
-}
-
-computeAlertPrefCounts <- function(rows) {
-  counts <- rows %>%
-    filter(pref != "全国", is.finite(ratio_alert), ratio_alert >= 1) %>%
-    group_by(category) %>%
-    summarise(pref_alert_count = n(), .groups = "drop")
-  out <- counts$pref_alert_count
-  names(out) <- counts$category
-  out
 }
 
 integrateAnomalyIntoLead <- function(digest) {
@@ -983,42 +828,9 @@ selectRising <- function(rows, alert_categories = character(0)) {
     slice_head(n = 3)
 }
 
-selectAlerts <- function(rows) {
-  alert_prefs <- rows %>%
-    filter(pref != "全国", is.finite(ratio_alert), ratio_alert > 1) %>%
-    arrange(desc(ratio_alert), desc(current_ma4))
-
-  pref_info <- alert_prefs %>%
-    group_by(category) %>%
-    summarise(
-      pref_alert_count = n(),
-      top_prefs        = list(as.character(pref)),
-      .groups          = "drop"
-    )
-
-  if (nrow(pref_info) == 0) return(rows %>% slice(0))
-
-  nationwide <- rows %>%
-    filter(pref == "全国", category %in% pref_info$category, is.finite(ratio_alert))
-
-  if (nrow(nationwide) == 0) return(nationwide)
-
-  result <- nationwide %>%
-    left_join(pref_info, by = "category")
-
-  result$pref_alert_count[is.na(result$pref_alert_count)] <- 0L
-  result$top_prefs[sapply(result$top_prefs, is.null)] <- list(character(0))
-
-  result %>%
-    mutate(
-      alert_score = ratio_alert +
-                    log(pref_alert_count + 1) +
-                    log(pmax(coalesce(as.numeric(weeksOverAlert), 0), 0) + 1)
-    ) %>%
-    arrange(desc(alert_score)) %>%
-    slice_head(n = 3)
-}
-
+# JS 側で実際に読まれるフィールドのみ出力する。
+# top_prefectures: category, pref のみ参照 / rising: category, current_value, previous_value, growth1Rate
+# 共通スキーマで両者をカバーする。
 as_item_list <- function(df, n = 3) {
   if (nrow(df) == 0) return(list())
   out <- df %>% slice_head(n = n)
@@ -1027,39 +839,23 @@ as_item_list <- function(df, n = 3) {
     list(
       category = as.character(row$category[[1]]),
       pref = as.character(row$pref[[1]]),
-      current_ma4 = ifelse(is.finite(row$current_ma4[[1]]), as.numeric(row$current_ma4[[1]]), NA_real_),
       current_value = ifelse(is.finite(row$current_value[[1]]), as.numeric(row$current_value[[1]]), NA_real_),
       previous_value = ifelse(is.finite(row$previous_value[[1]]), as.numeric(row$previous_value[[1]]), NA_real_),
-      ratio_alert = ifelse(is.finite(row$ratio_alert[[1]]), as.numeric(row$ratio_alert[[1]]), NA_real_),
-      ratio_heinen = ifelse(is.finite(row$ratio_heinen[[1]]), as.numeric(row$ratio_heinen[[1]]), NA_real_),
       growth1Rate = ifelse(is.finite(row$growth1Rate[[1]]), as.numeric(row$growth1Rate[[1]]), NA_real_)
     )
   })
 }
 
+# anomalies は JS 側で anomalies[0].category しか参照されない
 as_anomaly_list <- function(df, n = 3) {
   if (nrow(df) == 0) return(list())
   out <- df %>% slice_head(n = n)
   lapply(seq_len(nrow(out)), function(i) {
     row <- out[i, ]
     list(
-      category = as.character(row$category[[1]]),
-      pref = as.character(row$pref[[1]]),
-      current_ma4 = ifelse(is.finite(row$current_ma4[[1]]), as.numeric(row$current_ma4[[1]]), NA_real_),
-      current_value = ifelse(is.finite(row$current_value[[1]]), as.numeric(row$current_value[[1]]), NA_real_),
-      seasonal_mean = ifelse(is.finite(row$seasonal_mean[[1]]), as.numeric(row$seasonal_mean[[1]]), NA_real_),
-      seasonal_zscore = ifelse(is.finite(row$seasonal_zscore[[1]]), as.numeric(row$seasonal_zscore[[1]]), NA_real_)
+      category = as.character(row$category[[1]])
     )
   })
-}
-
-as_top_news <- function(df) {
-  if (nrow(df) == 0) return(NULL)
-  row <- df[1, ]
-  list(
-    category = as.character(row$category[[1]]),
-    pref = as.character(row$pref[[1]])
-  )
 }
 
 buildAlertBullets <- function(rows, in_alert_now) {
@@ -1109,7 +905,7 @@ buildAnomalyBullets <- function(rows, alert_diseases) {
   })
 }
 
-buildGeneratedText <- function(digest, top_pref_df, rising_df, alert_df, rows, in_alert_now) {
+buildGeneratedText <- function(rows, in_alert_now) {
   alert_diseases  <- unique(as.character(
     in_alert_now %>% filter(in_alert_level == TRUE, pref != "全国") %>% pull(category)
   ))
@@ -1263,51 +1059,8 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
       n_attention = ifelse(is.na(n_attention), 0L, as.integer(n_attention))
     )
 
-  # スコアは「警報 / 注意報 / zスコア」の3要素のみ
-  spotlight_by_block <- combined %>%
-    mutate(
-      score = (n_alert > 0) * 1e6 +
-              (n_attention > 0) * 1e4 +
-              pmax(coalesce(zscore, 0), 0) * 100
-    ) %>%
-    group_by(block) %>%
-    arrange(desc(score), .by_group = TRUE) %>%
-    slice_head(n = 3) %>%
-    ungroup()
-
-  # by_block 用（既存。地方ごとの上位3疾患を出すので「全国」は含めない）
-  block_order <- c("北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州")
-  # block_matrix 用（ヒートマップで一番左に「全国」を出す）
-  matrix_block_order <- c("全国", block_order)
-  blocks_present <- intersect(block_order, unique(spotlight_by_block$block))
-
-  # by_block: 地方ごとの上位3疾患（既存）
-  out <- list()
-  for (b in blocks_present) {
-    rows_b <- spotlight_by_block %>% filter(block == b)
-    spots <- lapply(seq_len(nrow(rows_b)), function(i) {
-      r <- rows_b[i, ]
-      alert_prefs_v <- r$alert_prefs[[1]]
-      if (is.null(alert_prefs_v)) alert_prefs_v <- character(0)
-      attention_prefs_v <- r$attention_prefs[[1]]
-      if (is.null(attention_prefs_v)) attention_prefs_v <- character(0)
-      list(
-        category        = as.character(r$category[[1]]),
-        avg_value       = safe_num(r$avg_value[[1]], 4),
-        growth1Rate     = safe_num(r$growth1Rate[[1]], 4),
-        zscore          = safe_num(r$zscore[[1]], 4),
-        ratio_heinen    = safe_num(r$ratio_heinen[[1]], 4),
-        n_alert         = as.integer(r$n_alert[[1]]),
-        alert_prefs     = unname(as.list(alert_prefs_v)),
-        n_attention     = as.integer(r$n_attention[[1]]),
-        attention_prefs = unname(as.list(attention_prefs_v)),
-        n_prefs         = as.integer(r$n_prefs[[1]])
-      )
-    })
-    out[[b]] <- list(spotlights = spots)
-  }
-
   # block_matrix: 全疾患×全地方のフラットリスト（ヒートマップ用、先頭は全国）
+  matrix_block_order <- c("全国", "北海道", "東北", "関東", "中部", "近畿", "中国", "四国", "九州")
   matrix_rows <- combined %>%
     mutate(block = factor(block, levels = matrix_block_order)) %>%
     arrange(block, category)
@@ -1327,12 +1080,11 @@ buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr
       n_alert         = as.integer(r$n_alert[[1]]),
       alert_prefs     = unname(as.list(alert_prefs_v)),
       n_attention     = as.integer(r$n_attention[[1]]),
-      attention_prefs = unname(as.list(attention_prefs_v)),
-      n_prefs         = as.integer(r$n_prefs[[1]])
+      attention_prefs = unname(as.list(attention_prefs_v))
     )
   })
 
-  list(by_block = out, matrix = matrix_out)
+  list(matrix = matrix_out)
 }
 
 # 週次系列（category + pref ごと）
@@ -1482,7 +1234,6 @@ ranking <- ranking %>%
 write_excel_csv(ranking, "docs/results/ranking.csv")
 message("ランキング出力: docs/results/ranking.csv")
 
-alertPrefCountByDisease <- computeAlertPrefCounts(news_base)
 anomalies_df <- detectAnomalies(news_base)
 
 lead_pick <- selectLead(news_base)
@@ -1511,36 +1262,15 @@ top_pref_df <- selectTopPrefectures(
   anomalies_df = anomalies_df,
   prefer_anomaly_prefs = isTRUE(grepl("^A: 季節パターン逸脱", lead_bundle$lead$reason))
 )
-alert_df <- selectAlerts(news_base)
 rising_df <- selectRising(news_base)
 
-top_pref_df <- attachImportanceScore(top_pref_df)
-rising_df <- attachImportanceScore(rising_df)
-alert_df <- attachImportanceScore(alert_df)
-anomalies_df <- attachImportanceScore(anomalies_df)
-
-news_candidates_df <- buildNewsCandidates(list(
-  anomalies_df = anomalies_df,
-  rising_df = rising_df,
-  alert_df = alert_df
-))
-top_news_df <- pickTopNews(news_candidates_df)
-geo_context <- buildGeoContext(list(
-  top_news = top_news_df,
-  top_pref_df = top_pref_df,
-  rising_df = rising_df,
-  alert_df = alert_df
-))
-
-generated_text <- buildGeneratedText(list(
-  lead = lead_bundle$lead,
-  anomalies_df = anomalies_df,
-  top_news = top_news_df,
-  geo_context = geo_context
-), top_pref_df, rising_df, alert_df, rows = news_base, in_alert_now = in_alert_now)
+generated_text <- buildGeneratedText(rows = news_base, in_alert_now = in_alert_now)
 
 block_result <- buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk)
 
+# news_digest.json は JS 側で実際に参照されるフィールドだけを出力する。
+# - メインサイト (newsDigest.js) で使用: lead.category / top_prefectures / rising / anomalies / generated_text.bullets
+# - heatmap.html で使用: week / block_matrix
 news_digest <- list(
   week = as.character(reference_date),
   lead = list(
@@ -1548,12 +1278,7 @@ news_digest <- list(
   ),
   top_prefectures = as_item_list(top_pref_df, 3),
   rising = as_item_list(rising_df, 3),
-  alerts = as_item_list(alert_df, 3),
   anomalies = as_anomaly_list(anomalies_df, 3),
-  top_news = as_top_news(top_news_df),
-  spread_type = geo_context$spread_type,
-  affected_blocks = unname(as.list(geo_context$affected_blocks)),
-  by_block = block_result$by_block,
   block_matrix = block_result$matrix,
   generated_text = list(bullets = generated_text$bullets)
 )

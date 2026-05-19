@@ -4,37 +4,20 @@
  * @typedef {Object} NewsDigestItem
  * @property {string} [category]
  * @property {string} [pref]
- * @property {number|null} [current_ma4]
- * @property {number|null} [ratio_alert]
- * @property {number|null} [importance_score]
- * @property {number|null} [seasonal_zscore]
+ * @property {number|null} [current_value]
+ * @property {number|null} [previous_value]
+ * @property {number|null} [growth1Rate]
  */
 
 /**
  * @typedef {Object} NewsDigest
  * @property {string} [week]
- * @property {{category?:string, reason?:string}|null} [lead]
- * @property {{category?:string,pref?:string,flags?:string[]}|null} [top_news]
- * @property {{headline?:string, summary?:string, bullets?:string[]}|null} [generated_text]
+ * @property {{category?:string}|null} [lead]
+ * @property {{bullets?:string[]}|null} [generated_text]
  * @property {NewsDigestItem[]} [top_prefectures]
  * @property {NewsDigestItem[]} [rising]
- * @property {NewsDigestItem[]} [alerts]
- * @property {NewsDigestItem[]} [anomalies]
- * @property {NewsDigestItem[]} [improving]
- * @property {string} [spread_type]
- * @property {string[]} [affected_blocks]
+ * @property {Array<{category?:string}>} [anomalies]
  */
-
-const BLOCK_TO_PREFS = {
-  "北海道": ["北海道"],
-  "東北": ["青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県"],
-  "関東": ["茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県"],
-  "中部": ["新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県"],
-  "近畿": ["三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県"],
-  "中国": ["鳥取県", "島根県", "岡山県", "広島県", "山口県"],
-  "四国": ["徳島県", "香川県", "愛媛県", "高知県"],
-  "九州": ["福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県"]
-};
 
 function isObject(value) {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -60,44 +43,22 @@ function normalizeNewsDigest(raw) {
   if (!isObject(raw)) return null;
   const generated = isObject(raw.generated_text) ? raw.generated_text : {};
   const lead = isObject(raw.lead) ? raw.lead : {};
-  const topNews = isObject(raw.top_news) ? raw.top_news : {};
   return {
     week: asString(raw.week, ""),
     lead: {
-      category: asString(lead.category, ""),
-      reason: asString(lead.reason, "")
-    },
-    top_news: {
-      category: asString(topNews.category, ""),
-      pref: asString(topNews.pref, ""),
-      flags: asArray(topNews.flags).filter(v => typeof v === "string")
+      category: asString(lead.category, "")
     },
     generated_text: {
-      headline: asString(generated.headline, ""),
-      summary: asString(generated.summary, ""),
       bullets: asArray(generated.bullets).filter(v => typeof v === "string")
     },
     top_prefectures: toDigestItems(raw.top_prefectures),
     rising: toDigestItems(raw.rising),
-    alerts: toDigestItems(raw.alerts),
-    anomalies: toDigestItems(raw.anomalies),
-    improving: toDigestItems(raw.improving),
-    spread_type: asString(raw.spread_type, ""),
-    affected_blocks: asArray(raw.affected_blocks).filter(v => typeof v === "string")
+    anomalies: toDigestItems(raw.anomalies)
   };
 }
 
 function uniqueStrings(values) {
   return Array.from(new Set((values || []).filter(v => typeof v === "string" && v)));
-}
-
-function getPrefsFromBlocks(blocks) {
-  const all = [];
-  (blocks || []).forEach(block => {
-    const prefs = BLOCK_TO_PREFS[block];
-    if (prefs) all.push(...prefs);
-  });
-  return uniqueStrings(all).filter(pref => state.uniquePrefectures.includes(pref));
 }
 
 function applyChartPeriodForCategory(category, prefs, weeks) {
@@ -692,103 +653,4 @@ function renderNewsDigestSection(rawDigest) {
   root.appendChild(card);
 }
 
-function chooseDiverseSignals(digest) {
-  const used = new Set();
-  const uniqueByKey = (item) => {
-    if (!item) return false;
-    const k = `${item.category || ""}::${item.pref || ""}`;
-    if (used.has(k)) return false;
-    used.add(k);
-    return true;
-  };
-
-  const spreadItem = digest.top_news.category ? {
-    category: digest.top_news.category,
-    pref: digest.top_news.pref,
-    kind: "spread",
-    title: "全国的な広がりを示すもの",
-    note: `${digest.spread_type || "未判定"} / ${digest.affected_blocks.join("・") || "ブロック情報なし"}`
-  } : null;
-  if (spreadItem) uniqueByKey(spreadItem);
-
-  const regionalSource = digest.alerts[0] || digest.rising[0] || digest.top_prefectures[0] || null;
-  const regionalItem = regionalSource ? {
-    category: regionalSource.category,
-    pref: regionalSource.pref,
-    kind: "regional",
-    title: "地域的な突出を示すもの",
-    note: "局所の動向を直接確認"
-  } : null;
-  if (regionalItem && !uniqueByKey(regionalItem)) {
-    const alt = (digest.rising.concat(digest.alerts, digest.top_prefectures)).find(it => uniqueByKey(it));
-    if (alt) {
-      regionalItem.category = alt.category;
-      regionalItem.pref = alt.pref;
-    }
-  }
-
-  const anomalySource = digest.anomalies[0] || null;
-  const anomalyItem = anomalySource ? {
-    category: anomalySource.category,
-    pref: anomalySource.pref,
-    kind: "anomaly",
-    title: "季節性から外れた異常を示すもの",
-    note: `seasonal_zscore ${formatSmallNumber(anomalySource.seasonal_zscore)}`
-  } : null;
-  if (anomalyItem && !uniqueByKey(anomalyItem)) {
-    const altAnom = digest.anomalies.find(it => uniqueByKey(it));
-    if (altAnom) {
-      anomalyItem.category = altAnom.category;
-      anomalyItem.pref = altAnom.pref;
-      anomalyItem.note = `seasonal_zscore ${formatSmallNumber(altAnom.seasonal_zscore)}`;
-    }
-  }
-
-  return [spreadItem, regionalItem, anomalyItem].filter(Boolean);
-}
-
-function renderRankingSignalsFromDigest(rawDigest) {
-  if (!els.rankingTopHighlights) return false;
-  const digest = normalizeNewsDigest(rawDigest);
-  if (!digest) return false;
-
-  els.rankingTopHighlights.style.display = "block";
-  els.rankingTopHighlights.innerHTML = "";
-  const wrap = document.createElement("div");
-  wrap.className = "digest-highlights-grid";
-  const signals = chooseDiverseSignals(digest);
-  if (!signals.length) {
-    els.rankingTopHighlights.innerHTML = `<p class="news-digest-placeholder">注目シグナルを生成できませんでした。</p>`;
-    return true;
-  }
-
-  signals.forEach(sig => {
-    const card = document.createElement("button");
-    card.type = "button";
-    card.className = "digest-highlight-card";
-    card.innerHTML = `
-      <p class="digest-highlight-title">${sig.title}</p>
-      <p class="digest-highlight-main">${sig.category || "—"}（${sig.pref || "—"}）</p>
-      <p class="digest-highlight-note">${sig.note || ""}</p>
-    `;
-    card.addEventListener("click", () => {
-      const weeks = sig.kind === "rising" ? 26 : (sig.kind === "anomaly" ? 52 : 52);
-      const prefs = sig.kind === "spread" && digest.affected_blocks.length
-        ? getPrefsFromBlocks(digest.affected_blocks)
-        : (sig.pref ? [sig.pref] : []);
-      applyDigestNavigationSelection({
-        category: sig.category,
-        prefs,
-        periodWeeks: weeks,
-        scrollTarget: "chart"
-      });
-    });
-    wrap.appendChild(card);
-  });
-
-  els.rankingTopHighlights.appendChild(wrap);
-  return true;
-}
-
 window.renderNewsDigestSection = renderNewsDigestSection;
-window.renderRankingSignalsFromDigest = renderRankingSignalsFromDigest;
