@@ -23,7 +23,6 @@ const color = d3.scaleOrdinal(d3.schemeCategory10);
 const state = {
   allData: [],
   rankingData: [],
-  precomputedTopHighlights: null,
   newsDigest: null,
   alertThresholdsMap: {},
   uniquePrefectures: [],

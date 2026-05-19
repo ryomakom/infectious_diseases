@@ -363,135 +363,8 @@ function buildHighlightReason(item) {
   return reasons.slice(0, 2).join(" / ");
 }
 
-function computeTopHighlightsFromPrecomputed(filteredRows) {
-  const p = state.precomputedTopHighlights;
-  if (!p || !p.targetCategory) return null;
-  if (state.selectedDiseases.size && !state.selectedDiseases.has(p.targetCategory)) return null;
-
-  const rowsForCategory = (filteredRows || []).filter(d => d.category === p.targetCategory);
-  if (!rowsForCategory.length) return null;
-
-  const toEntry = (rowLike, fallbackRank) => {
-    if (!rowLike || !rowLike.pref) return null;
-    const live = rowsForCategory.find(r => r.pref === rowLike.pref);
-    const base = live || rowLike;
-    return {
-      category: p.targetCategory,
-      pref: rowLike.pref,
-      rankLabel: rowLike.rankLabel || fallbackRank || "",
-      current_ma4: Number.isFinite(+base.current_ma4) ? +base.current_ma4 : null,
-      ratio_alert: Number.isFinite(+base.ratio_alert) ? +base.ratio_alert : null,
-      sparkValues: Array.isArray(rowLike.series52) ? rowLike.series52 : null
-    };
-  };
-
-  const nationwideRow = toEntry(p.nationwideRow, "全国");
-  const topPrefRows = (Array.isArray(p.topPrefRows) ? p.topPrefRows : [])
-    .map((row, idx) => toEntry(row, `${idx + 1}.`))
-    .filter(Boolean)
-    .slice(0, 3);
-
-  if (!nationwideRow && !topPrefRows.length) return null;
-  return {
-    targetCategory: p.targetCategory,
-    nationwideRow,
-    topPrefRows
-  };
-}
-
-function computeTopHighlights(filteredRows) {
-  if (!Array.isArray(filteredRows) || !filteredRows.length) return null;
-
-  const precomputed = computeTopHighlightsFromPrecomputed(filteredRows);
-  if (precomputed) return precomputed;
-
-  const compareByAlertRatio = (a, b) => {
-    const av = Number.isFinite(a.ratio_alert) ? a.ratio_alert : -Infinity;
-    const bv = Number.isFinite(b.ratio_alert) ? b.ratio_alert : -Infinity;
-    if (bv !== av) return bv - av;
-    const ay = Number.isFinite(a.ratio_heinen) ? a.ratio_heinen : -Infinity;
-    const by = Number.isFinite(b.ratio_heinen) ? b.ratio_heinen : -Infinity;
-    if (by !== ay) return by - ay;
-    const ac = Number.isFinite(a.current_ma4) ? a.current_ma4 : -Infinity;
-    const bc = Number.isFinite(b.current_ma4) ? b.current_ma4 : -Infinity;
-    return bc - ac;
-  };
-
-  const candidates = filteredRows.filter(d => Number.isFinite(d.ratio_alert));
-  if (!candidates.length) return null;
-
-  // Step 1: pick the disease whose nationwide row has the highest alert ratio.
-  const nationwideRows = candidates.filter(d => isNationwide(d.pref));
-  const diseaseAnchor = (nationwideRows.length ? nationwideRows : candidates).slice().sort(compareByAlertRatio)[0];
-  if (!diseaseAnchor) return null;
-  const targetCategory = diseaseAnchor.category;
-
-  // Step 2: for that disease, collect nationwide and top 3 prefectures.
-  const sameDiseaseAll = filteredRows.filter(d => d.category === targetCategory);
-  if (!sameDiseaseAll.length) return null;
-
-  const enrichRow = (row, rankLabel) => {
-    return {
-      ...row,
-      rankLabel,
-      sparkValues: null
-    };
-  };
-
-  const nationwideRow = sameDiseaseAll.find(d => isNationwide(d.pref))
-    || sameDiseaseAll.slice().sort(compareByAlertRatio)[0];
-  const topPrefRows = sameDiseaseAll
-    .filter(d => !isNationwide(d.pref))
-    .slice()
-    .sort(compareByAlertRatio)
-    .slice(0, 3)
-    .map((d, idx) => enrichRow(d, `${idx + 1}.`));
-
-  return {
-    targetCategory,
-    nationwideRow: nationwideRow ? enrichRow(nationwideRow, "全国") : null,
-    topPrefRows
-  };
-}
-
-function buildCategoryHighlightsPayload(category) {
-  if (!category || !Array.isArray(state.rankingData) || !state.rankingData.length) return null;
-  const rows = state.rankingData.filter(d => d.category === category);
-  if (!rows.length) return null;
-
-  const nationwide = rows.find(d => isNationwide(d.pref)) || null;
-  const topPrefRows = rows
-    .filter(d => !isNationwide(d.pref))
-    .slice()
-    .sort((a, b) => {
-      const av = Number.isFinite(a.current_value ?? a.current_ma4) ? (a.current_value ?? a.current_ma4) : -Infinity;
-      const bv = Number.isFinite(b.current_value ?? b.current_ma4) ? (b.current_value ?? b.current_ma4) : -Infinity;
-      return bv - av;
-    })
-    .slice(0, 3)
-    .map((d, idx) => ({ ...d, rankLabel: `${idx + 1}.` }));
-
-  if (!nationwide && !topPrefRows.length) return null;
-  return {
-    targetCategory: category,
-    nationwideRow: nationwide ? { ...nationwide, rankLabel: "全国" } : null,
-    topPrefRows,
-    topLabel: "定点あたり患者数が高い3都道府県"
-  };
-}
-
-function renderCategoryHighlights(category, options = {}) {
-  const payload = buildCategoryHighlightsPayload(category);
+function renderCategoryHighlights(category) {
   state.activeDigestCategory = category || null;
-  renderTopHighlights(payload, options.signalKey);
-  if (options.scroll) {
-    const el = els.rankingTopHighlights;
-    if (el) {
-      const rect = el.getBoundingClientRect();
-      const outside = rect.bottom < 0 || rect.top > window.innerHeight;
-      if (outside) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }
 }
 window.renderCategoryHighlights = renderCategoryHighlights;
 window.buildMiniSparkline = buildMiniSparkline;
@@ -630,109 +503,6 @@ function startMiniSparklineDotAnimations(rootEl) {
   });
 }
 
-const SIGNAL_LABELS = {
-  alert:   { main: "警報開始基準比が直近で最も高い感染症", prefs: "警報開始基準比が高い3都道府県",   help: "患者数が警報基準の何倍かを示す指標",         helpAriaLabel: "警報開始基準比の説明を表示",         helpText: "警報開始基準比" },
-  rising:  { main: "前週比増加率が最も高い感染症",     prefs: "増加率が高い3都道府県",         help: "今週の患者数が先週から何割増えたかを示す指標", helpAriaLabel: "前週比増加率の説明を表示",        helpText: "前週比増加率" },
-  anomaly: { main: "季節外れの増加が最も大きい感染症", prefs: "季節外れの増加が目立つ3都道府県", help: "同時期の例年平均と比べた乖離の大きさを示す指標", helpAriaLabel: "季節性Zスコアの説明を表示",      helpText: "季節性Zスコア" },
-};
-
-function renderTopHighlights(payload, signalKey) {
-  if (!els.rankingTopHighlights) return;
-  els.rankingTopHighlights.innerHTML = "";
-  if (!payload || !payload.targetCategory) {
-    els.rankingTopHighlights.style.display = "none";
-    return;
-  }
-  if (state.newsDigest) { els.rankingTopHighlights.style.display = "none"; return; }
-  els.rankingTopHighlights.style.display = "block";
-
-  const labels = SIGNAL_LABELS[signalKey] || SIGNAL_LABELS.alert;
-  const { targetCategory, nationwideRow, topPrefRows } = payload;
-  const wrapper = document.createElement("div");
-  wrapper.className = "ranking-top-layout";
-
-  const left = document.createElement("div");
-  left.className = "ranking-top-main ranking-top-main-unified";
-  left.innerHTML = `
-    <p class="ranking-top-main-label">
-      <span class="ranking-top-main-label-wrap">
-        ${labels.main}
-        <button type="button" class="top-help-trigger" aria-label="${labels.helpAriaLabel}" aria-expanded="false">?</button>
-        <span class="top-help-popover" role="tooltip">${labels.help}</span>
-      </span>
-    </p>
-    <p class="ranking-top-main-disease">${targetCategory || "—"}</p>
-  `;
-  if (nationwideRow) {
-    const nationwideMini = buildMiniSparkline(nationwideRow.category, nationwideRow.pref, 116, 52, nationwideRow.sparkValues);
-    left.innerHTML += `
-      <div class="ranking-top-main-unified-grid">
-        <p class="ranking-top-main-unified-pref-row">
-          <span class="ranking-top-main-unified-pref">全国平均</span>
-          <span class="ranking-top-main-unified-alert-inline ${alertSeverityClass(nationwideRow.ratio_alert)}">${formatRatioAlert(nationwideRow.ratio_alert)}</span>
-        </p>
-        <div class="ranking-top-main-unified-current">
-          <span class="label">定点あたり患者数</span>
-          <span class="value">${Number.isFinite(nationwideRow.current_value ?? nationwideRow.current_ma4) ? (nationwideRow.current_value ?? nationwideRow.current_ma4).toFixed(2) : "—"}</span>
-        </div>
-        <div class="ranking-top-main-unified-spark">
-          <span class="value spark-wrap">
-            <svg class="top-metric-sparkline top-metric-sparkline--nationwide" aria-hidden="true" width="116" height="52" viewBox="0 0 116 52" data-values="${nationwideMini.values.join("|")}" data-y-max="${nationwideMini.yMax}" data-threshold="${Number.isFinite(nationwideMini.threshold) ? nationwideMini.threshold : ""}" data-alert-end="${Number.isFinite(nationwideMini.alertEnd) ? nationwideMini.alertEnd : ""}" data-alert-states="${nationwideMini.alertStates ? nationwideMini.alertStates.map(b => b ? "1" : "0").join("") : ""}" data-attention-states="${nationwideMini.attentionStates ? nationwideMini.attentionStates.map(b => b ? "1" : "0").join("") : ""}" data-pad-x="${nationwideMini.padX || 0}" data-pad-y="${nationwideMini.padY || 0}">
-              <path class="top-metric-sparkline-path" d="${nationwideMini.normalPath}"></path>
-              <path class="top-metric-sparkline-path top-metric-sparkline-path-attention" d="${nationwideMini.attentionPath || ""}"></path>
-              <path class="top-metric-sparkline-path top-metric-sparkline-path-alert" d="${nationwideMini.alertPath}"></path>
-              <circle class="top-metric-spark-dot" cx="0" cy="0" r="2.8"></circle>
-            </svg>
-          </span>
-        </div>
-      </div>
-    `;
-    left.setAttribute("role", "button");
-    left.tabIndex = 0;
-    left.title = "クリックでグラフへ移動";
-    left.style.cursor = "pointer";
-    const topHelpTrigger = left.querySelector(".top-help-trigger");
-    const topHelpPopover = left.querySelector(".top-help-popover");
-    if (topHelpTrigger && topHelpPopover) {
-      initHelpTrigger(topHelpTrigger, topHelpPopover);
-    }
-    left.addEventListener("click", () => goToChart(nationwideRow.pref, nationwideRow.category));
-    left.addEventListener("keydown", e => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        goToChart(nationwideRow.pref, nationwideRow.category);
-      }
-    });
-  }
-  wrapper.appendChild(left);
-
-  const right = document.createElement("div");
-  right.className = "ranking-top-prefs";
-  const rightTitle = document.createElement("p");
-  rightTitle.className = "ranking-top-prefs-label";
-  rightTitle.textContent = payload.topLabel || labels.prefs;
-  right.appendChild(rightTitle);
-
-  const list = document.createElement("ol");
-  list.className = "ranking-top-prefs-list";
-  topPrefRows.forEach((item) => {
-    const li = document.createElement("li");
-    li.className = "ranking-top-prefs-item";
-    const card = renderTopMetricCard(item);
-    if (card) li.appendChild(card);
-    list.appendChild(li);
-  });
-  right.appendChild(list);
-  wrapper.appendChild(right);
-
-  els.rankingTopHighlights.appendChild(wrapper);
-  const sparkNote = document.createElement("p");
-  sparkNote.className = "ranking-top-spark-note";
-  sparkNote.textContent = "※折れ線は過去1年の推移（右端が最新）";
-  els.rankingTopHighlights.appendChild(sparkNote);
-  requestAnimationFrame(() => startMiniSparklineDotAnimations(els.rankingTopHighlights));
-}
-
 function computeRanking() {
   let highlightSource = state.rankingData.slice();
   if (state.selectedDiseases.size) {
@@ -765,17 +535,15 @@ function computeRanking() {
   return {
     filtered,
     rows,
-    captionText: filtered.length ? `${captionParts.join(" / ")} / ${filtered.length}件` : "該当データがありません。",
-    highlights: computeTopHighlights(highlightSource)
+    captionText: filtered.length ? `${captionParts.join(" / ")} / ${filtered.length}件` : "該当データがありません。"
   };
 }
 
 function renderRanking(result) {
   if (!els.rankingBody) return;
-  const { filtered, rows, captionText, highlights } = result;
+  const { filtered, rows, captionText } = result;
 
   if (els.rankingCaption) els.rankingCaption.textContent = captionText;
-  renderTopHighlights(highlights);
   els.rankingBody.innerHTML = "";
   rows.forEach(row => {
     // buildMiniSparkline は閾値クロス位置を線形補間して正確に色分けする

@@ -62,19 +62,6 @@ function loadRankingCsv() {
     .catch(() => []);
 }
 
-function loadTopHighlightsJson() {
-  return loadTextFlexible("results/top_highlights.json")
-    .then(text => {
-      try {
-        const json = JSON.parse(text);
-        return json && typeof json === "object" ? json : null;
-      } catch (e) {
-        console.warn("Failed to parse top_highlights.json", e);
-        return null;
-      }
-    })
-    .catch(() => null);
-}
 
 function loadNewsDigestJson() {
   return loadTextFlexible("results/news_digest.json")
@@ -153,18 +140,16 @@ async function initialize() {
   cleanBakedDom();
   // 「その他」CSV（数十MB）は初期表示の帯域を奪うので、初期描画が終わってから遅延ロードする。
   // まずは東京・大阪・全国の小さなCSVだけを並列で取得し、画面を最速で描画する。
-  const [tokyo, osaka, nationwide, thresholds, lastFetch, rankingCsv, topHighlightsJson, newsDigestJson] = await Promise.all([
+  const [tokyo, osaka, nationwide, thresholds, lastFetch, rankingCsv, newsDigestJson] = await Promise.all([
     loadData("results/data-東京都.csv"),
     loadData("results/data-大阪府.csv"),
     loadData("results/data-全国.csv"),
     loadAlertThresholds(),
     loadLastFetchDate(),
     loadRankingCsv(),
-    loadTopHighlightsJson(),
     loadNewsDigestJson()
   ]);
   state.allData = [...tokyo, ...osaka, ...nationwide];
-  state.precomputedTopHighlights = topHighlightsJson;
   state.newsDigest = newsDigestJson;
 
   const alwaysLoaded = new Set(["全国", "東京都", "大阪府"]);
