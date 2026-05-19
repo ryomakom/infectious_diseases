@@ -92,7 +92,8 @@
       width: 9%;
       padding: 10px 2px;
       text-align: center;
-      white-space: nowrap;
+      word-break: break-all;
+      overflow-wrap: break-word;
     }
 
     /* 疾患名セル */
@@ -100,13 +101,12 @@
       background: #fff;
       font-weight: 500;
       font-size: 0.82rem;
-      padding: 0 14px;
+      padding: 6px 14px;
       color: #0f172a;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      overflow-wrap: break-word;
+      word-break: break-all;
       border-right: 2px solid #e2e8f0;
-      height: 48px;
+      min-height: 48px;
       vertical-align: middle;
     }
 
@@ -286,7 +286,7 @@
   <table>
     <thead>
       <tr id="header-row">
-        <th class="corner">疾患 ↓　　地方 →</th>
+        <th class="corner"></th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
