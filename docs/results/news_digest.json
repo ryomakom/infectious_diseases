@@ -3,29 +3,6 @@
   "lead": {
     "category": "水痘"
   },
-  "top_prefectures": [
-    {
-      "category": "水痘",
-      "pref": "大分県",
-      "current_value": 1,
-      "previous_value": 1.06,
-      "growth1Rate": -0.0566
-    },
-    {
-      "category": "水痘",
-      "pref": "福岡県",
-      "current_value": 0.87,
-      "previous_value": 0.67,
-      "growth1Rate": 0.2985
-    },
-    {
-      "category": "水痘",
-      "pref": "沖縄県",
-      "current_value": 0.63,
-      "previous_value": 0.46,
-      "growth1Rate": 0.3696
-    }
-  ],
   "rising": [],
   "anomalies": [
     {
