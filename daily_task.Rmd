@@ -782,40 +782,6 @@ integrateAnomalyIntoLead <- function(digest) {
   digest
 }
 
-selectTopPrefectures <- function(rows, lead_row, anomalies_df = NULL, prefer_anomaly_prefs = FALSE) {
-  if (nrow(lead_row) == 0) return(rows %>% slice(0))
-  lead_cat <- as.character(lead_row$category[[1]])
-  base <- rows %>%
-    filter(category == lead_cat, pref != "全国") %>%
-    filter(is.finite(ratio_alert), current_ma4 >= MIN_CURRENT_MA4) %>%
-    mutate(priority_high = ratio_alert > 0.5) %>%
-    arrange(desc(priority_high), desc(ratio_alert), desc(current_ma4)) %>%
-    slice_head(n = 3)
-
-  if (!prefer_anomaly_prefs || is.null(anomalies_df) || nrow(anomalies_df) == 0) {
-    return(base)
-  }
-
-  anomaly_prefs <- anomalies_df %>%
-    filter(category == lead_cat) %>%
-    arrange(desc(seasonal_zscore)) %>%
-    pull(pref) %>%
-    unique()
-
-  if (length(anomaly_prefs) == 0) return(base)
-
-  rows %>%
-    filter(category == lead_cat, pref != "全国") %>%
-    filter(is.finite(ratio_alert), current_ma4 >= MIN_CURRENT_MA4) %>%
-    mutate(
-      priority_high = ratio_alert > 0.5,
-      anomaly_rank = match(pref, anomaly_prefs),
-      is_anomaly_pref = !is.na(anomaly_rank)
-    ) %>%
-    arrange(desc(is_anomaly_pref), anomaly_rank, desc(priority_high), desc(ratio_alert), desc(current_ma4)) %>%
-    slice_head(n = 3)
-}
-
 selectRising <- function(rows, alert_categories = character(0)) {
   rows %>%
     filter(pref == "全国") %>%
@@ -1256,12 +1222,6 @@ lead_bundle <- integrateAnomalyIntoLead(list(
 lead_row <- lead_bundle$lead_row
 lead_category <- lead_bundle$lead_category
 
-top_pref_df <- selectTopPrefectures(
-  news_base,
-  lead_row,
-  anomalies_df = anomalies_df,
-  prefer_anomaly_prefs = isTRUE(grepl("^A: 季節パターン逸脱", lead_bundle$lead$reason))
-)
 rising_df <- selectRising(news_base)
 
 generated_text <- buildGeneratedText(rows = news_base, in_alert_now = in_alert_now)
@@ -1269,14 +1229,13 @@ generated_text <- buildGeneratedText(rows = news_base, in_alert_now = in_alert_n
 block_result <- buildBlockSummary(by_week, in_alert_now, in_attention_now, latest_yr_wk)
 
 # news_digest.json は JS 側で実際に参照されるフィールドだけを出力する。
-# - メインサイト (newsDigest.js) で使用: lead.category / top_prefectures / rising / anomalies / generated_text.bullets
+# - メインサイト (newsDigest.js) で使用: lead.category / rising / anomalies / generated_text.bullets
 # - heatmap.html で使用: week / block_matrix
 news_digest <- list(
   week = as.character(reference_date),
   lead = list(
     category = ifelse(is.na(lead_category), NA_character_, lead_category)
   ),
-  top_prefectures = as_item_list(top_pref_df, 3),
   rising = as_item_list(rising_df, 3),
   anomalies = as_anomaly_list(anomalies_df, 3),
   block_matrix = block_result$matrix,

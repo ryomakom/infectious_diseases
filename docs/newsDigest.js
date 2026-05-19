@@ -14,7 +14,6 @@
  * @property {string} [week]
  * @property {{category?:string}|null} [lead]
  * @property {{bullets?:string[]}|null} [generated_text]
- * @property {NewsDigestItem[]} [top_prefectures]
  * @property {NewsDigestItem[]} [rising]
  * @property {Array<{category?:string}>} [anomalies]
  */
@@ -51,7 +50,6 @@ function normalizeNewsDigest(raw) {
     generated_text: {
       bullets: asArray(generated.bullets).filter(v => typeof v === "string")
     },
-    top_prefectures: toDigestItems(raw.top_prefectures),
     rising: toDigestItems(raw.rising),
     anomalies: toDigestItems(raw.anomalies)
   };

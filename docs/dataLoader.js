@@ -167,21 +167,7 @@ async function initialize() {
   state.precomputedTopHighlights = topHighlightsJson;
   state.newsDigest = newsDigestJson;
 
-  // newsDigest の top_prefectures に登場する都道府県のデータを、
-  // 描画前にロードする。これでスパークラインが確実にデータを持てる。
-  // 対象はせいぜい3〜5県（数MB）なので初期表示の遅延は最小限に抑えられる。
   const alwaysLoaded = new Set(["全国", "東京都", "大阪府"]);
-  const prominentPrefs = new Set();
-  if (newsDigestJson && Array.isArray(newsDigestJson.top_prefectures)) {
-    newsDigestJson.top_prefectures.forEach(r => {
-      if (r && r.pref && !alwaysLoaded.has(r.pref)) prominentPrefs.add(r.pref);
-    });
-  }
-  // prominent prefs: ニュースダイジェストの上位県を表示疾患3種だけプリロード
-  if (prominentPrefs.size > 0) {
-    const initCats = ["新型コロナウイルス", "インフルエンザ", "RSウイルス"];
-    await Promise.all([...prominentPrefs].flatMap(p => initCats.map(c => ensurePrefCatLoaded(p, c))));
-  }
 
   initializeUniqueLists();
   buildChartDropdownOptions();
