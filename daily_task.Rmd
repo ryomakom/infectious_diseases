@@ -695,6 +695,17 @@ as_anomaly_list <- function(df, n = 3) {
   })
 }
 
+# 都道府県名の末尾文字（都/道/府/県）のうち、実際に含まれるものだけを正規順で連結する
+# 例: c("東京都","埼玉県","神奈川県") → "都県" / c("北海道","青森県") → "道県"
+prefTypeSuffix <- function(prefs) {
+  if (length(prefs) == 0) return("")
+  last_chars <- substr(prefs, nchar(prefs), nchar(prefs))
+  ordered <- c("都", "道", "府", "県")
+  present <- ordered[ordered %in% unique(last_chars)]
+  if (length(present) == 0) return("")
+  paste(present, collapse = "")
+}
+
 buildAlertBullets <- function(rows, in_alert_now) {
   alert_prefs <- in_alert_now %>%
     filter(in_alert_level == TRUE, pref != "全国") %>%
@@ -706,11 +717,13 @@ buildAlertBullets <- function(rows, in_alert_now) {
   lapply(alert_diseases, function(cat) {
     prefs_in_alert <- alert_prefs %>% filter(category == cat)
     n_total <- nrow(prefs_in_alert)
-    top3 <- head(as.character(prefs_in_alert$pref), 3)
+    all_prefs <- as.character(prefs_in_alert$pref)
+    top3 <- head(all_prefs, 3)
     if (n_total <= 3) {
       sprintf("%s：%sで患者数が警報レベル", cat, paste(top3, collapse = "、"))
     } else {
-      sprintf("%s：%sなど%d都道府県で患者数が警報レベル", cat, paste(top3, collapse = "、"), n_total)
+      suffix <- prefTypeSuffix(all_prefs)
+      sprintf("%s：%sなど%d%sで患者数が警報レベル", cat, paste(top3, collapse = "、"), n_total, suffix)
     }
   })
 }
