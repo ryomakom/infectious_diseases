@@ -513,7 +513,7 @@ ranking <- current_ma4 %>%
 
 # ranking.csv は news_base 計算後に ratio_wow を付与してから書き出す（下記）
 
-# ---- ニュース自動生成: news_digest.json / weekly_report.md ----
+# ---- ニュース自動生成: news_digest.json ----
 safe_num <- function(x, digits = 4) {
   ifelse(is.finite(x), round(as.numeric(x), digits), NA_real_)
 }
