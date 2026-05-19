@@ -1,7 +1,7 @@
 # generate_merged_weekly.R
-# merged_data.csv から週次集計（by_week）を生成し、
-# docs/results/merged_weekly.csv に書き出す。
-# bullets_tester.html の動作に必要なファイルを作る専用スクリプト。
+# merged_data.csv から週次集計（by_week）を年別ファイルに分割して出力する。
+# bullets_tester.html が必要な年だけ遅延ロードできるよう、
+# docs/results/merged_weekly_YYYY.csv として1年1ファイル形式で書き出す。
 #
 # 使い方:
 #   Rscript generate_merged_weekly.R
@@ -63,6 +63,12 @@ by_week <- d %>%
 
 out_dir <- "docs/results"
 if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-out_path <- file.path(out_dir, "merged_weekly.csv")
-write_csv(by_week, out_path)
-message(sprintf("出力完了: %s  (%d 行)", out_path, nrow(by_week)))
+
+years <- sort(unique(by_week$yr))
+for (y in years) {
+  out_path <- file.path(out_dir, sprintf("merged_weekly_%d.csv", y))
+  yr_data  <- filter(by_week, yr == y)
+  write_csv(yr_data, out_path)
+  message(sprintf("  %d: %d 行 → %s", y, nrow(yr_data), out_path))
+}
+message(sprintf("完了: %d 年分を出力しました", length(years)))

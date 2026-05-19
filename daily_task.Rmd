@@ -427,8 +427,11 @@ if (length(data_list) > 0) {
         .groups      = "drop"
       )
     if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
-    write_csv(by_week_tmp, "docs/results/merged_weekly.csv")
-    message("merged_weekly.csv を更新しました（", nrow(by_week_tmp), " 行）")
+    for (y in sort(unique(by_week_tmp$yr))) {
+      write_csv(filter(by_week_tmp, yr == y),
+                sprintf("docs/results/merged_weekly_%d.csv", y))
+    }
+    message("merged_weekly_YYYY.csv を更新しました（", nrow(by_week_tmp), " 行）")
   }
   knitr::knit_exit()
 }
@@ -503,8 +506,11 @@ by_week <- d %>%
     .groups = "drop"
   )
 
-# bullets_tester.html 用：週次集計データを丸ごと出力
-write_csv(by_week, "docs/results/merged_weekly.csv")
+# bullets_tester.html 用：週次集計データを年別ファイルに分割して出力
+for (y in sort(unique(by_week$yr))) {
+  write_csv(filter(by_week, yr == y),
+            sprintf("docs/results/merged_weekly_%d.csv", y))
+}
 
 latest_yr_wk <- by_week %>% pull(year_week) %>% max()
 latest_yr <- as.integer(substr(latest_yr_wk, 1, 4))
