@@ -391,7 +391,8 @@ if (length(data_list) > 0) {
   cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
   message("新規データを統合し merged_data を更新しました。")
 } else {
-  message("新規データがありませんでした。")
+  message("新規データがありませんでした。以降の処理をスキップします。")
+  knitr::knit_exit()
 }
 
 # グラフ用CSVは常に変換後の名前で出力（新規の有無にかかわらず）
