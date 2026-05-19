@@ -391,7 +391,45 @@ if (length(data_list) > 0) {
   cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
   message("新規データを統合し merged_data を更新しました。")
 } else {
-  message("新規データがありませんでした。以降の処理をスキップします。")
+  message("新規データがありませんでした。merged_weekly.csv のみ更新して終了します。")
+  # 新規データがない日も by_week を再計算して bullets_tester.html 用に書き出す
+  {
+    yw_tmp <- cleaned_diseases %>%
+      mutate(date = as.Date(date)) %>%
+      distinct(date) %>%
+      mutate(
+        yr        = lubridate::year(date),
+        wk        = lubridate::isoweek(date),
+        year_week = sprintf("%04d-%02d", yr, wk)
+      ) %>%
+      select(date, year_week, yr, wk)
+    d_tmp <- cleaned_diseases %>%
+      mutate(date = as.Date(date)) %>%
+      left_join(yw_tmp, by = "date") %>%
+      group_by(pref, category) %>%
+      arrange(date) %>%
+      mutate(
+        ma4 = if_else(
+          row_number() >= 4,
+          (value + lag(value, 1) + lag(value, 2) + lag(value, 3)) / 4,
+          NA_real_
+        )
+      ) %>%
+      ungroup() %>%
+      filter(!is.na(ma4))
+    by_week_tmp <- d_tmp %>%
+      group_by(pref, category, year_week) %>%
+      summarise(
+        ma4          = last(ma4),
+        weekly_value = last(value),
+        yr           = last(yr),
+        wk           = last(wk),
+        .groups      = "drop"
+      )
+    if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+    write_csv(by_week_tmp, "docs/results/merged_weekly.csv")
+    message("merged_weekly.csv を更新しました（", nrow(by_week_tmp), " 行）")
+  }
   knitr::knit_exit()
 }
 
