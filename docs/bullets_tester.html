@@ -360,18 +360,18 @@
         if (isFinite(r.alert_end)   && r.alert_end   > 0) alertEndMap[r.category]   = r.alert_end;
       });
 
-      // 最新年を取得して週リストを構築
+      // 利用可能な全年（2012〜現在）の週リストを構築。
+      // 各年のCSVは ~30KB と小さく、Promise.all で並列ロードする。
+      // 存在しない年は loadYear が空配列を返すのでフィルタで弾かれる。
       const now = new Date();
       latestYr = now.getFullYear();
-      // 最新年のファイルが存在しない場合は1年前を試みる
-      let latestData = await loadYear(latestYr);
-      if (!latestData.length) latestData = await loadYear(latestYr - 1);
-
-      allWeeks = [...new Set(latestData.map(d => d.year_week))].sort();
-      // より古い年のデータから週リストを補完（最新年が少ない場合）
-      const prevData = await loadYear(latestYr - 1);
-      const prevWeeks = prevData.map(d => d.year_week);
-      allWeeks = [...new Set([...allWeeks, ...prevWeeks])].sort();
+      const FIRST_YEAR = 2012;
+      const years = [];
+      for (let y = FIRST_YEAR; y <= latestYr; y++) years.push(y);
+      const allArrays = await Promise.all(years.map(loadYear));
+      const weekSet = new Set();
+      allArrays.flat().forEach(d => { if (d.year_week) weekSet.add(d.year_week); });
+      allWeeks = [...weekSet].sort();
 
     } catch (e) {
       loadDiv.innerHTML = `<p class="error-msg">読み込みエラー：${e.message}</p>
