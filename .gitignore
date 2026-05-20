@@ -1,0 +1,24 @@
+# R
+.Rhistory
+.RData
+.Rproj.user/
+*.knit.md
+*.utf8.md
+
+# Build output (再生成可能)
+daily_task.html
+daily_task_files/
+
+# Temporary
+_tmp_*
+*~
+.local_serve.R
+
+# Editor / IDE
+.claude/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

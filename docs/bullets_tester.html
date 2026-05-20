@@ -141,7 +141,7 @@
   async function loadYear(yr) {
     if (yearCache.has(yr)) return yearCache.get(yr);
     try {
-      const data = await fetchCsv(`results/merged_weekly_${yr}.csv`, rowParser);
+      const data = await fetchCsv(`data/weekly/merged_weekly_${yr}.csv`, rowParser);
       yearCache.set(yr, data);
       return data;
     } catch (_) {

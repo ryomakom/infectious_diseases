@@ -1,29 +1,31 @@
 # generate_merged_weekly.R
 # merged_data.csv から週次集計（by_week）を年別ファイルに分割して出力する。
 # bullets_tester.html が必要な年だけ遅延ロードできるよう、
-# docs/results/merged_weekly_YYYY.csv として1年1ファイル形式で書き出す。
+# docs/data/weekly/merged_weekly_YYYY.csv として1年1ファイル形式で書き出す。
 #
 # 使い方:
-#   Rscript generate_merged_weekly.R
+#   Rscript R/lib/generate_merged_weekly.R   （プロジェクトルートから）
 # または RStudio で source()
 
 library(tidyverse)
 library(lubridate)
 
 {
+  # スクリプトは R/lib/ にある前提。プロジェクトルートは2階層上。
   args <- commandArgs(trailingOnly = FALSE)
   script_flag <- grep("--file=", args, value = TRUE)
   if (length(script_flag) > 0) {
     script_path <- sub("--file=", "", script_flag[1])
-    setwd(dirname(normalizePath(script_path)))
+    setwd(normalizePath(file.path(dirname(script_path), "..", "..")))
   } else if (requireNamespace("rstudioapi", quietly = TRUE) &&
              rstudioapi::isAvailable()) {
-    setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+    setwd(normalizePath(file.path(
+      dirname(rstudioapi::getActiveDocumentContext()$path), "..", "..")))
   }
 }
 
 message("merged_data.csv を読み込んでいます...")
-cleaned_diseases <- read_csv("merged_data/merged_data.csv", show_col_types = FALSE) %>%
+cleaned_diseases <- read_csv("data/merged/merged_data.csv", show_col_types = FALSE) %>%
   mutate(date = as.Date(date), value = as.numeric(value))
 
 message("週次集計を計算しています...")
@@ -61,7 +63,7 @@ by_week <- d %>%
     .groups      = "drop"
   )
 
-out_dir <- "docs/results"
+out_dir <- "docs/data/weekly"
 if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
 years <- sort(unique(by_week$yr))

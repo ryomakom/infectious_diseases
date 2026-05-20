@@ -41,13 +41,13 @@ function loadAlertThresholds() {
 }
 
 function loadLastFetchDate() {
-  return loadTextFlexible("results/last_fetch.txt")
+  return loadTextFlexible("data/last_fetch.txt")
     .then(t => t.trim())
     .catch(() => "");
 }
 
 function loadRankingCsv() {
-  return loadCsvFlexible("results/ranking.csv")
+  return loadCsvFlexible("data/ranking.csv")
     .then(rows => rows.map(d => ({
       category: categoryToDisplay(d.category),
       pref: prefToDisplay(d.pref),
@@ -64,7 +64,7 @@ function loadRankingCsv() {
 
 
 function loadNewsDigestJson() {
-  return loadTextFlexible("results/news_digest.json")
+  return loadTextFlexible("data/news_digest.json")
     .then(text => {
       try {
         const json = JSON.parse(text);
@@ -141,9 +141,9 @@ async function initialize() {
   // 「その他」CSV（数十MB）は初期表示の帯域を奪うので、初期描画が終わってから遅延ロードする。
   // まずは東京・大阪・全国の小さなCSVだけを並列で取得し、画面を最速で描画する。
   const [tokyo, osaka, nationwide, thresholds, lastFetch, rankingCsv, newsDigestJson] = await Promise.all([
-    loadData("results/data-東京都.csv"),
-    loadData("results/data-大阪府.csv"),
-    loadData("results/data-全国.csv"),
+    loadData("data/pref/data-東京都.csv"),
+    loadData("data/pref/data-大阪府.csv"),
+    loadData("data/pref/data-全国.csv"),
     loadAlertThresholds(),
     loadLastFetchDate(),
     loadRankingCsv(),
@@ -235,7 +235,7 @@ function ensurePrefCatLoaded(prefName, catName) {
   const key = `${prefName}\x00${catName}`;
   if (_prefCatLoadCache[key]) return _prefCatLoadCache[key];
 
-  _prefCatLoadCache[key] = loadData(`results/pref/data-${prefName}-${catName}.csv`)
+  _prefCatLoadCache[key] = loadData(`data/pref/data-${prefName}-${catName}.csv`)
     .then(rows => {
       if (!rows.length) return;
       state.allData = state.allData.concat(rows);

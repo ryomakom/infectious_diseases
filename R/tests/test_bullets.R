@@ -11,17 +11,17 @@
 library(tidyverse)
 library(lubridate)
 
-# RStudio から source() した場合はスクリプトの場所へ、
-# Rscript から実行した場合はコマンドライン引数のパスへ移動する
+# スクリプトは R/tests/ にある前提。プロジェクトルートは2階層上。
 {
   args <- commandArgs(trailingOnly = FALSE)
   script_flag <- grep("--file=", args, value = TRUE)
   if (length(script_flag) > 0) {
     script_path <- sub("--file=", "", script_flag[1])
-    setwd(dirname(normalizePath(script_path)))
+    setwd(normalizePath(file.path(dirname(script_path), "..", "..")))
   } else if (requireNamespace("rstudioapi", quietly = TRUE) &&
              rstudioapi::isAvailable()) {
-    setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+    setwd(normalizePath(file.path(
+      dirname(rstudioapi::getActiveDocumentContext()$path), "..", "..")))
   }
 }
 
@@ -41,10 +41,10 @@ MIN_AVG_FOR_GROWTH <- 0.1
 PERSISTENCE_WINDOW <- 4L
 
 # ---- データ読み込み ----
-cleaned_diseases <- read_csv("merged_data/merged_data.csv", show_col_types = FALSE) %>%
+cleaned_diseases <- read_csv("data/merged/merged_data.csv", show_col_types = FALSE) %>%
   mutate(date = as.Date(date), value = as.numeric(value))
 
-alert <- read_csv("data/alert_thresholds.csv", col_types = "cdddc")
+alert <- read_csv("docs/data/alert_thresholds.csv", col_types = "cdddc")
 
 # ---- 週集計 ----
 yw <- cleaned_diseases %>%

@@ -6,6 +6,8 @@ date: "2024-04-16"
 ---
 
 ```{r setup, include=FALSE}
+# このRmdは R/ 直下に置く前提。knit時の作業ディレクトリをプロジェクトルートに固定。
+knitr::opts_knit$set(root.dir = normalizePath(".."))
 library(tidyverse)
 library(rvest)
 library(lubridate)
@@ -141,7 +143,7 @@ cleaned_diseases <- diseases %>%
   mutate(value = ifelse(is.na(value), 0, value))
 
 cleaned_diseases %>% 
-  write_excel_csv("merged_data/merged_data.csv")
+  write_excel_csv("data/merged/merged_data.csv")
 
 pref_lookup <- tibble::tribble(
   ~pref, ~pref_en,
