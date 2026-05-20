@@ -167,7 +167,12 @@ async function initialize() {
   if (latestDate && els.latestData) {
     els.latestData.textContent = `最新データ：${latestDate.getFullYear()}年${latestDate.getMonth() + 1}月${latestDate.getDate()}日`;
   }
-  state.rankingData = mergeRankingRows(rankingCsv, computeRankingFromAllData());
+  // ranking.csv が正常取得できた場合はそのまま使用。
+  // CSV が空の場合のみ allData からの計算値にフォールバックする。
+  // （mergeRankingRows でマージすると、CSV に存在しない computed 行が余分に加算される）
+  state.rankingData = rankingCsv.length > 0
+    ? rankingCsv
+    : computeRankingFromAllData();
 
   // ニュースダイジェストの3シグナルカード（警戒・増加・季節外れ）に表示される
   // 上位3県のスパークライン用データを renderNewsDigestSection の前にプリロードする。
