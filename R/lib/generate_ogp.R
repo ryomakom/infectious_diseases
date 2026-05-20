@@ -30,7 +30,7 @@ if (.use_showtext) {
 ff <- if (.use_showtext) "noto" else ""
 
 # ---- データ読み込み --------------------------------------------------------
-res_dir <- "docs/results"
+res_dir <- "docs/data"
 news_digest <- jsonlite::read_json(
   file.path(res_dir, "news_digest.json"), simplifyVector = TRUE
 )
@@ -38,7 +38,7 @@ ranking <- readr::read_csv(
   file.path(res_dir, "ranking.csv"),
   show_col_types = FALSE, locale = locale(encoding = "UTF-8")
 )
-ts_path <- file.path(res_dir, "data-全国.csv")
+ts_path <- file.path(res_dir, "pref", "data-全国.csv")
 ts_data <- if (file.exists(ts_path)) {
   readr::read_csv(ts_path, show_col_types = FALSE,
                   locale = locale(encoding = "UTF-8"))

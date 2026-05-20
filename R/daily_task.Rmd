@@ -4,6 +4,11 @@ output: html_document
 date: "2025-4-16"
 ---
 
+```{r setup, include=FALSE}
+# このRmdは R/ 直下に置く前提。knit時の作業ディレクトリをプロジェクトルートに固定。
+knitr::opts_knit$set(root.dir = normalizePath(".."))
+```
+
 ```{r}
 library(tidyverse)
 library(rvest)
@@ -100,7 +105,7 @@ category_to_display <- function(x) {
   )
 }
 
-cleaned_diseases <- read_csv("merged_data/merged_data.csv", show_col_types = FALSE) %>%
+cleaned_diseases <- read_csv("data/merged/merged_data.csv", show_col_types = FALSE) %>%
   mutate(category = category_to_display(category))
 
 # cp932のCSVをUTF-8の一時ファイルに変換してからread_csvに渡すヘルパー
@@ -180,7 +185,7 @@ process_csv <- function(file_path) {
 
 
 # — year_week.csv 読み込み —
-year_week <- read_csv("year_week.csv") %>%
+year_week <- read_csv("config/year_week.csv") %>%
   mutate(date = as.Date(date))
 
 # — 今日と5日前 —
@@ -195,7 +200,7 @@ distinct_weeks <- year_week %>%
   pull(year_week)
 
 # — ディレクトリ準備 —
-data_dir <- "data"
+data_dir <- "data/raw"
 log_dir  <- "logs"
 if (!dir.exists(data_dir)) dir.create(data_dir)
 if (!dir.exists(log_dir))  dir.create(log_dir)
@@ -263,7 +268,7 @@ if (!dir.exists(log_dir))  dir.create(log_dir)
   if (length(backfill_list) > 0) {
     cleaned_diseases <- bind_rows(cleaned_diseases, bind_rows(backfill_list)) %>%
       distinct()
-    cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
+    cleaned_diseases %>% write_excel_csv("data/merged/merged_data.csv")
     message("バックフィル完了: ", length(backfill_list), " 週分を統合しました")
   } else {
     message("バックフィル: 未処理ファイルなし")
@@ -374,8 +379,8 @@ write_csv(all_logs, log_file)
   if (nrow(last_success_rows) > 0) {
     last_success_ts <- max(as.POSIXct(last_success_rows$timestamp, tz = "UTC"), na.rm = TRUE)
     date_str <- format(last_success_ts, "%Y-%m-%d", tz = "UTC")
-    if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
-    writeLines(date_str, "docs/results/last_fetch.txt")
+    if (!dir.exists("docs/data")) dir.create("docs/data", recursive = TRUE)
+    writeLines(date_str, "docs/data/last_fetch.txt")
     message("last_fetch.txt を ", date_str, " に更新しました")
   } else {
     message("今回のダウンロード成功なし。last_fetch.txt は更新しません")
@@ -389,7 +394,7 @@ if (length(data_list) > 0) {
     bind_rows(latest_data) %>%
     distinct() %>%
     mutate(category = category_to_display(category))
-  cleaned_diseases %>% write_excel_csv("merged_data/merged_data.csv")
+  cleaned_diseases %>% write_excel_csv("data/merged/merged_data.csv")
   message("新規データを統合し merged_data を更新しました。")
 } else {
   message("新規データがありませんでした。merged_weekly.csv のみ更新して終了します。")
@@ -427,10 +432,10 @@ if (length(data_list) > 0) {
         wk           = last(wk),
         .groups      = "drop"
       )
-    if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
+    if (!dir.exists("docs/data/weekly")) dir.create("docs/data/weekly", recursive = TRUE)
     for (y in sort(unique(by_week_tmp$yr))) {
       write_csv(filter(by_week_tmp, yr == y),
-                sprintf("docs/results/merged_weekly_%d.csv", y))
+                sprintf("docs/data/weekly/merged_weekly_%d.csv", y))
     }
     message("merged_weekly_YYYY.csv を更新しました（", nrow(by_week_tmp), " 行）")
   }
@@ -439,11 +444,11 @@ if (length(data_list) > 0) {
 
 # グラフ用CSVは常に変換後の名前で出力（新規の有無にかかわらず）
 cleaned_diseases %>%
-  filter(pref == "全国")  %>% write_excel_csv("docs/results/data-全国.csv")
+  filter(pref == "全国")  %>% write_excel_csv("docs/data/pref/data-全国.csv")
 cleaned_diseases %>%
-  filter(pref == "東京都") %>% write_excel_csv("docs/results/data-東京都.csv")
+  filter(pref == "東京都") %>% write_excel_csv("docs/data/pref/data-東京都.csv")
 cleaned_diseases %>%
-  filter(pref == "大阪府") %>% write_excel_csv("docs/results/data-大阪府.csv")
+  filter(pref == "大阪府") %>% write_excel_csv("docs/data/pref/data-大阪府.csv")
 # 「その他」都道府県は 都道府県×感染症 の組み合わせで1ファイルずつ出力。
 # JS がチャートを描く直前に必要な1疾患分だけロードできるようにするため。
 # ファイル名は JS の categoryToDisplay() と同じ表示名を使う（名前不一致による404を防ぐ）。
@@ -455,7 +460,7 @@ category_to_display <- function(cat) {
     TRUE ~ cat
   )
 }
-dir.create("docs/results/pref", recursive = TRUE, showWarnings = FALSE)
+dir.create("docs/data/pref", recursive = TRUE, showWarnings = FALSE)
 other_prefs <- cleaned_diseases %>%
   filter(!pref %in% c("全国", "東京都", "大阪府")) %>%
   distinct(pref) %>%
@@ -466,12 +471,12 @@ for (p in other_prefs) {
     file_cat <- category_to_display(cat)
     cleaned_diseases %>%
       filter(pref == p, category == cat) %>%
-      write_excel_csv(paste0("docs/results/pref/data-", p, "-", file_cat, ".csv"))
+      write_excel_csv(paste0("docs/data/pref/data-", p, "-", file_cat, ".csv"))
   }
 }
 
 # ---- ランキング用: 平年比・警報基準比（毎回実行・cleaned_diseases で算出） ----
-# 出典: docs/DASHBOARD_SPEC.md, data/alert_thresholds.csv
+# 出典: docs/DASHBOARD_SPEC.md, docs/data/alert_thresholds.csv
 yw <- cleaned_diseases %>%
   mutate(date = as.Date(date)) %>%
   distinct(date) %>%
@@ -508,9 +513,10 @@ by_week <- d %>%
   )
 
 # bullets_tester.html 用：週次集計データを年別ファイルに分割して出力
+if (!dir.exists("docs/data/weekly")) dir.create("docs/data/weekly", recursive = TRUE)
 for (y in sort(unique(by_week$yr))) {
   write_csv(filter(by_week, yr == y),
-            sprintf("docs/results/merged_weekly_%d.csv", y))
+            sprintf("docs/data/weekly/merged_weekly_%d.csv", y))
 }
 
 latest_yr_wk <- by_week %>% pull(year_week) %>% max()
@@ -540,7 +546,7 @@ baseline_ma4 <- by_week %>%
   group_by(pref, category) %>%
   summarise(baseline_ma4 = mean(weekly_value, na.rm = TRUE), .groups = "drop")
 
-alert <- read_csv("data/alert_thresholds.csv", col_types = "cdddc")
+alert <- read_csv("docs/data/alert_thresholds.csv", col_types = "cdddc")
 
 ranking <- current_ma4 %>%
   left_join(baseline_ma4, by = c("pref", "category")) %>%
@@ -823,7 +829,7 @@ buildGeneratedText <- function(rows, in_alert_now) {
 # 警報県を計算し、各地方ごとに「目立つ」疾患トップ3を JSON 出力用に整形する。
 # 人口加重とする理由：定点あたり患者数を県単純平均すると人口の少ない県が過大に効く。
 # 厳密には定点数加重が筋だが、定点数の管理が重いため人口を proxy として用いる。
-pref_population <- read_csv("data/prefecture_population.csv", show_col_types = FALSE)
+pref_population <- read_csv("config/prefecture_population.csv", show_col_types = FALSE)
 buildBlockSummary <- function(by_week, in_alert_now, in_attention_now, latest_yr_wk) {
   block_weekly <- by_week %>%
     left_join(pref_population, by = "pref") %>%
@@ -1134,8 +1140,8 @@ ranking <- ranking %>%
   ) %>%
   select(category, pref, year_week, reference_date, current_value, current_ma4, baseline_ma4, ratio_heinen, alert_start, ratio_alert, ratio_wow, in_alert_level)
 
-write_excel_csv(ranking, "docs/results/ranking.csv")
-message("ランキング出力: docs/results/ranking.csv")
+write_excel_csv(ranking, "docs/data/ranking.csv")
+message("ランキング出力: docs/data/ranking.csv")
 
 anomalies_df <- detectAnomalies(news_base)
 
@@ -1156,8 +1162,8 @@ news_digest <- list(
   generated_text = list(bullets = generated_text$bullets)
 )
 
-writeLines(toJSON(news_digest, auto_unbox = TRUE, pretty = TRUE, na = "null"), "docs/results/news_digest.json")
-message("ニュースJSON出力: docs/results/news_digest.json")
+writeLines(toJSON(news_digest, auto_unbox = TRUE, pretty = TRUE, na = "null"), "docs/data/news_digest.json")
+message("ニュースJSON出力: docs/data/news_digest.json")
 
 # OGP画像（SNSシェア用サムネイル）を生成。失敗してもパイプライン全体は止めない
 tryCatch(
@@ -1175,7 +1181,7 @@ tryCatch(
 tryCatch({
   # ?v= には最終ダウンロード成功日を使う（last_fetch.txt から読む）
   last_fetch_date <- tryCatch(
-    as.Date(readLines("docs/results/last_fetch.txt", warn = FALSE)[1]),
+    as.Date(readLines("docs/data/last_fetch.txt", warn = FALSE)[1]),
     error = function(e) as.Date(reference_date)
   )
   v_str <- format(last_fetch_date, "%Y%m%d")

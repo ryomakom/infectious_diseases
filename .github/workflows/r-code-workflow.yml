@@ -75,14 +75,17 @@ jobs:
       # 6. 日次処理
       - name: Render daily task
         run: |
-          Rscript -e "rmarkdown::render('daily_task.Rmd')"
+          Rscript -e "rmarkdown::render('R/daily_task.Rmd')"
 
       # 7. 生成された CSV をコミット＆プッシュ（データ更新コミットは上書きして履歴を蓄積させない）
       - name: Commit and push CSVs
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/*-teiten.csv docs/results/data-*.csv docs/results/pref/*.csv merged_data/*.csv logs/*.csv docs/results/ranking.csv docs/results/news_digest.json docs/results/merged_weekly_*.csv docs/results/last_fetch.txt docs/ogp.png docs/index.html || echo "No CSV files to add"
+          git add data/raw/*.csv data/merged/*.csv logs/*.csv \
+                  docs/data/ranking.csv docs/data/news_digest.json docs/data/last_fetch.txt \
+                  docs/data/pref/*.csv docs/data/weekly/*.csv \
+                  docs/ogp.png docs/index.html || echo "No CSV files to add"
           if git diff --cached --quiet; then
             echo "No changes to commit"
           else

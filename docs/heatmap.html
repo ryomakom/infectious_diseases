@@ -408,7 +408,7 @@ function zToRGB(z) {
 })();
 
 // ── データ読み込み ────────────────────────────────────────────────────────
-fetch('results/news_digest.json')
+fetch('data/news_digest.json')
   .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
   .then(buildHeatmap)
   .catch(err => {
