@@ -6,9 +6,8 @@ on:
     branches:
       - main
 
-  # NOTE: リポジトリ再構成中は schedule を一時停止。完了後に戻す。
-  # schedule:
-  #   - cron: '0 5 * * 1,2,3,4,5'
+  schedule:
+    - cron: '0 5 * * 1,2,3,4,5'
 
   workflow_dispatch:      # 手動トリガー
 
