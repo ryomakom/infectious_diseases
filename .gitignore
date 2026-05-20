@@ -12,6 +12,7 @@ daily_task_files/
 # Temporary
 _tmp_*
 *~
+.local_serve.R
 
 # Editor / IDE
 .claude/
