@@ -542,10 +542,15 @@ baseline_ma4 <- by_week %>%
 alert <- read_csv("data/alert_thresholds.csv", col_types = "cdddc")
 
 ranking <- current_ma4 %>%
-  inner_join(baseline_ma4, by = c("pref", "category")) %>%
-  filter(baseline_ma4 > 0) %>%
+  left_join(baseline_ma4, by = c("pref", "category")) %>%
+  # baseline が 0 や NA（過去3年に患者ゼロ）でも行を残す。
+  # 0除算を避けるため ratio_heinen は baseline > 0 のときだけ算出し、それ以外は NA。
   mutate(
-    ratio_heinen = round(current_ma4 / baseline_ma4, 2),
+    ratio_heinen = if_else(
+      is.finite(baseline_ma4) & baseline_ma4 > 0,
+      round(current_ma4 / baseline_ma4, 2),
+      NA_real_
+    ),
     year_week = latest_yr_wk,
     reference_date = as.character(reference_date)
   ) %>%
