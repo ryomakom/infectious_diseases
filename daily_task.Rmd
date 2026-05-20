@@ -298,7 +298,7 @@ log_entries <- list()
 data_list   <- list()
 
 for (week_label in distinct_weeks) {
-  ts        <- Sys.time()
+  ts        <- as.POSIXct(format(Sys.time(), tz = "UTC"), tz = "UTC")  # UTC 固定
   parts     <- str_split(week_label, "-")[[1]]
   url       <- sprintf(
     "https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv",
@@ -372,10 +372,11 @@ write_csv(all_logs, log_file)
 {
   last_success_rows <- all_logs %>% filter(action == "downloaded")
   if (nrow(last_success_rows) > 0) {
-    last_success_ts <- max(as.POSIXct(last_success_rows$timestamp), na.rm = TRUE)
+    last_success_ts <- max(as.POSIXct(last_success_rows$timestamp, tz = "UTC"), na.rm = TRUE)
+    date_str <- format(last_success_ts, "%Y-%m-%d", tz = "UTC")
     if (!dir.exists("docs/results")) dir.create("docs/results", recursive = TRUE)
-    writeLines(format(as.Date(last_success_ts), "%Y-%m-%d"), "docs/results/last_fetch.txt")
-    message("last_fetch.txt を ", format(as.Date(last_success_ts), "%Y-%m-%d"), " に更新しました")
+    writeLines(date_str, "docs/results/last_fetch.txt")
+    message("last_fetch.txt を ", date_str, " に更新しました")
   } else {
     message("今回のダウンロード成功なし。last_fetch.txt は更新しません")
   }
