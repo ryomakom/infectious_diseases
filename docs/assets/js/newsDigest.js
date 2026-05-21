@@ -200,7 +200,7 @@ function buildIntroSignals(digest) {
       category: pickAlertLeadCategoryFromNationwide(),
       description: "（全国平均の警報開始基準比が最も高い）",
       noDataMessage: "今週は警戒が必要な感染症はありません",
-      definition: "定点あたり患者数を、警報を出すときの基準となる人数で割った値（警報開始基準比）が最も高い感染症。1.0倍を超えると警報水準を突破している状態"
+      definition: "定点あたり患者数を、警報を出す基準となる人数で割った値（警報開始基準比）が最も高い感染症。1.0倍を超えると警報レベルに"
     },
     {
       key: "rising",
@@ -208,7 +208,7 @@ function buildIntroSignals(digest) {
       category: pickRisingLeadCategory(digest),
       description: "（前週比増加率が最も高い）",
       noDataMessage: "今週は急増中の感染症はありません",
-      definition: "前週と比べた定点あたり患者数の増加率が最も高い感染症。前週0.05人以上、今週0.1人以上の感染症から抽出",
+      definition: "前週と比べた定点あたり患者数の増加率が最も高い感染症。3割以上増えていて、また前週0.05人以上、今週0.1人以上の感染症から抽出",
       wowRatio: (() => {
         const r = digest?.rising?.[0];
         if (!r) return null;
