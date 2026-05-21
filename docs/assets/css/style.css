@@ -2650,30 +2650,22 @@ header::after{
   outline-offset: 2px;
 }
 
-/* 感染症解説リンク（↗マーク・角丸ボックス） */
+/* 感染症解説リンク（外部リンクアイコン） */
 .disease-info-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   margin-left: 4px;
-  padding: 1px 4px;
-  font-size: 0.65em;
-  font-weight: 700;
+  padding: 0;
   color: var(--color-primary);
   text-decoration: none;
-  vertical-align: 0.15em;
-  line-height: 1.4;
-  border: 1.5px solid var(--color-primary);
-  border-radius: 4px;
+  vertical-align: -0.05em;
   opacity: 0.6;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  transition: opacity 0.15s;
   cursor: pointer;
-  white-space: nowrap;
 }
 .disease-info-link:hover {
   opacity: 1;
-  background: var(--color-primary);
-  color: #fff;
   text-decoration: none;
 }
 .disease-info-link:focus-visible {
@@ -2681,13 +2673,9 @@ header::after{
   outline-offset: 2px;
   opacity: 1;
 }
-/* 三つの切り口カード内では2割小さく */
+/* 三つの切り口カード内ではフォントサイズのみ小さく */
 .news-digest-spark-category .disease-info-link {
   font-size: 0.52em;
-  padding: 1px 3px;
-  border-width: 1px;
-  border-radius: 3px;
-  vertical-align: 0.35em;
 }
 
 @media (min-width: 700px){

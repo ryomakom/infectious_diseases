@@ -163,7 +163,7 @@ function makeDiseaseInfoLink(category) {
   const a = document.createElement("a");
   a.className = "disease-info-link";
   a.href = "disclaimer.html#" + anchor;
-  a.textContent = "↗";
+  a.innerHTML = '<svg width="15" height="15" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 1h3m0 0v3m0-3L6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   a.setAttribute("aria-label", category + "の解説");
   a.setAttribute("title", "解説ページを開く");
   a.addEventListener("click", function(e) {
