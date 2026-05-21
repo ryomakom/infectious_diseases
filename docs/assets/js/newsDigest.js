@@ -225,7 +225,7 @@ function buildIntroSignals(digest) {
       category: pickAnomalyLeadCategory(digest),
       description: "（平年パターンからの乖離）",
       noDataMessage: "今週は季節外れの増加はありません",
-      definition: "過去の同時期と比べ、定点あたり患者数の乖離（Zスコア）が最も大きい感染症。「今の水準がどれだけ異常か」を示す"
+      definition: "過去の同時期と比べ、定点あたり患者数の乖離（Zスコア）が最も大きく、平年と比べて異例に流行している感染症"
     }
   ];
 }
