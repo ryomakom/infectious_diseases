@@ -2729,14 +2729,24 @@ header::after{
   border-color: rgba(0, 0, 0, 0.1);
 }
 
+/* 選択中のチャートカード（クリックまたは goToChart で維持）：外枠のみ色をつける */
+.chart.chart-selected{
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
+
+/* goToChart で遷移してきたときの入場パルス（chart-selected と併用） */
 .chart.chart-target{
   border-color: var(--color-primary);
-  animation: chart-target-pulse 0.7s ease-out forwards;
+  animation: chart-target-pulse 1.2s ease-out forwards;
 }
 @keyframes chart-target-pulse{
-  0%   { box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-primary) 50%, transparent); }
-  60%  { box-shadow: 0 0 0 8px color-mix(in srgb, var(--color-primary) 20%, transparent); }
-  100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 30%, transparent); }
+  0%   { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-primary) 60%, transparent);
+          background: color-mix(in srgb, var(--color-primary) 10%, #fff); }
+  60%  { box-shadow: 0 0 0 12px color-mix(in srgb, var(--color-primary) 18%, transparent);
+          background: color-mix(in srgb, var(--color-primary) 3%, #fff); }
+  100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 22%, transparent);
+          background: transparent; }
 }
 
 .ranking-row-flash{
@@ -2746,6 +2756,23 @@ header::after{
   0%   { background: color-mix(in srgb, var(--color-primary) 18%, transparent); }
   100% { background: transparent; }
 }
+
+/* カード（トップメトリクス・ニュースダイジェスト）クリック時フラッシュ */
+.card-flash{
+  animation: card-flash 0.7s ease-out forwards;
+}
+@keyframes card-flash{
+  0%   { background: color-mix(in srgb, var(--color-primary) 22%, #fff);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 45%, transparent);
+          transform: scale(1.03); }
+  55%  { background: color-mix(in srgb, var(--color-primary) 8%, #fff);
+          box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-primary) 15%, transparent);
+          transform: scale(1.01); }
+  100% { background: transparent;
+          box-shadow: none;
+          transform: scale(1); }
+}
+
 
 /* ===================================================
    Inner layout

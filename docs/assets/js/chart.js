@@ -397,10 +397,17 @@ function createChartContainer(category, data, focusMargin, focusHeight, FOCUS_OU
     .attr("role", "region")
     .attr("aria-labelledby", chartHeadingId);
 
-  // グラフパネルをクリックするとそのグラフのURLに自動更新
+  // グラフパネルをクリックするとそのグラフのURLに自動更新＋選択状態を維持
   container.on("click", function(event) {
     // ダウンロードボタン上のクリックは無視
     if (event.target.closest(".chart-download-btn")) return;
+    // 他のカードの選択状態（chart-selected / chart-target）をすべてクリア
+    if (chartTargetTimeout != null) { clearTimeout(chartTargetTimeout); chartTargetTimeout = null; }
+    document.querySelectorAll("#chart-container .chart").forEach(el => {
+      el.classList.remove("chart-selected", "chart-target");
+    });
+    // クリックしたカードを選択中にする（色を維持）
+    container.node().classList.add("chart-selected");
     if (typeof updateUrlForChart === "function") updateUrlForChart(category);
   });
 
@@ -1005,13 +1012,14 @@ async function goToChart(pref, category) {
   state.highlightedPrefByCategory[category] = pref;
   await drawAllCharts(getSelectedDropdownPrefectures());
   await ensureCategoryChartDrawn(category); // placeholder なら描画完了まで待つ
+  // 全カードの選択状態をリセットしてターゲットを選択中にする
   const charts = document.querySelectorAll(".chart");
-  const chartContainer = document.getElementById("chart-container");
-  if (chartContainer) chartContainer.querySelectorAll(".chart-target").forEach(el => el.classList.remove("chart-target"));
-  if (chartTargetTimeout != null) clearTimeout(chartTargetTimeout);
+  charts.forEach(el => el.classList.remove("chart-selected", "chart-target"));
+  if (chartTargetTimeout != null) { clearTimeout(chartTargetTimeout); chartTargetTimeout = null; }
   for (const chartEl of charts) {
     if (chartEl.dataset.category === category) {
-      chartEl.classList.remove("chart-target");
+      // chart-selected: 色を維持、chart-target: 入場パルスアニメーション
+      chartEl.classList.add("chart-selected");
       void chartEl.offsetWidth; // reflow to restart animation
       chartEl.classList.add("chart-target");
       setTimeout(() => {
@@ -1029,11 +1037,11 @@ async function goToChart(pref, category) {
         }
         requestAnimationFrame(step);
       }, 400);
-      if (chartTargetTimeout != null) clearTimeout(chartTargetTimeout);
+      // パルスアニメーション終了後に chart-target だけ除去（chart-selected は残す）
       chartTargetTimeout = setTimeout(() => {
         chartTargetTimeout = null;
         chartEl.classList.remove("chart-target");
-      }, 10000);
+      }, 1500);
       break;
     }
   }

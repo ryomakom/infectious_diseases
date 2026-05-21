@@ -438,6 +438,9 @@ function buildTopPrefsSection(category, signalKey) {
     `;
 
     card.addEventListener("click", () => {
+      card.classList.remove("card-flash");
+      void card.offsetWidth; // reflow でアニメーションをリセット
+      card.classList.add("card-flash");
       if (typeof goToChart === "function") goToChart(row.pref, row.category);
     });
 

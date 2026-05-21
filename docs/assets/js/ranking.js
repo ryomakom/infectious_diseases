@@ -401,7 +401,12 @@ function renderTopMetricCard(entry) {
       </div>
     </div>
   `;
-  card.addEventListener("click", () => goToChart(entry.pref, entry.category));
+  card.addEventListener("click", () => {
+    card.classList.remove("card-flash");
+    void card.offsetWidth; // reflow でアニメーションをリセット
+    card.classList.add("card-flash");
+    goToChart(entry.pref, entry.category);
+  });
   return card;
 }
 
