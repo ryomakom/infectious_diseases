@@ -44,6 +44,8 @@ function _currentWeekTag() {
 })();
 
 // ── グラフをクリック or ハイライト変更時にURLを更新 ──────────────────────
+let _gcLastCategory = null;
+
 function updateUrlForChart(category) {
   const p = new URLSearchParams();
   p.set(_UP.W, _currentWeekTag());
@@ -67,6 +69,15 @@ function updateUrlForChart(category) {
 
   history.replaceState(null, "", location.pathname + "?" + p.toString());
   _updateShareButtonHrefs();
+
+  // GoatCounter：疾患が変わったときだけ送信
+  if (typeof window.goatcounter?.count === "function" && category !== _gcLastCategory) {
+    _gcLastCategory = category;
+    window.goatcounter.count({
+      path:  location.pathname + "?cat=" + encodeURIComponent(category),
+      title: category + "の流行状況",
+    });
+  }
 }
 
 // ── URL → state（initialize() 内で setDefaultDropdownSelection の直後に呼ぶ）
