@@ -262,6 +262,11 @@
     </section>
   </main>
 
+  <section class="pref-links-section" aria-labelledby="pref-links-heading">
+    <h2 id="pref-links-heading" class="pref-links-heading">各都道府県の感染症情報</h2>
+    <div id="pref-links-grid" class="pref-links-grid"></div>
+  </section>
+
   <div class="tooltip" style="opacity:0;"></div>
 
   <script src="assets/js/state.js"></script>
@@ -270,6 +275,22 @@
   <script src="assets/js/chart.js"></script>
   <script src="assets/js/newsDigest.js"></script>
   <script src="assets/js/dataLoader.js"></script>
+  <script>
+  (function () {
+    var grid = document.getElementById("pref-links-grid");
+    if (!grid) return;
+    fetch("data/pref_links.json")
+      .then(function (r) { return r.json(); })
+      .then(function (list) {
+        grid.innerHTML = list.map(function (d) {
+          return '<a class="pref-link-item" href="' + d.url + '" target="_blank" rel="noopener noreferrer">' + d.pref + '</a>';
+        }).join("");
+      })
+      .catch(function () {
+        grid.innerHTML = '<p class="pref-links-error">情報を読み込めませんでした</p>';
+      });
+  })();
+  </script>
   <script>
   (function () {
     var credit = document.querySelector('.author-credit');

@@ -164,6 +164,43 @@ header::after{
   text-decoration: underline;
 }
 
+/* ── 都道府県感染症情報リンク ── */
+.pref-links-section{
+  max-width: 1000px;
+  margin: 48px auto 32px;
+  padding: 0 16px;
+}
+.pref-links-heading{
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-sub);
+  margin-bottom: 12px;
+}
+.pref-links-grid{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pref-link-item{
+  display: inline-block;
+  padding: 4px 10px;
+  font-size: 0.82rem;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pref-link-item:hover{
+  background: color-mix(in srgb, var(--color-primary) 8%, #fff);
+  border-color: var(--color-primary);
+  text-decoration: none;
+}
+.pref-links-error{
+  font-size: 0.85rem;
+  color: var(--color-text-sub);
+}
+
 .update-date{
   font-size: 13px;
   color: var(--color-text-muted);
