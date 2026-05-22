@@ -266,8 +266,11 @@
       const anomaly_ratio = (isFinite(cv) && isFinite(seasonal_mean) && seasonal_mean >= MIN_CURRENT_MA4)
         ? cv / seasonal_mean : NaN;
 
+      const ratio_heinen = (isFinite(d.ma4) && isFinite(baseline) && baseline > 0)
+        ? d.ma4 / baseline : NaN;
+
       rows.push({ pref: d.pref, category: d.category, current_ma4: d.ma4,
-                  current_value: cv, anomaly_z, anomaly_ratio });
+                  current_value: cv, anomaly_z, anomaly_ratio, ratio_heinen });
     });
 
     // 警報 bullets
@@ -295,25 +298,32 @@
     });
 
     // 異常 bullets
+    function ratioToMultLabel(r) {
+      if (!isFinite(r) || r < 2) return null;
+      if (r < 10)  return Math.floor(r);
+      if (r < 100) return Math.floor(r / 10) * 10;
+      return Math.floor(r / 100) * 100;
+    }
+
     const anomalyBullets = rows
       .filter(r =>
         r.pref === "全国" &&
         isFinite(r.anomaly_z) && r.anomaly_z >= 3 &&
         isFinite(r.current_ma4) && r.current_ma4 >= MIN_CURRENT_MA4 &&
-        isFinite(r.anomaly_ratio) && r.anomaly_ratio > 1 &&
+        isFinite(r.ratio_heinen) && r.ratio_heinen >= 2 &&
         !alertDiseases.includes(r.category)
       )
       .sort((a, b) => b.anomaly_z - a.anomaly_z)
       .map(r => {
-        const pct      = Math.round((r.anomaly_ratio - 1) * 100);
+        const mult     = ratioToMultLabel(r.ratio_heinen);
         const topPrefs = rows
           .filter(x => x.category === r.category && x.pref !== "全国" &&
                        isFinite(x.current_ma4) && x.current_ma4 >= MIN_CURRENT_MA4)
           .sort((a, b) => b.current_ma4 - a.current_ma4)
           .slice(0, 3).map(x => x.pref);
         const text = topPrefs.length >= 1
-          ? `${r.category}：全国の患者数が平年比+${pct}%で、とくに${topPrefs.join("、")}で多い`
-          : `${r.category}：全国の患者数が平年比+${pct}%`;
+          ? `${r.category}：全国の患者数が平年比${mult}倍以上で、とくに${topPrefs.join("、")}で多い`
+          : `${r.category}：全国の患者数が平年比${mult}倍以上`;
         return { type: "anomaly", text };
       });
 

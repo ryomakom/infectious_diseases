@@ -787,18 +787,25 @@ buildAlertBullets <- function(rows, in_alert_now) {
   })
 }
 
+ratio_to_mult_label <- function(r) {
+  if (!is.finite(r) || r < 2) return(NA_real_)
+  if (r < 10)  return(floor(r))
+  if (r < 100) return(floor(r / 10) * 10)
+  return(floor(r / 100) * 100)
+}
+
 buildAnomalyBullets <- function(rows, alert_diseases) {
   nationwide_anomalies <- rows %>%
     filter(pref == "全国", is.finite(anomaly_z), anomaly_z >= 3,
            is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4,
-           is.finite(anomaly_ratio), anomaly_ratio > 1,
+           is.finite(ratio_heinen), ratio_heinen >= 2,
            !category %in% alert_diseases) %>%
     arrange(desc(anomaly_z))
   if (nrow(nationwide_anomalies) == 0) return(list())
   lapply(seq_len(nrow(nationwide_anomalies)), function(i) {
     row <- nationwide_anomalies[i, ]
     cat <- as.character(row$category[[1]])
-    pct <- round((as.numeric(row$anomaly_ratio[[1]]) - 1) * 100)
+    mult <- ratio_to_mult_label(as.numeric(row$ratio_heinen[[1]]))
     top_prefs <- rows %>%
       filter(category == cat, pref != "全国",
              is.finite(current_ma4), current_ma4 >= MIN_CURRENT_MA4) %>%
@@ -807,9 +814,9 @@ buildAnomalyBullets <- function(rows, alert_diseases) {
       pull(pref) %>%
       as.character()
     if (length(top_prefs) >= 1) {
-      sprintf("%s：全国の患者数が平年比+%d%%で、とくに%sで多い", cat, pct, paste(top_prefs, collapse = "、"))
+      sprintf("%s：全国の患者数が平年比%d倍以上で、とくに%sで多い", cat, mult, paste(top_prefs, collapse = "、"))
     } else {
-      sprintf("%s：全国の患者数が平年比+%d%%", cat, pct)
+      sprintf("%s：全国の患者数が平年比%d倍以上", cat, mult)
     }
   })
 }
