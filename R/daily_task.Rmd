@@ -270,6 +270,9 @@ if (!dir.exists(log_dir))  dir.create(log_dir)
       distinct()
     cleaned_diseases %>% write_excel_csv("data/merged/merged_data.csv")
     message("バックフィル完了: ", length(backfill_list), " 週分を統合しました")
+    # バックフィルでデータが追加された = 実質的な更新なので last_fetch.txt を今日の日付で更新する
+    if (!dir.exists("docs/data")) dir.create("docs/data", recursive = TRUE)
+    writeLines(format(Sys.Date(), "%Y-%m-%d"), "docs/data/last_fetch.txt")
   } else {
     message("バックフィル: 未処理ファイルなし")
   }
