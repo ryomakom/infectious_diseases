@@ -383,14 +383,23 @@ all_logs <- bind_rows(existing_logs, new_logs) %>%
 write_csv(all_logs, log_file)
 
 # 「最終更新」: ダウンロードに成功した最後の日付を last_fetch.txt に書き出す
+# ただし現在の値より新しい場合のみ更新（手動設定値を上書きしない）
 {
   last_success_rows <- all_logs %>% filter(action == "downloaded")
   if (nrow(last_success_rows) > 0) {
     last_success_ts <- max(as.POSIXct(last_success_rows$timestamp, tz = "UTC"), na.rm = TRUE)
     date_str <- format(last_success_ts, "%Y-%m-%d", tz = "UTC")
-    if (!dir.exists("docs/data")) dir.create("docs/data", recursive = TRUE)
-    writeLines(date_str, "docs/data/last_fetch.txt")
-    message("last_fetch.txt を ", date_str, " に更新しました")
+    current_last_fetch <- tryCatch(
+      as.Date(readLines("docs/data/last_fetch.txt", warn = FALSE)[1]),
+      error = function(e) as.Date("2000-01-01")
+    )
+    if (as.Date(date_str) > current_last_fetch) {
+      if (!dir.exists("docs/data")) dir.create("docs/data", recursive = TRUE)
+      writeLines(date_str, "docs/data/last_fetch.txt")
+      message("last_fetch.txt を ", date_str, " に更新しました")
+    } else {
+      message("last_fetch.txt は ", format(current_last_fetch, "%Y-%m-%d"), " のまま維持します（ログの最終DL日: ", date_str, "）")
+    }
   } else {
     message("今回のダウンロード成功なし。last_fetch.txt は更新しません")
   }
