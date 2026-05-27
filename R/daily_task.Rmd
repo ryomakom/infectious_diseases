@@ -305,17 +305,23 @@ data_list   <- list()
 for (week_label in distinct_weeks) {
   ts        <- as.POSIXct(format(Sys.time(), tz = "UTC"), tz = "UTC")  # UTC 固定
   parts     <- str_split(week_label, "-")[[1]]
-  url       <- sprintf(
-    "https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv",
-    parts[1], parts[2], week_label
+  urls <- c(
+    sprintf("https://id-info.jihs.go.jp/surveillance/idwr/provisional/%s/%s/%s-teiten.csv",
+            parts[1], parts[2], week_label),
+    sprintf("https://id-info.jihs.go.jp/surveillance/idwr/jp/rapid/%s/%s/%s-teiten.csv",
+            parts[1], parts[2], week_label)
   )
   local_file <- file.path(data_dir, sprintf("%s-teiten.csv", week_label))
 
   if (!file.exists(local_file)) {
-    success <- tryCatch(
-      { download.file(url, destfile = local_file, mode = "wb"); TRUE },
-      error = function(e) FALSE
-    )
+    success <- FALSE
+    for (url in urls) {
+      success <- tryCatch(
+        { download.file(url, destfile = local_file, mode = "wb"); TRUE },
+        error = function(e) FALSE
+      )
+      if (success) break
+    }
     if (success && file.exists(local_file)) {
       df <- tryCatch({
         process_csv(local_file) %>%
