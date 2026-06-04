@@ -89,8 +89,11 @@ function applyUrlState() {
   // 地域
   const prefStr = p.get(_UP.PREF);
   if (prefStr) {
+    // マスター一覧（PREF_ORDER）で検証する。uniquePrefectures は初期ロード済みの
+    // 県（全国・東京・大阪）しか含まないため、それで弾くと URL 指定の未ロード県
+    // （例: 山形県）が落ちてしまう。選択さえ残れば描画時に遅延ロードされる。
     const prefs = prefStr.split(",").map(s => s.trim()).filter(s =>
-      s && state.uniquePrefectures.includes(s)
+      s && PREF_ORDER.includes(s)
     );
     if (prefs.length) {
       state.selectedChartPrefectures = new Set(prefs);
@@ -116,7 +119,7 @@ function applyUrlState() {
   if (hiStr && catStr) {
     const cat = catStr.split(",")[0].trim();
     if (cat && state.uniqueCategories.includes(cat) &&
-        state.uniquePrefectures.includes(hiStr.trim())) {
+        PREF_ORDER.includes(hiStr.trim())) {
       state.highlightedPrefByCategory[cat] = hiStr.trim();
       applied = true;
     }
