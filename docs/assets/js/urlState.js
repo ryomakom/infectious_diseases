@@ -17,6 +17,10 @@
 
 const _UP = { W: "w", PREF: "pref", CAT: "cat", HI: "hi", T0: "t0", T1: "t1" };
 
+// Date をローカル時刻（JST）基準で "YYYY-MM-DD" にフォーマットする。
+// d3.timeFormat はローカル時刻で出力するため、UTC変換による日付ずれが起きない。
+const _fmtLocalDate = d3.timeFormat("%Y-%m-%d");
+
 // 今週の ISO 週番号タグ（例: "2026-W20"）を返す
 function _currentWeekTag() {
   const t = new Date();
@@ -62,8 +66,11 @@ function updateUrlForChart(category) {
   if (ext) {
     const [d0, d1] = ext;
     if (d0 instanceof Date && d1 instanceof Date && !isNaN(d0) && !isNaN(d1)) {
-      p.set(_UP.T0, d0.toISOString().slice(0, 10));
-      p.set(_UP.T1, d1.toISOString().slice(0, 10));
+      // ローカル時刻でフォーマットする。toISOString() は UTC 変換するため、
+      // JST(UTC+9) では深夜0時が前日15時となり日付が1日戻ってしまう
+      // （例: 2026-05-24 00:00 JST → "2026-05-23"）。最新週が切り落とされるのを防ぐ。
+      p.set(_UP.T0, _fmtLocalDate(d0));
+      p.set(_UP.T1, _fmtLocalDate(d1));
     }
   }
 
@@ -129,8 +136,11 @@ function applyUrlState() {
   const t0s = p.get(_UP.T0);
   const t1s = p.get(_UP.T1);
   if (t0s && t1s) {
-    const d0 = new Date(t0s);
-    const d1 = new Date(t1s);
+    // parseDate（ローカル時刻パース）で読む。new Date("YYYY-MM-DD") は UTC 解釈となり、
+    // JST では実日付が1日ずれてブラシ終端から最新週が外れてしまうため、
+    // 書き出し側（_fmtLocalDate）とローカル時刻基準で揃える。
+    const d0 = parseDate(t0s) || new Date(t0s);
+    const d1 = parseDate(t1s) || new Date(t1s);
     if (!isNaN(d0) && !isNaN(d1) && d0 < d1) {
       state.selectedCategories.forEach(cat => {
         state.savedBrushExtents[cat] = [d0, d1];
