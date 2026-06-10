@@ -16,17 +16,7 @@
       "growth1Rate": 0.4388
     }
   ],
-  "anomalies": [
-    {
-      "category": "突発性発しん"
-    },
-    {
-      "category": "水痘"
-    },
-    {
-      "category": "手足口病"
-    }
-  ],
+  "anomalies": [],
   "block_matrix": [
     {
       "category": "A群溶血性レンサ球菌咽頭炎",
