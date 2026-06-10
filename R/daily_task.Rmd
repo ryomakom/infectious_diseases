@@ -602,6 +602,14 @@ fmt_num <- function(x, digits = 2) {
 MIN_CURRENT_MA4 <- 0.1
 MIN_AVG_FOR_GROWTH <- 0.1
 PERSISTENCE_WINDOW <- 4L
+# 「最も季節外れの多さ」カードに載せる最低条件。
+# 平年（直近3年同時期）を実際に上回っているものだけを対象にし、
+# 全感染症が平年以下の週に「最もマシ」な負の乖離が繰り上げ選出されるのを防ぐ。
+# ゲートはページ表示の平年比(ratio_heinen, 4週移動平均ベース)で判定する。
+# 並べ替えに使う anomaly_z/anomaly_ratio は単週値ベースのため、単週スパイクで
+# 「表示の平年比は1未満なのに季節外れ扱い」になる矛盾を ratio_heinen ゲートで防ぐ。
+ANOMALY_Z_MIN <- 2          # Zスコア（平年からの乖離）の下限
+ANOMALY_HEINEN_MIN <- 1     # 表示平年比(ratio_heinen)の下限（1超＝平年より多い）
 
 major_categories <- c(
   "インフルエンザ",
@@ -706,7 +714,8 @@ detectAnomalies <- function(rows) {
     filter(pref == "全国") %>%
     filter(is.finite(current_value), current_value >= MIN_CURRENT_MA4) %>%
     filter(is.finite(seasonal_mean), seasonal_mean >= MIN_CURRENT_MA4) %>%
-    filter(is.finite(anomaly_z)) %>%
+    filter(is.finite(anomaly_z), anomaly_z >= ANOMALY_Z_MIN) %>%
+    filter(is.finite(ratio_heinen), ratio_heinen > ANOMALY_HEINEN_MIN) %>%
     arrange(desc(anomaly_z), desc(anomaly_ratio), desc(anomaly_diff), desc(current_value)) %>%
     slice_head(n = 3) %>%
     mutate(seasonal_zscore = anomaly_z, seasonal_ratio = anomaly_ratio)
