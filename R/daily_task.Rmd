@@ -637,8 +637,11 @@ is_major_category <- function(cat) {
 }
 
 prefToBlock <- function(pref) {
-  out <- unname(PREF_TO_BLOCK[pref])
-  ifelse(is.na(out), NA_character_, out)
+  # PREF_TO_BLOCK[未知キー] は character の NA を返すので ifelse は不要。
+  # ifelse を使うと pref が length 0（例: 警報/注意報該当が 0 件の週）のとき
+  # 戻り値が logical(0) になり、後続の bind_rows/left_join で block 列が
+  # logical と character で型不一致になって落ちる。as.character で必ず character に揃える。
+  as.character(unname(PREF_TO_BLOCK[as.character(pref)]))
 }
 
 computeSeasonalBaseline <- function(rows) {
