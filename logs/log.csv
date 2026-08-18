@@ -1211,3 +1211,5 @@ timestamp,week_label,action,rows
 2026-08-14 06:10:19,2026-32,not_found,NA
 2026-08-17 05:32:00,2026-31,skipped,NA
 2026-08-17 05:32:05,2026-32,not_found,NA
+2026-08-18 05:25:02,2026-31,skipped,NA
+2026-08-18 05:25:07,2026-32,downloaded,908
